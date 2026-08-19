@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стример-хаб | WoW Розыгрыши</title>
+    <style>
+        /* ===== БАЗА ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        /* ===== ШАПКА ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #9146ff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 100, 0.15);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 100, 0.3);
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff64;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .admin-login {
+            padding: 8px 20px;
+            background: rgba(145, 70, 255, 0.2);
+            border: 1px solid rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+            color: #9146ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .admin-login:hover {
+            background: rgba(145, 70, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* ===== ТАБЫ ===== */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.3), rgba(0, 212, 255, 0.3));
+            border-color: rgba(145, 70, 255, 0.5);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(145, 70, 255, 0.2);
+        }
+
+        /* ===== КОНТЕЙНЕРЫ ВКЛАДОК ===== */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== КАРТОЧКИ ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-title .icon {
+            font-size: 28px;
+        }
+
+        /* ===== МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО ===== */
+        .keyword-setup {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .keyword-setup input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .keyword-setup input:focus {
+            outline: none;
+            border-color: #9146ff;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.15);
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #9146ff, #7a3bcb);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 25px rgba(145, 70, 255, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #c0392b);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            color: #1a1f35;
+        }
+
+        .btn-gold:hover {
+            box-shadow: 0 6px 25px rgba(249, 202, 36, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline:hover {
+            border-color: #9146ff;
+            background: rgba(145, 70, 255, 0.1);
+        }
+
+        /* Список участников */
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .participants-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .participants-grid::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.4);
+            border-radius: 10px;
+        }
+
+        .participant-chip {
+            padding: 8px 14px;
+            background: rgba(145, 70, 255, 0.15);
+            border: 1px solid rgba(145, 70, 255, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            text-align: center;
+            transition: all 0.3s;
+            animation: chipIn 0.3s ease;
+        }
+
+        .participant-chip:hover {
+            background: rgba(145, 70, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        @keyframes chipIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .participant-count {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 10px;
+        }
+
+        /* ===== МЕХАНИКА 2: КОЛЕСО ===== */
+        .wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 400px;
+            height: 400px;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
+            transition: box-shadow 0.3s;
+        }
+
+        #wheelCanvas.spinning {
+            box-shadow: 0 0 80px rgba(145, 70, 255, 0.5);
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9146ff, #00d4ff);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 30px rgba(145, 70, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .wheel-center:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 50px rgba(145, 70, 255, 0.5);
+        }
+
+        .wheel-center:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        /* Настройки колеса */
+        .wheel-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+
+        .sector-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .sector-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .sector-input input:focus {
+            outline: none;
+            border-color: #9146ff;
+        }
+
+        .sector-input .remove-btn {
+            background: none;
+            border: none;
+            color: #ff4757;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: all 0.3s;
+        }
+
+        .sector-input .remove-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* Результат колеса */
+        .wheel-result {
+            font-size: 32px;
+            font-weight: 700;
+            padding: 20px 40px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .wheel-result.winner {
+            background: rgba(249, 202, 36, 0.15);
+            border-color: #f9ca24;
+            box-shadow: 0 0 40px rgba(249, 202, 36, 0.2);
+            animation: resultPop 0.6s ease;
+        }
+
+        @keyframes resultPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== МЕХАНИКА 3: КЕЙСЫ ===== */
+        .cases-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .cases-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .cases-container::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.4);
+            border-radius: 10px;
+        }
+
+        .case-slot {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: default;
+        }
+
+        .case-slot:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-4px);
+            border-color: rgba(145, 70, 255, 0.3);
+        }
+
+        .case-slot .item-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: rgba(145, 70, 255, 0.1);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .case-slot .item-name {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .case-slot .item-quality {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+        }
+
+        /* Анимация открытия кейса */
+        .case-open-animation {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .case-open-animation.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .case-open-animation .slot-machine {
+            display: flex;
+            gap: 10px;
+            overflow: hidden;
+            padding: 20px 40px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            max-width: 80vw;
+        }
+
+        .case-open-animation .slot-item {
+            min-width: 80px;
+            height: 80px;
+            background: rgba(145, 70, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            opacity: 0.5;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .case-open-animation .slot-item.active {
+            opacity: 1;
+            transform: scale(1.1);
+            border: 2px solid #f9ca24;
+            box-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
+        }
+
+        .case-result {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f9ca24;
+            text-align: center;
+        }
+
+        .case-close-btn {
+            padding: 12px 40px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .case-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px 20px;
+                text-align: center;
+            }
+
+            .tabs {
+                justify-content: center;
+            }
+
+            .tab-btn {
+                padding: 10px 18px;
+                font-size: 14px;
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+            }
+
+            .wheel-wrapper {
+                width: 300px;
+                height: 300px;
+            }
+
+            .wheel-center {
+                width: 50px;
+                height: 50px;
+                font-size: 16px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .cases-container {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+
+            .keyword-setup {
+                flex-direction: column;
+            }
+
+            .keyword-setup input {
+                min-width: unset;
+            }
+
+            .case-open-animation .slot-item {
+                min-width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .wheel-wrapper {
+                width: 240px;
+                height: 240px;
+            }
+
+            .wheel-center {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+
+            .participants-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+
+            .participant-chip {
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== ШАПКА ===== -->
+    <header class="header">
+        <div class="logo">🎮 Стример-хаб</div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Онлайн
+        </div>
+        <button class="admin-login" id="adminToggle">🔐 Админ</button>
+    </header>
+
+    <!-- ===== ТАБЫ ===== -->
+    <nav class="tabs">
+        <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
+        <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
+        <button class="tab-btn" data-tab="tab3">📦 Открытие кейсов</button>
+    </nav>
+
+    <!-- ========================================= -->
+    <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
+    <!-- ========================================= -->
+    <div class="tab-content active" id="tab1">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">🎯</span>
+                Розыгрыш по ключевому слову
+            </div>
+
+            <div class="keyword-setup">
+                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут">
+                <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт набора</button>
+                <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
+                <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
+                    Участников: <strong id="participantCount">0</strong>
+                </span>
+                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
+                    Статус: <span id="keywordStatus" style="color: #ff4757;">Остановлен</span>
+                </span>
+            </div>
+
+            <div class="participants-grid" id="participantsGrid">
+                <!-- Сюда будут добавляться участники -->
+                <div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 30px;">
+                    Пока никого нет 😴
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ===== ВКЛАДКА 2: КОЛЕСО ФОРТУНЫ ===== -->
+    <!-- ========================================= -->
+    <div class="tab-content" id="tab2">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">🎡</span>
+                Колесо фортуны
+            </div>
+
+            <div class="wheel-container">
+                <div class="wheel-wrapper">
+                    <canvas id="wheelCanvas" width="600" height="600"></canvas>
+                    <div class="wheel-center" id="spinBtn">SPIN</div>
+                </div>
+
+                <div class="wheel-result" id="wheelResult">
+                    🎡 Нажмите SPIN
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">⚙️</span>
+                Настройка секторов
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+                <input type="text" id="sectorNameInput" placeholder="Название награды..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <input type="number" id="sectorWeightInput" placeholder="Вес (шанс)" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <button class="btn btn-success" id="addSectorBtn">➕ Добавить</button>
+                <button class="btn btn-danger" id="resetWheelBtn">🗑️ Сброс</button>
+            </div>
+            <div class="wheel-settings" id="sectorList">
+                <!-- Сектора будут добавляться сюда -->
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
+                    Добавьте сектора для колеса
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ===== ВКЛАДКА 3: ОТКРЫТИЕ КЕЙСОВ ===== -->
+    <!-- ========================================= -->
+    <div class="tab-content" id="tab3">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon">📦</span>
+                Открытие кейсов (CS:GO стиль)
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                <input type="text" id="itemNameInput" placeholder="Название предмета..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <input type="text" id="itemIconInput" placeholder="URL иконки (или эмодзи)" style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <select id="itemQualityInput" style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                    <option value="Обычный">Обычный</option>
+                    <option value="Необычный">Необычный</option>
+                    <option value="Редкий" selected>Редкий</option>
+                    <option value="Эпический">Эпический</option>
+                    <option value="Легендарный">Легендарный</option>
+                </select>
+                <button class="btn btn-success" id="addItemBtn">➕ Добавить</button>
+                <button class="btn btn-gold" id="openCaseBtn">🎲 Открыть кейс!</button>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
+                    Слотов: <strong id="slotCount">0</strong>
+                </span>
+            </div>
+
+            <div class="cases-container" id="itemsGrid">
+                <!-- Сюда будут добавляться предметы -->
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
+                    Добавьте предметы для розыгрыша
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА ОТКРЫТИЯ КЕЙСА ===== -->
+    <div class="case-open-animation" id="caseModal">
+        <div class="slot-machine" id="slotMachine">
+            <!-- Слоты будут генерироваться JS -->
+        </div>
+        <div class="case-result" id="caseResult">🎉 Вы выиграли!</div>
+        <button class="case-close-btn" id="closeCaseBtn">✕ Закрыть</button>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ========================================= -->
+    <script>
+        // ==========================================
+        // 1. ОБЩИЕ УТИЛИТЫ И СОСТОЯНИЕ
+        // ==========================================
+
+        // Состояние для каждой вкладки
+        const state = {
+            // Ключевое слово
+            keyword: {
+                active: false,
+                currentKeyword: '!лут',
+                participants: [],
+            },
+            // Колесо
+            wheel: {
+                sectors: [
+                    { label: '1000 голды', weight: 3, color: '#ff6b6b' },
+                    { label: '500 голды', weight: 5, color: '#feca57' },
+                    { label: '200 голды', weight: 8, color: '#48dbfb' },
+                    { label: 'Питомец', weight: 2, color: '#ff9ff3' },
+                    { label: 'Ничего', weight: 4, color: '#8395a7' },
+                ],
+                currentRotation: 0,
+                isSpinning: false,
+            },
+            // Кейсы
+            cases: {
+                items: [
+                    { id: 1, name: 'Меч Тысячи Истин', icon: '⚔️', quality: 'Легендарный' },
+                    { id: 2, name: 'Шлем Мудрости', icon: '🪖', quality: 'Эпический' },
+                    { id: 3, name: 'Кольцо Удачи', icon: '💍', quality: 'Редкий' },
+                    { id: 4, name: 'Плащ Невидимости', icon: '🧥', quality: 'Необычный' },
+                ],
+            }
+        };
+
+        // ==========================================
+        // 2. ТАБЫ (переключение вкладок)
+        // ==========================================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+
+                // Перерисовываем колесо, если переключились на его вкладку
+                if (this.dataset.tab === 'tab2') {
+                    drawWheel();
+                }
+            });
+        });
+
+        // ==========================================
+        // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
+        // ==========================================
+
+        const keywordInput = document.getElementById('keywordInput');
+        const startBtn = document.getElementById('startKeywordBtn');
+        const stopBtn = document.getElementById('stopKeywordBtn');
+        const drawBtn = document.getElementById('drawKeywordBtn');
+        const participantsGrid = document.getElementById('participantsGrid');
+        const participantCount = document.getElementById('participantCount');
+        const keywordStatus = document.getElementById('keywordStatus');
+
+        // Симуляция добавления участников (потом заменим на API)
+        function addParticipant(name) {
+            if (!state.keyword.active) return;
+            if (state.keyword.participants.includes(name)) return;
+            state.keyword.participants.push(name);
+            renderParticipants();
+        }
+
+        function renderParticipants() {
+            const list = state.keyword.participants;
+            participantCount.textContent = list.length;
+
+            if (list.length === 0) {
+                participantsGrid.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
+                        Пока никого нет 😴
+                    </div>
+                `;
+                return;
+            }
+
+            participantsGrid.innerHTML = list.map(name =>
+                `<div class="participant-chip">${name}</div>`
+            ).join('');
+        }
+
+        // Симуляция входящих сообщений (для демо)
+        function simulateChatMessage(username, message) {
+            const kw = state.keyword.currentKeyword;
+            if (message.toLowerCase().includes(kw.toLowerCase())) {
+                addParticipant(username);
+            }
+        }
+
+        // Кнопки
+        startBtn.addEventListener('click', function() {
+            const kw = keywordInput.value.trim();
+            if (!kw) { alert('Введите кодовое слово!'); return; }
+            state.keyword.active = true;
+            state.keyword.currentKeyword = kw;
+            state.keyword.participants = [];
+            renderParticipants();
+            keywordStatus.textContent = 'Активен';
+            keywordStatus.style.color = '#00ff64';
+            this.textContent = '▶️ Идёт набор...';
+            this.disabled = true;
+        });
+
+        stopBtn.addEventListener('click', function() {
+            state.keyword.active = false;
+            keywordStatus.textContent = 'Остановлен';
+            keywordStatus.style.color = '#ff4757';
+            startBtn.textContent = '▶️ Старт набора';
+            startBtn.disabled = false;
+        });
+
+        drawBtn.addEventListener('click', function() {
+            const list = state.keyword.participants;
+            if (list.length === 0) {
+                alert('Нет участников!');
+                return;
+            }
+            const winner = list[Math.floor(Math.random() * list.length)];
+            alert(`🎉 Победитель: ${winner}!`);
+            // Можно добавить красивую анимацию
+        });
+
+        // Демо: симулируем сообщения от зрителей
+        const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
+            'LightBringer'
+        ];
+        let demoIndex = 0;
+
+        setInterval(() => {
+            if (!state.keyword.active) return;
+            const user = demoUsers[demoIndex % demoUsers.length];
+            const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
+            simulateChatMessage(user, msg);
+            demoIndex++;
+        }, 2000);
+
+        // ==========================================
+        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // ==========================================
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const spinBtn = document.getElementById('spinBtn');
+        const wheelResult = document.getElementById('wheelResult');
+
+        // Цвета для секторов (если не заданы)
+        const defaultColors = [
+            '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
+            '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
+            '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
+        ];
+
+        function drawWheel() {
+            const sectors = state.wheel.sectors;
+            if (sectors.length === 0) {
+                ctx.clearRect(0, 0, 600, 600);
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                ctx.beginPath();
+                ctx.arc(300, 300, 250, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.font = '24px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Добавьте сектора', 300, 300);
+                return;
+            }
+
+            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+            let startAngle = state.wheel.currentRotation;
+
+            ctx.clearRect(0, 0, 600, 600);
+
+            sectors.forEach((sector, i) => {
+                const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
+                const endAngle = startAngle + sliceAngle;
+
+                // Рисуем сектор
+                ctx.beginPath();
+                ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 280, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Текст
+                const midAngle = startAngle + sliceAngle / 2;
+                const textRadius = 200;
+                const x = 300 + Math.cos(midAngle) * textRadius;
+                const y = 300 + Math.sin(midAngle) * textRadius;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 4;
+
+                const label = sector.label.length > 12 ? sector.label.slice(0, 10) + '…' : sector.label;
+                ctx.fillText(label, 0, 0);
+                ctx.restore();
+
+                startAngle = endAngle;
+            });
+
+            // Рисуем внешнее кольцо
+            ctx.beginPath();
+            ctx.arc(300, 300, 280, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Рисуем указатель (сверху)
+            ctx.fillStyle = '#ff4757';
+            ctx.beginPath();
+            ctx.moveTo(300, 10);
+            ctx.lineTo(280, 35);
+            ctx.lineTo(320, 35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowColor = 'rgba(255,71,87,0.5)';
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function spinWheel() {
+            if (state.wheel.isSpinning) return;
+            if (state.wheel.sectors.length === 0) {
+                alert('Добавьте сектора на колесо!');
+                return;
+            }
+
+            state.wheel.isSpinning = true;
+            spinBtn.style.opacity = '0.5';
+            spinBtn.style.pointerEvents = 'none';
+            canvas.classList.add('spinning');
+            wheelResult.className = 'wheel-result';
+
+            const sectors = state.wheel.sectors;
+            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+
+            // Выбираем победителя с учетом весов
+            let rand = Math.random() * totalWeight;
+            let winnerIndex = 0;
+            let accumulated = 0;
+            for (let i = 0; i < sectors.length; i++) {
+                accumulated += sectors[i].weight;
+                if (rand <= accumulated) {
+                    winnerIndex = i;
+                    break;
+                }
+            }
+
+            // Вычисляем угол для остановки
+            const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
+            const targetAngle = Math.PI * 2 * 5 + (Math.PI * 2 - (winnerIndex / sectors.length) * Math.PI * 2 - sliceAngle / 2);
+
+            // Анимируем вращение
+            const duration = 3000 + Math.random() * 1000;
+            const startTime = Date.now();
+            const startRotation = state.wheel.currentRotation;
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // easeOutQuint
+                const eased = 1 - Math.pow(1 - progress, 5);
+                const currentAngle = startRotation + (targetAngle - startRotation) * eased;
+
+                state.wheel.currentRotation = currentAngle;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    state.wheel.currentRotation = targetAngle % (Math.PI * 2);
+                    drawWheel();
+
+                    // Показываем результат
+                    const winner = sectors[winnerIndex];
+                    wheelResult.className = 'wheel-result winner';
+                    wheelResult.innerHTML = `🎉 ${winner.label}!`;
+
+                    state.wheel.isSpinning = false;
+                    spinBtn.style.opacity = '1';
+                    spinBtn.style.pointerEvents = 'auto';
+                    canvas.classList.remove('spinning');
+                }
+            }
+            animate();
+        }
+
+        // Настройка колеса
+        function addSector(label, weight) {
+            if (!label.trim()) { alert('Введите название!'); return; }
+            if (weight < 1) { alert('Вес должен быть >= 1'); return; }
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
+                '#ff9f43', '#10ac84', '#ee5a24'
+            ];
+            state.wheel.sectors.push({
+                label: label.trim(),
+                weight: weight,
+                color: colors[state.wheel.sectors.length % colors.length]
+            });
+            renderSectors();
+            drawWheel();
+        }
+
+        function removeSector(index) {
+            state.wheel.sectors.splice(index, 1);
+            renderSectors();
+            drawWheel();
+        }
+
+        function renderSectors() {
+            const container = document.getElementById('sectorList');
+            const sectors = state.wheel.sectors;
+
+            if (sectors.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
+                        Добавьте сектора для колеса
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sectors.map((s, i) => `
+                <div class="sector-input">
+                    <span style="color:${s.color}; font-weight:600;">●</span>
+                    <input type="text" value="${s.label}" disabled style="flex:1; padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.03); color:#fff;">
+                    <span style="font-size:13px; color:rgba(255,255,255,0.4);">×${s.weight}</span>
+                    <button class="remove-btn" data-index="${i}">✕</button>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    removeSector(parseInt(this.dataset.index));
+                });
+            });
+        }
+
+        // События для колеса
+        spinBtn.addEventListener('click', spinWheel);
+
+        document.getElementById('addSectorBtn').addEventListener('click', function() {
+            const nameInput = document.getElementById('sectorNameInput');
+            const weightInput = document.getElementById('sectorWeightInput');
+            addSector(nameInput.value, parseInt(weightInput.value) || 1);
+            nameInput.value = '';
+            weightInput.value = '1';
+        });
+
+        document.getElementById('resetWheelBtn').addEventListener('click', function() {
+            if (confirm('Удалить все сектора?')) {
+                state.wheel.sectors = [];
+                renderSectors();
+                drawWheel();
+                wheelResult.className = 'wheel-result';
+                wheelResult.textContent = '🎡 Нажмите SPIN';
+            }
+        });
+
+        // Инициализация колеса
+        renderSectors();
+        drawWheel();
+
+        // ==========================================
+        // 5. МЕХАНИКА 3: ОТКРЫТИЕ КЕЙСОВ
+        // ==========================================
+
+        const itemsGrid = document.getElementById('itemsGrid');
+        const slotCount = document.getElementById('slotCount');
+        const caseModal = document.getElementById('caseModal');
+        const slotMachine = document.getElementById('slotMachine');
+        const caseResult = document.getElementById('caseResult');
+        const closeCaseBtn = document.getElementById('closeCaseBtn');
+
+        function renderItems() {
+            const items = state.cases.items;
+            slotCount.textContent = items.length;
+
+            if (items.length === 0) {
+                itemsGrid.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
+                        Добавьте предметы для розыгрыша
+                    </div>
+                `;
+                return;
+            }
+
+            const qualityColors = {
+                'Обычный': '#a0a0a0',
+                'Необычный': '#4ec0c0',
+                'Редкий': '#4c9eff',
+                'Эпический': '#b44cff',
+                'Легендарный': '#ff8c00',
+            };
+
+            itemsGrid.innerHTML = items.map(item => `
+                <div class="case-slot" style="border-color: ${qualityColors[item.quality] || '#555'}40;">
+                    <div class="item-icon">${item.icon}</div>
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-quality" style="color: ${qualityColors[item.quality] || '#888'}">
+                        ${item.quality}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addItem(name, icon, quality) {
+            if (!name.trim()) { alert('Введите название!'); return; }
+            if (!icon.trim()) { alert('Введите иконку (эмодзи)'); return; }
+            state.cases.items.push({
+                id: Date.now(),
+                name: name.trim(),
+                icon: icon.trim(),
+                quality: quality || 'Обычный'
+            });
+            renderItems();
+        }
+
+        function removeItem(id) {
+            state.cases.items = state.cases.items.filter(item => item.id !== id);
+            renderItems();
+        }
+
+        // Открытие кейса (анимация)
+        function openCase() {
+            const items = state.cases.items;
+            if (items.length === 0) {
+                alert('Добавьте предметы в кейс!');
+                return;
+            }
+
+            // Выбираем победителя
+            const winnerIndex = Math.floor(Math.random() * items.length);
+            const winner = items[winnerIndex];
+
+            // Генерируем слоты для анимации (10 штук)
+            const slotCount = 10;
+            const slots = [];
+            for (let i = 0; i < slotCount; i++) {
+                const randomItem = items[Math.floor(Math.random() * items.length)];
+                slots.push(randomItem);
+            }
+            // Заменяем последний на победителя
+            slots[slotCount - 1] = winner;
+
+            // Рендерим слоты
+            slotMachine.innerHTML = slots.map((item, i) => `
+                <div class="slot-item" data-index="${i}" style="font-size:48px;">
+                    ${item.icon}
+                </div>
+            `).join('');
+
+            // Показываем модалку
+            caseModal.classList.add('active');
+            caseResult.textContent = '🎰 Вращение...';
+
+            // Анимация "прокрутки"
+            const slotElements = slotMachine.querySelectorAll('.slot-item');
+            let currentHighlight = 0;
+
+            // Сначала убираем все active
+            slotElements.forEach(el => el.classList.remove('active'));
+
+            // Запускаем бегущий огонек
+            let interval = setInterval(() => {
+                slotElements.forEach(el => el.classList.remove('active'));
+                slotElements[currentHighlight % slotElements.length].classList.add('active');
+                currentHighlight++;
+            }, 100);
+
+            // Останавливаем через 3 секунды на победителе
+            setTimeout(() => {
+                clearInterval(interval);
+
+                // Подсвечиваем победителя (последний слот)
+                slotElements.forEach(el => el.classList.remove('active'));
+                slotElements[slotElements.length - 1].classList.add('active');
+
+                // Показываем результат
+                const qualityColors = {
+                    'Обычный': '#a0a0a0',
+                    'Необычный': '#4ec0c0',
+                    'Редкий': '#4c9eff',
+                    'Эпический': '#b44cff',
+                    'Легендарный': '#ff8c00',
+                };
+                caseResult.innerHTML = `
+                    🎉 <strong style="color: ${qualityColors[winner.quality] || '#fff'}">
+                        ${winner.icon} ${winner.name}
+                    </strong>
+                    <span style="font-size:18px; color:rgba(255,255,255,0.5);">(${winner.quality})</span>
+                `;
+                caseResult.style.color = '#fff';
+            }, 3000);
+        }
+
+        // События для кейсов
+        document.getElementById('addItemBtn').addEventListener('click', function() {
+            const nameInput = document.getElementById('itemNameInput');
+            const iconInput = document.getElementById('itemIconInput');
+            const qualityInput = document.getElementById('itemQualityInput');
+            addItem(nameInput.value, iconInput.value, qualityInput.value);
+            nameInput.value = '';
+            iconInput.value = '';
+        });
+
+        document.getElementById('openCaseBtn').addEventListener('click', openCase);
+
+        closeCaseBtn.addEventListener('click', function() {
+            caseModal.classList.remove('active');
+        });
+
+        // Закрытие по клику вне модалки
+        caseModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+
+        // Инициализация кейсов
+        renderItems();
+
+        // ==========================================
+        // 6. АДМИНКА (демо)
+        // ==========================================
+
+        document.getElementById('adminToggle').addEventListener('click', function() {
+            const password = prompt('Введите пароль админа:');
+            if (password === 'admin123') {
+                alert('🔓 Добро пожаловать в админ-панель!\n\nТут можно управлять всеми розыгрышами.');
+                // Можно показать скрытые настройки
+            } else if (password !== null) {
+                alert('❌ Неверный пароль!');
+            }
+        });
+
+        // ==========================================
+        // 7. КОНСОЛЬНАЯ ПОМОЩЬ (для отладки)
+        // ==========================================
+
+        console.log('🎮 Стример-хаб загружен!');
+        console.log('📦 Состояние:', state);
+        console.log('💡 Команды:');
+        console.log('  - addParticipant("Имя") - добавить участника');
+        console.log('  - state.keyword.participants - список участников');
+        console.log('  - state.wheel.sectors - сектора колеса');
+        console.log('  - state.cases.items - предметы в кейсах');
+
+        // Добавляем глобальные функции для удобства
+        window.addParticipant = addParticipant;
+        window.state = state;
+    </script>
+
+</body>
+</html>
