@@ -31,6 +31,8 @@
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .logo {
@@ -61,8 +63,15 @@
         }
 
         @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
         }
 
         .admin-login {
@@ -73,6 +82,7 @@
             color: #9146ff;
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 14px;
         }
 
         .admin-login:hover {
@@ -125,8 +135,14 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* ===== КАРТОЧКИ ===== */
@@ -152,32 +168,7 @@
             font-size: 28px;
         }
 
-        /* ===== МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО ===== */
-        .keyword-setup {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .keyword-setup input {
-            flex: 1;
-            min-width: 200px;
-            padding: 12px 18px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .keyword-setup input:focus {
-            outline: none;
-            border-color: #9146ff;
-            box-shadow: 0 0 20px rgba(145, 70, 255, 0.15);
-        }
-
+        /* ===== КНОПКИ ===== */
         .btn {
             padding: 12px 28px;
             border: none;
@@ -194,20 +185,18 @@
             box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #9146ff, #7a3bcb);
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(145, 70, 255, 0.4);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #00d4ff, #0099cc);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ff4757, #c0392b);
         }
 
         .btn-gold {
@@ -215,21 +204,15 @@
             color: #1a1f35;
         }
 
-        .btn-gold:hover {
+        .btn-gold:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(249, 202, 36, 0.4);
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #c0392b);
         }
 
-        .btn-outline:hover {
-            border-color: #9146ff;
-            background: rgba(145, 70, 255, 0.1);
-        }
-
-        /* Список участников */
+        /* ===== УЧАСТНИКИ ===== */
         .participants-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -266,17 +249,17 @@
         }
 
         @keyframes chipIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
-        .participant-count {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 10px;
-        }
-
-        /* ===== МЕХАНИКА 2: КОЛЕСО ===== */
+        /* ===== КОЛЕСО ===== */
         .wheel-container {
             display: flex;
             flex-direction: column;
@@ -324,16 +307,20 @@
             user-select: none;
         }
 
-        .wheel-center:hover {
+        .wheel-center:hover:not(.disabled) {
             transform: translate(-50%, -50%) scale(1.05);
             box-shadow: 0 0 50px rgba(145, 70, 255, 0.5);
         }
 
-        .wheel-center:active {
+        .wheel-center:active:not(.disabled) {
             transform: translate(-50%, -50%) scale(0.95);
         }
 
-        /* Настройки колеса */
+        .wheel-center.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .wheel-settings {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -379,7 +366,6 @@
             transform: scale(1.2);
         }
 
-        /* Результат колеса */
         .wheel-result {
             font-size: 32px;
             font-weight: 700;
@@ -404,72 +390,178 @@
         }
 
         @keyframes resultPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
-        /* ===== МЕХАНИКА 3: КЕЙСЫ ===== */
-        .cases-container {
+        /* ===== БАНК 98 - УВЕЛИЧЕННАЯ В 1.5 РАЗА ===== */
+        .draw-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .draw-status .info {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .draw-status .info span {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .draw-status .info strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .draw-status .info .highlight {
+            color: #f9ca24;
+        }
+
+        /* СЕТКА — УВЕЛИЧЕННАЯ В 1.5 РАЗА */
+        .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-            max-height: 400px;
+            grid-template-columns: repeat(14, 1fr);
+            gap: 5px;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-height: 70vh;
             overflow-y: auto;
-            padding: 5px;
         }
 
-        .cases-container::-webkit-scrollbar {
-            width: 6px;
+        .grid-container::-webkit-scrollbar {
+            width: 4px;
         }
 
-        .cases-container::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.4);
+        .grid-container::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.3);
             border-radius: 10px;
         }
 
-        .case-slot {
+        /* Ячейка — УВЕЛИЧЕННАЯ В 1.5 РАЗА */
+        .grid-cell {
+            aspect-ratio: 1 / 1;
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            transition: all 0.3s;
-            cursor: default;
-        }
-
-        .case-slot:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-4px);
-            border-color: rgba(145, 70, 255, 0.3);
-        }
-
-        .case-slot .item-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            background: rgba(145, 70, 255, 0.1);
-            margin: 0 auto 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
+            position: relative;
+            padding: 2px;
+            overflow: hidden;
+            min-height: 0;
+            min-width: 0;
         }
 
-        .case-slot .item-name {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
+        .grid-cell .cell-number {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.15);
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-weight: 400;
+            line-height: 1;
         }
 
-        .case-slot .item-quality {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 4px;
+        .grid-cell .item-icon {
+            font-size: 24px;
+            line-height: 1.2;
         }
 
-        /* Анимация открытия кейса */
-        .case-open-animation {
+        .grid-cell .item-name {
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+
+        /* Состояния ячейки */
+        .grid-cell.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .grid-cell.eliminated {
+            background: rgba(255, 0, 0, 0.03);
+            border-color: rgba(255, 0, 0, 0.02);
+            transform: scale(0.7);
+            opacity: 0.08;
+            transition: all 0.3s ease;
+        }
+
+        .grid-cell.eliminated .item-icon,
+        .grid-cell.eliminated .item-name,
+        .grid-cell.eliminated .cell-number {
+            opacity: 0.1;
+        }
+
+        .grid-cell.winner {
+            background: rgba(249, 202, 36, 0.2);
+            border-color: #f9ca24;
+            transform: scale(1.15);
+            box-shadow: 0 0 30px rgba(249, 202, 36, 0.25);
+            animation: winnerPulse 0.8s ease-in-out infinite alternate;
+            z-index: 2;
+        }
+
+        .grid-cell.winner .item-icon {
+            animation: bounce 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes winnerPulse {
+            0% {
+                box-shadow: 0 0 15px rgba(249, 202, 36, 0.15);
+                transform: scale(1.08);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(249, 202, 36, 0.4);
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-4px);
+            }
+        }
+
+        /* ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== */
+        .winner-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -478,73 +570,129 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(20px);
-            z-index: 1000;
+            z-index: 2000;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .case-open-animation.active {
-            display: flex;
             animation: fadeIn 0.5s ease;
         }
 
-        .case-open-animation .slot-machine {
+        .winner-modal.active {
             display: flex;
-            gap: 10px;
-            overflow: hidden;
-            padding: 20px 40px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            max-width: 80vw;
         }
 
-        .case-open-animation .slot-item {
-            min-width: 80px;
-            height: 80px;
-            background: rgba(145, 70, 255, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            opacity: 0.5;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .case-open-animation .slot-item.active {
-            opacity: 1;
-            transform: scale(1.1);
-            border: 2px solid #f9ca24;
-            box-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
-        }
-
-        .case-result {
-            font-size: 28px;
-            font-weight: 700;
-            color: #f9ca24;
+        .winner-modal-content {
             text-align: center;
+            padding: 60px 80px;
+            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.2) 0%, transparent 70%);
+            border-radius: 40px;
+            border: 2px solid rgba(249, 202, 36, 0.3);
+            box-shadow: 0 0 80px rgba(249, 202, 36, 0.15);
+            animation: winnerPop 0.6s ease;
+            position: relative;
+            max-width: 90vw;
         }
 
-        .case-close-btn {
-            padding: 12px 40px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
+        @keyframes winnerPop {
+            0% {
+                transform: scale(0.5) rotate(-10deg);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.1) rotate(2deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .winner-emoji {
+            font-size: 80px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .winner-title {
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 20px 0 10px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
+        }
+
+        .winner-name {
+            font-size: 56px;
+            font-weight: 700;
             color: #fff;
-            font-size: 16px;
+            margin: 20px 0;
+            text-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
+        }
+
+        .winner-sub {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 10px;
+        }
+
+        .winner-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 28px;
             cursor: pointer;
             transition: all 0.3s;
         }
 
-        .case-close-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .winner-close-btn:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+
+        /* ===== КОНФЕТТИ ===== */
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
         }
 
         /* ===== АДАПТИВ ===== */
+        @media (max-width: 1200px) {
+            .grid-container {
+                max-width: 750px;
+                gap: 4px;
+                padding: 6px;
+            }
+            .grid-cell .item-icon {
+                font-size: 20px;
+            }
+            .grid-cell .item-name {
+                font-size: 7px;
+            }
+            .grid-cell .cell-number {
+                font-size: 8px;
+            }
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -565,59 +713,70 @@
                 text-align: center;
             }
 
-            .wheel-wrapper {
-                width: 300px;
-                height: 300px;
-            }
-
-            .wheel-center {
-                width: 50px;
-                height: 50px;
-                font-size: 16px;
-            }
-
             .card {
                 padding: 20px;
             }
 
-            .cases-container {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            .grid-container {
+                max-width: 600px;
+                gap: 3px;
+                padding: 5px;
+                max-height: 60vh;
+            }
+            .grid-cell .item-icon {
+                font-size: 18px;
+            }
+            .grid-cell .item-name {
+                display: none;
+            }
+            .grid-cell .cell-number {
+                font-size: 7px;
+                bottom: 1px;
+                right: 2px;
             }
 
-            .keyword-setup {
+            .draw-status {
                 flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .draw-status .info {
+                justify-content: center;
             }
 
-            .keyword-setup input {
-                min-width: unset;
+            .winner-modal-content {
+                padding: 40px 30px;
             }
-
-            .case-open-animation .slot-item {
-                min-width: 60px;
-                height: 60px;
-                font-size: 28px;
+            .winner-title {
+                font-size: 32px;
+            }
+            .winner-name {
+                font-size: 36px;
+            }
+            .winner-emoji {
+                font-size: 60px;
             }
         }
 
         @media (max-width: 480px) {
-            .wheel-wrapper {
-                width: 240px;
-                height: 240px;
+            .grid-container {
+                max-width: 450px;
+                gap: 2px;
+                padding: 3px;
             }
-
-            .wheel-center {
-                width: 40px;
-                height: 40px;
-                font-size: 12px;
+            .grid-cell .item-icon {
+                font-size: 14px;
             }
-
-            .participants-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            .grid-cell .cell-number {
+                font-size: 5px;
+                bottom: 1px;
+                right: 1px;
             }
-
-            .participant-chip {
-                font-size: 11px;
-                padding: 6px 10px;
+            .grid-cell.eliminated {
+                transform: scale(0.6);
+            }
+            .grid-cell.winner {
+                transform: scale(1.05);
             }
         }
     </style>
@@ -638,7 +797,7 @@
     <nav class="tabs">
         <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
         <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
-        <button class="tab-btn" data-tab="tab3">📦 Открытие кейсов</button>
+        <button class="tab-btn" data-tab="tab3">🏆 Банк 98</button>
     </nav>
 
     <!-- ========================================= -->
@@ -650,28 +809,18 @@
                 <span class="icon">🎯</span>
                 Розыгрыш по ключевому слову
             </div>
-
-            <div class="keyword-setup">
-                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут">
-                <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт набора</button>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут" style="flex:1; min-width:200px; padding:12px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:16px;">
+                <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт</button>
                 <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
                 <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
             </div>
-
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
-                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
-                    Участников: <strong id="participantCount">0</strong>
-                </span>
-                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
-                    Статус: <span id="keywordStatus" style="color: #ff4757;">Остановлен</span>
-                </span>
+                <span style="font-size:14px; color:rgba(255,255,255,0.5);">Участников: <strong id="participantCount">0</strong></span>
+                <span style="font-size:14px; color:rgba(255,255,255,0.5);">Статус: <span id="keywordStatus" style="color:#ff4757;">Остановлен</span></span>
             </div>
-
             <div class="participants-grid" id="participantsGrid">
-                <!-- Сюда будут добавляться участники -->
-                <div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 30px;">
-                    Пока никого нет 😴
-                </div>
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>
             </div>
         </div>
     </div>
@@ -681,89 +830,70 @@
     <!-- ========================================= -->
     <div class="tab-content" id="tab2">
         <div class="card">
-            <div class="card-title">
-                <span class="icon">🎡</span>
-                Колесо фортуны
-            </div>
-
-            <div class="wheel-container">
-                <div class="wheel-wrapper">
-                    <canvas id="wheelCanvas" width="600" height="600"></canvas>
-                    <div class="wheel-center" id="spinBtn">SPIN</div>
+            <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:30px;">
+                <div style="position:relative; width:400px; height:400px;">
+                    <canvas id="wheelCanvas" width="600" height="600" style="width:100%; height:100%; border-radius:50%; box-shadow:0 0 60px rgba(145,70,255,0.2);"></canvas>
+                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#9146ff,#00d4ff); border:3px solid rgba(255,255,255,0.2); box-shadow:0 0 30px rgba(145,70,255,0.3); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; cursor:pointer; user-select:none;" id="spinBtn">SPIN</div>
                 </div>
-
-                <div class="wheel-result" id="wheelResult">
-                    🎡 Нажмите SPIN
-                </div>
+                <div style="font-size:32px; font-weight:700; padding:20px 40px; background:rgba(0,212,255,0.1); border:2px solid rgba(0,212,255,0.3); border-radius:16px; text-align:center; min-height:80px; display:flex; align-items:center; justify-content:center;" id="wheelResult">🎡 Нажмите SPIN</div>
             </div>
         </div>
-
         <div class="card">
-            <div class="card-title">
-                <span class="icon">⚙️</span>
-                Настройка секторов
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
-                <input type="text" id="sectorNameInput" placeholder="Название награды..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <input type="number" id="sectorWeightInput" placeholder="Вес (шанс)" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <button class="btn btn-success" id="addSectorBtn">➕ Добавить</button>
+            <div class="card-title"><span class="icon">⚙️</span> Настройка секторов</div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+                <input type="text" id="sectorNameInput" placeholder="Название..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <button class="btn btn-primary" id="addSectorBtn">➕ Добавить</button>
                 <button class="btn btn-danger" id="resetWheelBtn">🗑️ Сброс</button>
             </div>
-            <div class="wheel-settings" id="sectorList">
-                <!-- Сектора будут добавляться сюда -->
-                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
-                    Добавьте сектора для колеса
-                </div>
+            <div id="sectorList" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; width:100%;">
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">Добавьте сектора</div>
             </div>
         </div>
     </div>
 
     <!-- ========================================= -->
-    <!-- ===== ВКЛАДКА 3: ОТКРЫТИЕ КЕЙСОВ ===== -->
+    <!-- ===== ВКЛАДКА 3: БАНК 98 ===== -->
     <!-- ========================================= -->
     <div class="tab-content" id="tab3">
         <div class="card">
             <div class="card-title">
-                <span class="icon">📦</span>
-                Открытие кейсов (CS:GO стиль)
-            </div>
-
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
-                <input type="text" id="itemNameInput" placeholder="Название предмета..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <input type="text" id="itemIconInput" placeholder="URL иконки (или эмодзи)" style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <select id="itemQualityInput" style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                    <option value="Обычный">Обычный</option>
-                    <option value="Необычный">Необычный</option>
-                    <option value="Редкий" selected>Редкий</option>
-                    <option value="Эпический">Эпический</option>
-                    <option value="Легендарный">Легендарный</option>
-                </select>
-                <button class="btn btn-success" id="addItemBtn">➕ Добавить</button>
-                <button class="btn btn-gold" id="openCaseBtn">🎲 Открыть кейс!</button>
-            </div>
-
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
-                <span style="font-size: 14px; color: rgba(255,255,255,0.5);">
-                    Слотов: <strong id="slotCount">0</strong>
+                <span class="icon">🏆</span>
+                Банк 98
+                <span style="font-size:14px; color:rgba(255,255,255,0.4); font-weight:400; margin-left:10px;">
+                    🎲 98 ячеек, одна победит!
                 </span>
             </div>
 
-            <div class="cases-container" id="itemsGrid">
-                <!-- Сюда будут добавляться предметы -->
-                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
-                    Добавьте предметы для розыгрыша
+            <div class="draw-status">
+                <div class="info">
+                    <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
+                    <span>✅ Активных: <strong id="activeCells">98</strong></span>
+                    <span>❌ Выбыло: <strong id="eliminatedCells">0</strong></span>
+                    <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.3);">—</strong></span>
                 </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
+                    <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
+                </div>
+            </div>
+
+            <div class="grid-container" id="bankGrid">
+                <!-- Ячейки генерируются JS -->
             </div>
         </div>
     </div>
 
-    <!-- ===== МОДАЛКА ОТКРЫТИЯ КЕЙСА ===== -->
-    <div class="case-open-animation" id="caseModal">
-        <div class="slot-machine" id="slotMachine">
-            <!-- Слоты будут генерироваться JS -->
+    <!-- ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== -->
+    <div class="winner-modal" id="winnerModal">
+        <div class="winner-modal-content">
+            <div class="winner-emoji">🏆</div>
+            <div class="winner-title">ПОБЕДИТЕЛЬ!</div>
+            <div class="winner-name" id="winnerModalName">Ячейка #1</div>
+            <div class="winner-sub" id="winnerModalSub">🎉 Поздравляем!</div>
+            <button class="winner-close-btn" id="closeWinnerBtn">✕</button>
         </div>
-        <div class="case-result" id="caseResult">🎉 Вы выиграли!</div>
-        <button class="case-close-btn" id="closeCaseBtn">✕ Закрыть</button>
     </div>
 
     <!-- ========================================= -->
@@ -771,18 +901,15 @@
     <!-- ========================================= -->
     <script>
         // ==========================================
-        // 1. ОБЩИЕ УТИЛИТЫ И СОСТОЯНИЕ
+        // 1. СОСТОЯНИЕ
         // ==========================================
 
-        // Состояние для каждой вкладки
         const state = {
-            // Ключевое слово
             keyword: {
                 active: false,
                 currentKeyword: '!лут',
                 participants: [],
             },
-            // Колесо
             wheel: {
                 sectors: [
                     { label: '1000 голды', weight: 3, color: '#ff6b6b' },
@@ -794,19 +921,17 @@
                 currentRotation: 0,
                 isSpinning: false,
             },
-            // Кейсы
-            cases: {
-                items: [
-                    { id: 1, name: 'Меч Тысячи Истин', icon: '⚔️', quality: 'Легендарный' },
-                    { id: 2, name: 'Шлем Мудрости', icon: '🪖', quality: 'Эпический' },
-                    { id: 3, name: 'Кольцо Удачи', icon: '💍', quality: 'Редкий' },
-                    { id: 4, name: 'Плащ Невидимости', icon: '🧥', quality: 'Необычный' },
-                ],
+            bank: {
+                items: [],
+                winnerIndex: -1,
+                eliminated: [],
+                isRunning: false,
+                revealed: false,
             }
         };
 
         // ==========================================
-        // 2. ТАБЫ (переключение вкладок)
+        // 2. ТАБЫ
         // ==========================================
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -816,9 +941,11 @@
                 this.classList.add('active');
                 document.getElementById(this.dataset.tab).classList.add('active');
 
-                // Перерисовываем колесо, если переключились на его вкладку
                 if (this.dataset.tab === 'tab2') {
                     drawWheel();
+                }
+                if (this.dataset.tab === 'tab3') {
+                    renderBankGrid();
                 }
             });
         });
@@ -835,7 +962,6 @@
         const participantCount = document.getElementById('participantCount');
         const keywordStatus = document.getElementById('keywordStatus');
 
-        // Симуляция добавления участников (потом заменим на API)
         function addParticipant(name) {
             if (!state.keyword.active) return;
             if (state.keyword.participants.includes(name)) return;
@@ -846,30 +972,37 @@
         function renderParticipants() {
             const list = state.keyword.participants;
             participantCount.textContent = list.length;
-
             if (list.length === 0) {
-                participantsGrid.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
-                        Пока никого нет 😴
-                    </div>
-                `;
+                participantsGrid.innerHTML =
+                    `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>`;
                 return;
             }
-
-            participantsGrid.innerHTML = list.map(name =>
-                `<div class="participant-chip">${name}</div>`
-            ).join('');
+            participantsGrid.innerHTML = list.map(name => `<div class="participant-chip">${name}</div>`).join('');
         }
 
-        // Симуляция входящих сообщений (для демо)
-        function simulateChatMessage(username, message) {
-            const kw = state.keyword.currentKeyword;
-            if (message.toLowerCase().includes(kw.toLowerCase())) {
-                addParticipant(username);
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: ${6 + Math.random() * 8}px;
+                    height: ${6 + Math.random() * 8}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -20px;
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
+                    animation-delay: ${Math.random() * 0.5}s;
+                    z-index: 2001;
+                    pointer-events: none;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
             }
         }
 
-        // Кнопки
         startBtn.addEventListener('click', function() {
             const kw = keywordInput.value.trim();
             if (!kw) { alert('Введите кодовое слово!'); return; }
@@ -887,32 +1020,40 @@
             state.keyword.active = false;
             keywordStatus.textContent = 'Остановлен';
             keywordStatus.style.color = '#ff4757';
-            startBtn.textContent = '▶️ Старт набора';
+            startBtn.textContent = '▶️ Старт';
             startBtn.disabled = false;
         });
 
         drawBtn.addEventListener('click', function() {
             const list = state.keyword.participants;
-            if (list.length === 0) {
-                alert('Нет участников!');
-                return;
-            }
+            if (list.length === 0) { alert('Нет участников!'); return; }
             const winner = list[Math.floor(Math.random() * list.length)];
-            alert(`🎉 Победитель: ${winner}!`);
-            // Можно добавить красивую анимацию
+            document.getElementById('winnerModalName').textContent = winner;
+            document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
+            document.getElementById('winnerModal').classList.add('active');
+            createConfetti();
         });
 
-        // Демо: симулируем сообщения от зрителей
+        document.getElementById('closeWinnerBtn').addEventListener('click', function() {
+            document.getElementById('winnerModal').classList.remove('active');
+        });
+
+        document.getElementById('winnerModal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+
+        // Демо-сообщения
         const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
             'LightBringer'
         ];
         let demoIndex = 0;
-
         setInterval(() => {
             if (!state.keyword.active) return;
             const user = demoUsers[demoIndex % demoUsers.length];
             const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
-            simulateChatMessage(user, msg);
+            if (msg.toLowerCase().includes(state.keyword.currentKeyword.toLowerCase())) {
+                addParticipant(user);
+            }
             demoIndex++;
         }, 2000);
 
@@ -924,12 +1065,8 @@
         const ctx = canvas.getContext('2d');
         const spinBtn = document.getElementById('spinBtn');
         const wheelResult = document.getElementById('wheelResult');
-
-        // Цвета для секторов (если не заданы)
-        const defaultColors = [
-            '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
-            '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
-            '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
+        const defaultColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
+            '#ff9f43', '#10ac84', '#ee5a24'
         ];
 
         function drawWheel() {
@@ -947,34 +1084,25 @@
                 ctx.fillText('Добавьте сектора', 300, 300);
                 return;
             }
-
             const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
             let startAngle = state.wheel.currentRotation;
-
             ctx.clearRect(0, 0, 600, 600);
-
             sectors.forEach((sector, i) => {
                 const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
                 const endAngle = startAngle + sliceAngle;
-
-                // Рисуем сектор
                 ctx.beginPath();
                 ctx.moveTo(300, 300);
                 ctx.arc(300, 300, 280, startAngle, endAngle);
                 ctx.closePath();
-
                 ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
                 ctx.fill();
                 ctx.strokeStyle = 'rgba(255,255,255,0.1)';
                 ctx.lineWidth = 2;
                 ctx.stroke();
-
-                // Текст
                 const midAngle = startAngle + sliceAngle / 2;
                 const textRadius = 200;
                 const x = 300 + Math.cos(midAngle) * textRadius;
                 const y = 300 + Math.sin(midAngle) * textRadius;
-
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
@@ -984,114 +1112,101 @@
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(0,0,0,0.5)';
                 ctx.shadowBlur = 4;
-
                 const label = sector.label.length > 12 ? sector.label.slice(0, 10) + '…' : sector.label;
                 ctx.fillText(label, 0, 0);
                 ctx.restore();
-
                 startAngle = endAngle;
             });
-
-            // Рисуем внешнее кольцо
             ctx.beginPath();
             ctx.arc(300, 300, 280, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(255,255,255,0.15)';
             ctx.lineWidth = 4;
             ctx.stroke();
-
-            // Рисуем указатель (сверху)
             ctx.fillStyle = '#ff4757';
-            ctx.beginPath();
-            ctx.moveTo(300, 10);
-            ctx.lineTo(280, 35);
-            ctx.lineTo(320, 35);
-            ctx.closePath();
-            ctx.fill();
             ctx.shadowColor = 'rgba(255,71,87,0.5)';
             ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.moveTo(300, 10);
+            ctx.lineTo(280, 40);
+            ctx.lineTo(320, 40);
+            ctx.closePath();
             ctx.fill();
             ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.arc(300, 35, 6, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         function spinWheel() {
             if (state.wheel.isSpinning) return;
-            if (state.wheel.sectors.length === 0) {
-                alert('Добавьте сектора на колесо!');
-                return;
-            }
-
+            if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
             state.wheel.isSpinning = true;
             spinBtn.style.opacity = '0.5';
             spinBtn.style.pointerEvents = 'none';
-            canvas.classList.add('spinning');
-            wheelResult.className = 'wheel-result';
-
-            const sectors = state.wheel.sectors;
-            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-
-            // Выбираем победителя с учетом весов
-            let rand = Math.random() * totalWeight;
-            let winnerIndex = 0;
-            let accumulated = 0;
-            for (let i = 0; i < sectors.length; i++) {
-                accumulated += sectors[i].weight;
-                if (rand <= accumulated) {
-                    winnerIndex = i;
-                    break;
+            canvas.style.boxShadow = '0 0 80px rgba(145,70,255,0.5)';
+            wheelResult.className = '';
+            try {
+                const sectors = state.wheel.sectors;
+                const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+                let rand = Math.random() * totalWeight;
+                let winnerIndex = 0;
+                let accumulated = 0;
+                for (let i = 0; i < sectors.length; i++) {
+                    accumulated += sectors[i].weight;
+                    if (rand <= accumulated) { winnerIndex = i; break; }
                 }
-            }
+                const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
+                let winnerStartAngle = 0;
+                for (let i = 0; i < winnerIndex; i++) {
+                    winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
+                }
+                const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
+                const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
+                const duration = 3000 + Math.random() * 1000;
+                const startTime = Date.now();
+                const startRotation = state.wheel.currentRotation;
 
-            // Вычисляем угол для остановки
-            const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
-            const targetAngle = Math.PI * 2 * 5 + (Math.PI * 2 - (winnerIndex / sectors.length) * Math.PI * 2 - sliceAngle / 2);
-
-            // Анимируем вращение
-            const duration = 3000 + Math.random() * 1000;
-            const startTime = Date.now();
-            const startRotation = state.wheel.currentRotation;
-
-            function animate() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-
-                // easeOutQuint
-                const eased = 1 - Math.pow(1 - progress, 5);
-                const currentAngle = startRotation + (targetAngle - startRotation) * eased;
-
-                state.wheel.currentRotation = currentAngle;
-                drawWheel();
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    state.wheel.currentRotation = targetAngle % (Math.PI * 2);
+                function animate() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 5);
+                    const currentAngle = startRotation + (targetAngle - startRotation) * eased;
+                    state.wheel.currentRotation = currentAngle;
                     drawWheel();
-
-                    // Показываем результат
-                    const winner = sectors[winnerIndex];
-                    wheelResult.className = 'wheel-result winner';
-                    wheelResult.innerHTML = `🎉 ${winner.label}!`;
-
-                    state.wheel.isSpinning = false;
-                    spinBtn.style.opacity = '1';
-                    spinBtn.style.pointerEvents = 'auto';
-                    canvas.classList.remove('spinning');
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        state.wheel.currentRotation = targetAngle % (Math.PI * 2);
+                        drawWheel();
+                        const winner = sectors[winnerIndex];
+                        wheelResult.className = 'winner';
+                        wheelResult.innerHTML = `🎉 ${winner.label}!`;
+                        state.wheel.isSpinning = false;
+                        spinBtn.style.opacity = '1';
+                        spinBtn.style.pointerEvents = 'auto';
+                        canvas.style.boxShadow = '0 0 60px rgba(145,70,255,0.2)';
+                    }
                 }
+                animate();
+            } catch (error) {
+                state.wheel.isSpinning = false;
+                spinBtn.style.opacity = '1';
+                spinBtn.style.pointerEvents = 'auto';
+                canvas.style.boxShadow = '0 0 60px rgba(145,70,255,0.2)';
+                console.error(error);
             }
-            animate();
         }
 
-        // Настройка колеса
+        spinBtn.addEventListener('click', spinWheel);
+
         function addSector(label, weight) {
             if (!label.trim()) { alert('Введите название!'); return; }
-            if (weight < 1) { alert('Вес должен быть >= 1'); return; }
-            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
-                '#ff9f43', '#10ac84', '#ee5a24'
-            ];
+            if (weight < 1) { alert('Вес >= 1'); return; }
             state.wheel.sectors.push({
                 label: label.trim(),
                 weight: weight,
-                color: colors[state.wheel.sectors.length % colors.length]
+                color: defaultColors[state.wheel.sectors.length % defaultColors.length]
             });
             renderSectors();
             drawWheel();
@@ -1106,34 +1221,20 @@
         function renderSectors() {
             const container = document.getElementById('sectorList');
             const sectors = state.wheel.sectors;
-
             if (sectors.length === 0) {
-                container.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
-                        Добавьте сектора для колеса
-                    </div>
-                `;
+                container.innerHTML =
+                    `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">Добавьте сектора</div>`;
                 return;
             }
-
             container.innerHTML = sectors.map((s, i) => `
-                <div class="sector-input">
+                <div style="display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px;">
                     <span style="color:${s.color}; font-weight:600;">●</span>
                     <input type="text" value="${s.label}" disabled style="flex:1; padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.03); color:#fff;">
                     <span style="font-size:13px; color:rgba(255,255,255,0.4);">×${s.weight}</span>
-                    <button class="remove-btn" data-index="${i}">✕</button>
+                    <button onclick="removeSector(${i})" style="background:none; border:none; color:#ff4757; font-size:18px; cursor:pointer;">✕</button>
                 </div>
             `).join('');
-
-            container.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    removeSector(parseInt(this.dataset.index));
-                });
-            });
         }
-
-        // События для колеса
-        spinBtn.addEventListener('click', spinWheel);
 
         document.getElementById('addSectorBtn').addEventListener('click', function() {
             const nameInput = document.getElementById('sectorNameInput');
@@ -1148,203 +1249,193 @@
                 state.wheel.sectors = [];
                 renderSectors();
                 drawWheel();
-                wheelResult.className = 'wheel-result';
+                wheelResult.className = '';
                 wheelResult.textContent = '🎡 Нажмите SPIN';
             }
         });
 
-        // Инициализация колеса
         renderSectors();
         drawWheel();
 
         // ==========================================
-        // 5. МЕХАНИКА 3: ОТКРЫТИЕ КЕЙСОВ
+        // 5. МЕХАНИКА 3: БАНК 98
         // ==========================================
 
-        const itemsGrid = document.getElementById('itemsGrid');
-        const slotCount = document.getElementById('slotCount');
-        const caseModal = document.getElementById('caseModal');
-        const slotMachine = document.getElementById('slotMachine');
-        const caseResult = document.getElementById('caseResult');
-        const closeCaseBtn = document.getElementById('closeCaseBtn');
+        const bankGrid = document.getElementById('bankGrid');
+        const totalCells = document.getElementById('totalCells');
+        const activeCells = document.getElementById('activeCells');
+        const eliminatedCells = document.getElementById('eliminatedCells');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+        const startBankBtn = document.getElementById('startBankBtn');
+        const resetBankBtn = document.getElementById('resetBankBtn');
 
-        function renderItems() {
-            const items = state.cases.items;
-            slotCount.textContent = items.length;
+        // Эмодзи для иконок
+        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
+            '🏆', '💍', '🧪', '📜', '🪄'
+        ];
 
+        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
+            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
+        ];
+
+        function generateBankItems() {
+            const items = [];
+            for (let i = 0; i < 98; i++) {
+                const idx = Math.floor(Math.random() * itemIcons.length);
+                items.push({
+                    id: i,
+                    icon: itemIcons[idx],
+                    name: itemNames[idx],
+                });
+            }
+            return items;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function renderBankGrid() {
+            const items = state.bank.items;
             if (items.length === 0) {
-                itemsGrid.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
-                        Добавьте предметы для розыгрыша
+                state.bank.items = generateBankItems();
+                shuffleArray(state.bank.items);
+                state.bank.eliminated = [];
+                state.bank.winnerIndex = -1;
+                state.bank.revealed = false;
+            }
+
+            totalCells.textContent = items.length;
+            const active = items.length - state.bank.eliminated.length;
+            activeCells.textContent = active;
+            eliminatedCells.textContent = state.bank.eliminated.length;
+
+            if (state.bank.revealed && state.bank.winnerIndex >= 0) {
+                winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
+                winnerDisplay.style.color = '#f9ca24';
+            } else {
+                winnerDisplay.textContent = '—';
+                winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
+            }
+
+            bankGrid.innerHTML = items.map((item, index) => {
+                const isEliminated = state.bank.eliminated.includes(index);
+                const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
+                let classes = 'grid-cell';
+                if (isEliminated) classes += ' eliminated';
+                if (isWinner) classes += ' winner';
+                return `
+                    <div class="${classes}" data-index="${index}">
+                        <span class="item-icon">${item.icon}</span>
+                        <span class="item-name">${item.name}</span>
+                        <span class="cell-number">#${index + 1}</span>
                     </div>
                 `;
+            }).join('');
+        }
+
+        function resetBank() {
+            if (state.bank.isRunning) return;
+            state.bank.items = generateBankItems();
+            shuffleArray(state.bank.items);
+            state.bank.eliminated = [];
+            state.bank.winnerIndex = -1;
+            state.bank.revealed = false;
+            renderBankGrid();
+            startBankBtn.textContent = '🎲 Запустить розыгрыш!';
+            startBankBtn.disabled = false;
+        }
+
+        function startBankDraw() {
+            if (state.bank.isRunning) return;
+            if (state.bank.items.length === 0) {
+                resetBank();
                 return;
             }
 
-            const qualityColors = {
-                'Обычный': '#a0a0a0',
-                'Необычный': '#4ec0c0',
-                'Редкий': '#4c9eff',
-                'Эпический': '#b44cff',
-                'Легендарный': '#ff8c00',
-            };
-
-            itemsGrid.innerHTML = items.map(item => `
-                <div class="case-slot" style="border-color: ${qualityColors[item.quality] || '#555'}40;">
-                    <div class="item-icon">${item.icon}</div>
-                    <div class="item-name">${item.name}</div>
-                    <div class="item-quality" style="color: ${qualityColors[item.quality] || '#888'}">
-                        ${item.quality}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function addItem(name, icon, quality) {
-            if (!name.trim()) { alert('Введите название!'); return; }
-            if (!icon.trim()) { alert('Введите иконку (эмодзи)'); return; }
-            state.cases.items.push({
-                id: Date.now(),
-                name: name.trim(),
-                icon: icon.trim(),
-                quality: quality || 'Обычный'
-            });
-            renderItems();
-        }
-
-        function removeItem(id) {
-            state.cases.items = state.cases.items.filter(item => item.id !== id);
-            renderItems();
-        }
-
-        // Открытие кейса (анимация)
-        function openCase() {
-            const items = state.cases.items;
-            if (items.length === 0) {
-                alert('Добавьте предметы в кейс!');
+            if (state.bank.revealed && state.bank.winnerIndex >= 0) {
+                resetBank();
+                setTimeout(() => startBankDraw(), 300);
                 return;
             }
 
-            // Выбираем победителя
-            const winnerIndex = Math.floor(Math.random() * items.length);
-            const winner = items[winnerIndex];
+            state.bank.isRunning = true;
+            state.bank.revealed = false;
+            startBankBtn.textContent = '⏳ Идёт розыгрыш...';
+            startBankBtn.disabled = true;
 
-            // Генерируем слоты для анимации (10 штук)
-            const slotCount = 10;
-            const slots = [];
-            for (let i = 0; i < slotCount; i++) {
-                const randomItem = items[Math.floor(Math.random() * items.length)];
-                slots.push(randomItem);
-            }
-            // Заменяем последний на победителя
-            slots[slotCount - 1] = winner;
+            const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
+            state.bank.winnerIndex = winnerIdx;
 
-            // Рендерим слоты
-            slotMachine.innerHTML = slots.map((item, i) => `
-                <div class="slot-item" data-index="${i}" style="font-size:48px;">
-                    ${item.icon}
-                </div>
-            `).join('');
+            const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
+            const toEliminate = allIndices.filter(i => i !== winnerIdx);
+            shuffleArray(toEliminate);
 
-            // Показываем модалку
-            caseModal.classList.add('active');
-            caseResult.textContent = '🎰 Вращение...';
+            let currentIndex = 0;
+            const totalToEliminate = toEliminate.length;
 
-            // Анимация "прокрутки"
-            const slotElements = slotMachine.querySelectorAll('.slot-item');
-            let currentHighlight = 0;
+            const interval = setInterval(() => {
+                if (currentIndex >= totalToEliminate) {
+                    clearInterval(interval);
+                    state.bank.revealed = true;
+                    renderBankGrid();
+                    state.bank.isRunning = false;
+                    startBankBtn.textContent = '🎲 Запустить розыгрыш!';
+                    startBankBtn.disabled = false;
 
-            // Сначала убираем все active
-            slotElements.forEach(el => el.classList.remove('active'));
+                    const winner = state.bank.items[winnerIdx];
+                    document.getElementById('winnerModalName').textContent = `${winner.icon} #${winnerIdx + 1}`;
+                    document.getElementById('winnerModalSub').textContent = `🎉 ${winner.icon} ${winner.name}!`;
+                    document.getElementById('winnerModal').classList.add('active');
+                    createConfetti();
+                    return;
+                }
 
-            // Запускаем бегущий огонек
-            let interval = setInterval(() => {
-                slotElements.forEach(el => el.classList.remove('active'));
-                slotElements[currentHighlight % slotElements.length].classList.add('active');
-                currentHighlight++;
-            }, 100);
+                const idxToEliminate = toEliminate[currentIndex];
+                if (!state.bank.eliminated.includes(idxToEliminate)) {
+                    state.bank.eliminated.push(idxToEliminate);
+                }
+                currentIndex++;
 
-            // Останавливаем через 3 секунды на победителе
-            setTimeout(() => {
-                clearInterval(interval);
+                renderBankGrid();
+                const active = state.bank.items.length - state.bank.eliminated.length;
+                activeCells.textContent = active;
+                eliminatedCells.textContent = state.bank.eliminated.length;
 
-                // Подсвечиваем победителя (последний слот)
-                slotElements.forEach(el => el.classList.remove('active'));
-                slotElements[slotElements.length - 1].classList.add('active');
-
-                // Показываем результат
-                const qualityColors = {
-                    'Обычный': '#a0a0a0',
-                    'Необычный': '#4ec0c0',
-                    'Редкий': '#4c9eff',
-                    'Эпический': '#b44cff',
-                    'Легендарный': '#ff8c00',
-                };
-                caseResult.innerHTML = `
-                    🎉 <strong style="color: ${qualityColors[winner.quality] || '#fff'}">
-                        ${winner.icon} ${winner.name}
-                    </strong>
-                    <span style="font-size:18px; color:rgba(255,255,255,0.5);">(${winner.quality})</span>
-                `;
-                caseResult.style.color = '#fff';
-            }, 3000);
+            }, 60 + Math.random() * 40);
         }
 
-        // События для кейсов
-        document.getElementById('addItemBtn').addEventListener('click', function() {
-            const nameInput = document.getElementById('itemNameInput');
-            const iconInput = document.getElementById('itemIconInput');
-            const qualityInput = document.getElementById('itemQualityInput');
-            addItem(nameInput.value, iconInput.value, qualityInput.value);
-            nameInput.value = '';
-            iconInput.value = '';
-        });
+        startBankBtn.addEventListener('click', startBankDraw);
+        resetBankBtn.addEventListener('click', resetBank);
 
-        document.getElementById('openCaseBtn').addEventListener('click', openCase);
-
-        closeCaseBtn.addEventListener('click', function() {
-            caseModal.classList.remove('active');
-        });
-
-        // Закрытие по клику вне модалки
-        caseModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-            }
-        });
-
-        // Инициализация кейсов
-        renderItems();
+        resetBank();
 
         // ==========================================
-        // 6. АДМИНКА (демо)
+        // 6. АДМИНКА
         // ==========================================
 
         document.getElementById('adminToggle').addEventListener('click', function() {
             const password = prompt('Введите пароль админа:');
             if (password === 'admin123') {
-                alert('🔓 Добро пожаловать в админ-панель!\n\nТут можно управлять всеми розыгрышами.');
-                // Можно показать скрытые настройки
+                alert('🔓 Добро пожаловать в админ-панель!');
             } else if (password !== null) {
                 alert('❌ Неверный пароль!');
             }
         });
 
         // ==========================================
-        // 7. КОНСОЛЬНАЯ ПОМОЩЬ (для отладки)
+        // 7. КОНСОЛЬ
         // ==========================================
 
         console.log('🎮 Стример-хаб загружен!');
         console.log('📦 Состояние:', state);
-        console.log('💡 Команды:');
-        console.log('  - addParticipant("Имя") - добавить участника');
-        console.log('  - state.keyword.participants - список участников');
-        console.log('  - state.wheel.sectors - сектора колеса');
-        console.log('  - state.cases.items - предметы в кейсах');
-
-        // Добавляем глобальные функции для удобства
-        window.addParticipant = addParticipant;
         window.state = state;
+        window.resetBank = resetBank;
+        window.startBankDraw = startBankDraw;
     </script>
 
 </body>
