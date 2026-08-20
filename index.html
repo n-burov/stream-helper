@@ -464,12 +464,20 @@
             font-size: 16px;
             font-weight: 700;
             color: #fff;
-            pointer-events: none;
+            cursor: pointer;
             user-select: none;
+            transition: all 0.3s;
+        }
+
+        .wheel-center:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
         }
 
         .wheel-center.disabled {
             opacity: 0.4;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(0.95);
         }
 
         .wheel-result {
@@ -866,11 +874,6 @@
                 </div>
             </div>
 
-            <!-- КНОПКА УПРАВЛЕНИЯ -->
-            <div class="control-buttons">
-                <button class="btn btn-gold" id="spinBtn">🎡 Запустить вращение!</button>
-            </div>
-
             <div class="wheel-wrapper">
                 <canvas id="wheelCanvas" width="600" height="600"></canvas>
                 <div class="wheel-center" id="wheelCenter">SPIN</div>
@@ -926,7 +929,20 @@
     <!-- ========================================= -->
     <script>
         // ==========================================
-        // 0. МЕНЮ
+        // 0. НАСТРОЙКИ TWITCH API
+        // ==========================================
+
+        // ⚠️ ЗАПОЛНИ ЭТИ ДАННЫЕ!
+        // Client ID можно получить в Twitch Developer Console
+        // Access Token — через twitchtokengenerator.com (выбрать скоупы chat:read, chat:edit)
+        const TWITCH_CONFIG = {
+            clientId: 'ТВОЙ_CLIENT_ID',        // например: 'abc123def456'
+            accessToken: 'ТВОЙ_OAUTH_ТОКЕН',    // например: 'oauth:xyz789...'
+            channel: 'НИК_СТРИМЕРА'             // без #, например: 'n_burov'
+        };
+
+        // ==========================================
+        // 1. МЕНЮ
         // ==========================================
 
         const menuToggle = document.getElementById('menuToggle');
@@ -951,7 +967,7 @@
         });
 
         // ==========================================
-        // 1. НАСТРОЙКИ (показ/скрытие админ-панели)
+        // 2. НАСТРОЙКИ (показ/скрытие админ-панели)
         // ==========================================
 
         let isAdminVisible = true;
@@ -975,34 +991,30 @@
         adminPanels.forEach(el => el.classList.remove('hidden'));
 
         // ==========================================
-        // 2. ВКЛАДКИ ЧЕРЕЗ МЕНЮ
+        // 3. ВКЛАДКИ ЧЕРЕЗ МЕНЮ
         // ==========================================
 
         document.querySelectorAll('.menu-item[data-tab]').forEach(item => {
             item.addEventListener('click', function() {
-                // Обновляем активный пункт меню
                 document.querySelectorAll('.menu-item[data-tab]').forEach(el => el.classList.remove('active'));
                 this.classList.add('active');
 
-                // Переключаем вкладки
                 const tabId = this.dataset.tab;
                 document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                 document.getElementById(tabId).classList.add('active');
 
-                // Закрываем меню
                 isMenuOpen = false;
                 menuDropdown.classList.remove('open');
                 menuToggle.classList.remove('active');
                 menuToggle.textContent = '☰';
 
-                // Перерисовываем
                 if (tabId === 'tab2') drawWheel();
                 if (tabId === 'tab3') renderBankGrid();
             });
         });
 
         // ==========================================
-        // 3. СОСТОЯНИЕ
+        // 4. СОСТОЯНИЕ
         // ==========================================
 
         const state = {
@@ -1032,7 +1044,7 @@
         };
 
         // ==========================================
-        // 4. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
+        // 5. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
         // ==========================================
 
         const keywordInput = document.getElementById('keywordInput');
@@ -1156,13 +1168,98 @@
             if (e.target === this) this.classList.remove('active');
         });
 
-        // Демо-участники
+        // ==========================================
+        // 6. ПОДКЛЮЧЕНИЕ К TWITCH CHAT (IRC)
+        // ==========================================
+
+        let ircSocket = null;
+        let isTwitchConnected = false;
+
+        function connectToTwitchChat() {
+            // Проверяем, заполнены ли настройки
+            if (!TWITCH_CONFIG.clientId || TWITCH_CONFIG.clientId === 'ТВОЙ_CLIENT_ID') {
+                console.log('ℹ️ Twitch API не настроен. Заполните TWITCH_CONFIG в коде.');
+                return;
+            }
+
+            if (!TWITCH_CONFIG.accessToken || TWITCH_CONFIG.accessToken === 'ТВОЙ_OAUTH_ТОКЕН') {
+                console.log('ℹ️ Twitch Access Token не настроен. Получите токен на twitchtokengenerator.com');
+                return;
+            }
+
+            console.log('🔗 Подключение к Twitch чату...');
+
+            try {
+                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+                socket.onopen = () => {
+                    console.log('✅ Подключено к Twitch IRC');
+                    socket.send(`CAP REQ :twitch.tv/tags twitch.tv/commands`);
+                    socket.send(`PASS oauth:${TWITCH_CONFIG.accessToken}`);
+                    socket.send(`NICK ${TWITCH_CONFIG.channel}`);
+                    socket.send(`JOIN #${TWITCH_CONFIG.channel}`);
+                    isTwitchConnected = true;
+                };
+
+                socket.onmessage = (event) => {
+                    const data = event.data;
+
+                    if (data.startsWith('PING')) {
+                        socket.send('PONG :tmi.twitch.tv');
+                        return;
+                    }
+
+                    // Парсим сообщение
+                    const privmsgMatch = data.match(/PRIVMSG #\w+ :(.+)/);
+                    if (privmsgMatch) {
+                        const message = privmsgMatch[1];
+                        // Извлекаем имя пользователя из тегов
+                        const userMatch = data.match(/display-name=([^;]+)/);
+                        const username = userMatch ? userMatch[1] : 'Неизвестный';
+
+                        // Проверяем ключевое слово
+                        const keyword = state.keyword.currentKeyword;
+                        if (state.keyword.active && message.toLowerCase().includes(keyword.toLowerCase())) {
+                            console.log(`📨 ${username}: ${message}`);
+                            addParticipant(username);
+                        }
+                    }
+                };
+
+                socket.onclose = () => {
+                    if (isTwitchConnected) {
+                        console.log('🔌 Отключено от Twitch чата. Переподключение через 5 сек...');
+                    }
+                    isTwitchConnected = false;
+                    setTimeout(connectToTwitchChat, 5000);
+                };
+
+                socket.onerror = (error) => {
+                    console.error('❌ Ошибка WebSocket:', error);
+                    socket.close();
+                };
+
+                ircSocket = socket;
+
+            } catch (error) {
+                console.error('❌ Ошибка подключения к Twitch:', error);
+                setTimeout(connectToTwitchChat, 10000);
+            }
+        }
+
+        // Запускаем подключение к Twitch
+        connectToTwitchChat();
+
+        // Демо-участники (для тестирования без Twitch)
         const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
             'LightBringer'
         ];
         let demoIndex = 0;
 
+        // Демо-режим работает только если Twitch не подключён
         setInterval(() => {
+            // Если Twitch подключён — демо не нужен
+            if (isTwitchConnected) return;
             if (!state.keyword.active) return;
             const user = demoUsers[demoIndex % demoUsers.length];
             const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
@@ -1170,17 +1267,16 @@
                 addParticipant(user);
             }
             demoIndex++;
-        }, 2000);
+        }, 3000);
 
         renderParticipants();
 
         // ==========================================
-        // 5. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // 7. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ (SPIN в центре)
         // ==========================================
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
-        const spinBtn = document.getElementById('spinBtn');
         const wheelCenter = document.getElementById('wheelCenter');
         const wheelResult = document.getElementById('wheelResult');
 
@@ -1276,7 +1372,6 @@
             if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
 
             state.wheel.isSpinning = true;
-            spinBtn.disabled = true;
             wheelCenter.classList.add('disabled');
             canvas.classList.add('spinning');
             wheelResult.className = '';
@@ -1328,7 +1423,6 @@
                         wheelResult.innerHTML = `🎉 ${winner.label}!`;
 
                         state.wheel.isSpinning = false;
-                        spinBtn.disabled = false;
                         wheelCenter.classList.remove('disabled');
                         canvas.classList.remove('spinning');
 
@@ -1338,14 +1432,14 @@
                 animate();
             } catch (error) {
                 state.wheel.isSpinning = false;
-                spinBtn.disabled = false;
                 wheelCenter.classList.remove('disabled');
                 canvas.classList.remove('spinning');
                 console.error(error);
             }
         }
 
-        spinBtn.addEventListener('click', spinWheel);
+        // Клик по SPIN в центре колеса
+        wheelCenter.addEventListener('click', spinWheel);
 
         function addSector(label, weight) {
             if (!label.trim()) { alert('Введите название!'); return; }
@@ -1412,7 +1506,7 @@
         drawWheel();
 
         // ==========================================
-        // 6. МЕХАНИКА 3: БАНК 98
+        // 8. МЕХАНИКА 3: БАНК 98
         // ==========================================
 
         const bankGrid = document.getElementById('bankGrid');
@@ -1552,7 +1646,7 @@
         renderBankGrid();
 
         // ==========================================
-        // 7. КОНСОЛЬ
+        // 9. КОНСОЛЬ
         // ==========================================
 
         console.log('🎮 Стример-хаб загружен!');
@@ -1560,6 +1654,14 @@
         console.log('🔘 Меню в левом верхнем углу');
         console.log('⚙️ Настройки скрываются через меню');
         console.log('🎯 Кнопки управления всегда видны');
+        console.log('🔄 Колесо запускается кликом по SPIN в центре');
+
+        if (TWITCH_CONFIG.clientId && TWITCH_CONFIG.clientId !== 'ТВОЙ_CLIENT_ID') {
+            console.log('✅ Twitch API настроен');
+            console.log(`📡 Канал: ${TWITCH_CONFIG.channel}`);
+        } else {
+            console.log('ℹ️ Twitch API не настроен. Заполните TWITCH_CONFIG в коде.');
+        }
 
         window.state = state;
         window.resetBank = resetBank;
