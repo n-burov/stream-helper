@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Стример-хаб | WoW Розыгрыши</title>
     <style>
-        /* ===== БАЗА ===== */
         * {
             margin: 0;
             padding: 0;
@@ -13,7 +12,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
             min-height: 100vh;
             color: #fff;
@@ -21,22 +20,24 @@
             overflow-x: hidden;
         }
 
-        /* ===== КОНТЕЙНЕРЫ ВКЛАДОК ===== */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
         }
-
         .tab-content.active {
             display: block;
         }
-
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        /* ===== КАРТОЧКИ ===== */
         .card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(10px);
@@ -46,21 +47,6 @@
             margin-bottom: 16px;
         }
 
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .card-title .icon {
-            font-size: 20px;
-        }
-
-        /* ===== ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ ===== */
         .tab-header {
             display: flex;
             align-items: center;
@@ -72,14 +58,11 @@
             margin-bottom: 16px;
             cursor: pointer;
             user-select: none;
-            transition: all 0.3s;
-            position: relative;
+            transition: 0.3s;
         }
-
         .tab-header:hover {
             background: rgba(255, 255, 255, 0.06);
         }
-
         .tab-header .tab-title {
             font-size: 18px;
             font-weight: 600;
@@ -87,13 +70,11 @@
             align-items: center;
             gap: 10px;
         }
-
         .tab-header .tab-arrow {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.3);
             transition: transform 0.3s;
         }
-
         .tab-header.open .tab-arrow {
             transform: rotate(180deg);
         }
@@ -103,7 +84,6 @@
             padding: 8px 0 0 0;
             animation: fadeIn 0.2s ease;
         }
-
         .tab-dropdown.open {
             display: block;
         }
@@ -115,50 +95,42 @@
             padding: 8px 14px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.02);
-            transition: all 0.2s;
+            transition: 0.2s;
             cursor: pointer;
             font-size: 14px;
             color: rgba(255, 255, 255, 0.5);
             border: 1px solid transparent;
         }
-
         .tab-dropdown .dropdown-item:hover {
             background: rgba(255, 255, 255, 0.05);
             color: #fff;
         }
-
         .tab-dropdown .dropdown-item.active {
             background: rgba(145, 70, 255, 0.12);
             border-color: rgba(145, 70, 255, 0.15);
             color: #fff;
         }
-
         .tab-dropdown .dropdown-item .icon {
             font-size: 16px;
             width: 24px;
             text-align: center;
         }
-
         .tab-dropdown .dropdown-divider {
             height: 1px;
             background: rgba(255, 255, 255, 0.04);
             margin: 6px 0;
         }
-
         .tab-dropdown .dropdown-item.settings-toggle {
             color: rgba(255, 255, 255, 0.3);
             font-size: 13px;
         }
-
         .tab-dropdown .dropdown-item.settings-toggle:hover {
             color: #fff;
         }
-
         .tab-dropdown .dropdown-item.settings-toggle.active-settings {
             color: #9146ff;
         }
 
-        /* ===== КНОПКИ ===== */
         .btn {
             padding: 10px 22px;
             border: none;
@@ -166,15 +138,13 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: 0.3s;
             color: #fff;
         }
-
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
         }
-
         .btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -184,7 +154,6 @@
         .btn-primary {
             background: linear-gradient(135deg, #9146ff, #7a3bcb);
         }
-
         .btn-primary:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(145, 70, 255, 0.3);
         }
@@ -193,7 +162,6 @@
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             color: #1a1f35;
         }
-
         .btn-gold:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(249, 202, 36, 0.3);
         }
@@ -201,7 +169,6 @@
         .btn-danger {
             background: linear-gradient(135deg, #ff4757, #c0392b);
         }
-
         .btn-danger:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(255, 71, 87, 0.3);
         }
@@ -209,7 +176,6 @@
         .btn-success {
             background: linear-gradient(135deg, #00d4ff, #0099cc);
         }
-
         .btn-success:hover:not(:disabled) {
             box-shadow: 0 6px 25px rgba(0, 212, 255, 0.3);
         }
@@ -220,7 +186,6 @@
             border-radius: 8px;
         }
 
-        /* ===== АДМИН-ПАНЕЛЬ (скрывается) ===== */
         .admin-panel {
             display: block;
             margin-bottom: 14px;
@@ -229,18 +194,15 @@
             border-radius: 12px;
             border: 1px dashed rgba(255, 255, 255, 0.04);
         }
-
         .admin-panel.hidden {
             display: none !important;
         }
-
         .admin-panel .admin-row {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             align-items: center;
         }
-
         .admin-panel input {
             flex: 1;
             min-width: 150px;
@@ -250,15 +212,13 @@
             background: rgba(255, 255, 255, 0.04);
             color: #fff;
             font-size: 14px;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-
         .admin-panel input:focus {
             outline: none;
             border-color: #9146ff;
             box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
         }
-
         .admin-panel input::placeholder {
             color: rgba(255, 255, 255, 0.2);
         }
@@ -269,7 +229,6 @@
             gap: 8px;
             margin-top: 10px;
         }
-
         .admin-panel .sector-item {
             display: flex;
             align-items: center;
@@ -279,25 +238,21 @@
             border-radius: 8px;
             border: 1px solid rgba(255, 255, 255, 0.04);
         }
-
         .admin-panel .sector-item .color-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-
         .admin-panel .sector-item .sector-label {
             flex: 1;
             font-size: 13px;
             color: rgba(255, 255, 255, 0.7);
         }
-
         .admin-panel .sector-item .sector-weight {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.3);
         }
-
         .admin-panel .sector-item .remove-btn {
             background: none;
             border: none;
@@ -305,14 +260,12 @@
             cursor: pointer;
             font-size: 16px;
             padding: 0 4px;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-
         .admin-panel .sector-item .remove-btn:hover {
             color: #ff4757;
             transform: scale(1.2);
         }
-
         .admin-panel .empty-sectors {
             text-align: center;
             color: rgba(255, 255, 255, 0.2);
@@ -320,7 +273,6 @@
             font-size: 13px;
         }
 
-        /* ===== КНОПКИ УПРАВЛЕНИЯ ===== */
         .control-buttons {
             display: flex;
             gap: 8px;
@@ -328,7 +280,6 @@
             margin-bottom: 12px;
         }
 
-        /* ===== УЧАСТНИКИ ===== */
         .participants-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -338,11 +289,9 @@
             overflow-y: auto;
             padding: 4px;
         }
-
         .participants-grid::-webkit-scrollbar {
             width: 4px;
         }
-
         .participants-grid::-webkit-scrollbar-thumb {
             background: rgba(145, 70, 255, 0.3);
             border-radius: 10px;
@@ -355,20 +304,24 @@
             border-radius: 16px;
             font-size: 12px;
             text-align: center;
-            transition: all 0.3s;
+            transition: 0.3s;
             animation: chipIn 0.3s ease;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .participant-chip:hover {
             background: rgba(145, 70, 255, 0.2);
         }
-
         @keyframes chipIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .status-bar {
@@ -379,33 +332,27 @@
             color: rgba(255, 255, 255, 0.5);
             margin-bottom: 10px;
         }
-
         .status-bar strong {
             color: #fff;
             font-weight: 600;
         }
-
         .status-bar .status-active {
             color: #00ff64;
         }
-
         .status-bar .status-inactive {
             color: #ff4757;
         }
-
         .status-bar .keyword-display {
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ===== КОЛЕСО ===== */
         .wheel-wrapper {
             position: relative;
             width: 100%;
             max-width: 420px;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1/1;
             margin: 0 auto;
         }
-
         #wheelCanvas {
             width: 100%;
             height: 100%;
@@ -413,7 +360,6 @@
             box-shadow: 0 0 50px rgba(145, 70, 255, 0.12);
             transition: box-shadow 0.3s;
         }
-
         #wheelCanvas.spinning {
             box-shadow: 0 0 70px rgba(145, 70, 255, 0.25);
         }
@@ -437,14 +383,12 @@
             color: #fff;
             cursor: pointer;
             user-select: none;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-
         .wheel-center:hover {
             transform: translate(-50%, -50%) scale(1.05);
             box-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
         }
-
         .wheel-center.disabled {
             opacity: 0.4;
             pointer-events: none;
@@ -464,24 +408,29 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: all 0.3s;
+            transition: 0.3s;
             margin-top: 14px;
         }
-
         .wheel-result.winner {
             background: rgba(249, 202, 36, 0.1);
             border-color: #f9ca24;
             box-shadow: 0 0 30px rgba(249, 202, 36, 0.08);
             animation: resultPop 0.5s ease;
         }
-
         @keyframes resultPop {
-            0% { transform: scale(0.95); opacity: 0.5; }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.95);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.03);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
-        /* ===== БАНК 98 ===== */
         .draw-status {
             display: flex;
             justify-content: space-between;
@@ -494,22 +443,18 @@
             margin-bottom: 12px;
             font-size: 13px;
         }
-
         .draw-status .info {
             display: flex;
             gap: 16px;
             flex-wrap: wrap;
         }
-
         .draw-status .info span {
             color: rgba(255, 255, 255, 0.5);
         }
-
         .draw-status .info strong {
             color: #fff;
             font-weight: 600;
         }
-
         .draw-status .info .highlight {
             color: #f9ca24;
         }
@@ -525,18 +470,16 @@
             max-height: 50vh;
             overflow-y: auto;
         }
-
         .grid-container::-webkit-scrollbar {
             width: 3px;
         }
-
         .grid-container::-webkit-scrollbar-thumb {
             background: rgba(145, 70, 255, 0.2);
             border-radius: 10px;
         }
 
         .grid-cell {
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1/1;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 3px;
             border: 1px solid rgba(255, 255, 255, 0.03);
@@ -551,7 +494,6 @@
             min-height: 0;
             min-width: 0;
         }
-
         .grid-cell .cell-number {
             font-size: 6px;
             color: rgba(255, 255, 255, 0.1);
@@ -561,12 +503,10 @@
             font-weight: 400;
             line-height: 1;
         }
-
         .grid-cell .item-icon {
             font-size: 16px;
             line-height: 1.2;
         }
-
         .grid-cell .item-name {
             font-size: 5px;
             color: rgba(255, 255, 255, 0.15);
@@ -577,7 +517,6 @@
             white-space: nowrap;
             line-height: 1.2;
         }
-
         .grid-cell.eliminated {
             background: rgba(255, 0, 0, 0.02);
             border-color: rgba(255, 0, 0, 0.02);
@@ -585,13 +524,11 @@
             opacity: 0.05;
             transition: all 0.3s ease;
         }
-
         .grid-cell.eliminated .item-icon,
         .grid-cell.eliminated .item-name,
         .grid-cell.eliminated .cell-number {
             opacity: 0.1;
         }
-
         .grid-cell.winner {
             background: rgba(249, 202, 36, 0.15);
             border-color: #f9ca24;
@@ -600,22 +537,28 @@
             animation: winnerPulse 0.8s ease-in-out infinite alternate;
             z-index: 2;
         }
-
         .grid-cell.winner .item-icon {
             animation: bounce 0.8s ease-in-out infinite alternate;
         }
-
         @keyframes winnerPulse {
-            0% { box-shadow: 0 0 10px rgba(249, 202, 36, 0.08); transform: scale(1.04); }
-            100% { box-shadow: 0 0 25px rgba(249, 202, 36, 0.2); transform: scale(1.12); }
+            0% {
+                box-shadow: 0 0 10px rgba(249, 202, 36, 0.08);
+                transform: scale(1.04);
+            }
+            100% {
+                box-shadow: 0 0 25px rgba(249, 202, 36, 0.2);
+                transform: scale(1.12);
+            }
         }
-
         @keyframes bounce {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-3px); }
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-3px);
+            }
         }
 
-        /* ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== */
         .winner-modal {
             display: none;
             position: fixed;
@@ -630,11 +573,9 @@
             align-items: center;
             animation: fadeIn 0.3s ease;
         }
-
         .winner-modal.active {
             display: flex;
         }
-
         .winner-modal-content {
             text-align: center;
             padding: 40px 50px;
@@ -646,18 +587,23 @@
             position: relative;
             max-width: 90vw;
         }
-
         @keyframes winnerPop {
-            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
-            60% { transform: scale(1.04) rotate(1deg); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            0% {
+                transform: scale(0.5) rotate(-5deg);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.04) rotate(1deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
         }
-
         .winner-emoji {
             font-size: 56px;
             animation: bounce 1s infinite;
         }
-
         .winner-title {
             font-size: 32px;
             font-weight: 900;
@@ -667,7 +613,6 @@
             margin: 12px 0 6px;
             letter-spacing: 2px;
         }
-
         .winner-name {
             font-size: 36px;
             font-weight: 700;
@@ -675,13 +620,11 @@
             margin: 8px 0;
             text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
-
         .winner-sub {
             font-size: 15px;
             color: rgba(255, 255, 255, 0.45);
             margin-top: 4px;
         }
-
         .winner-close-btn {
             position: absolute;
             top: 12px;
@@ -691,62 +634,149 @@
             color: rgba(255, 255, 255, 0.15);
             font-size: 22px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: 0.3s;
         }
-
         .winner-close-btn:hover {
             color: #fff;
             transform: rotate(90deg);
         }
 
-        /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
         }
 
-        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
-            body { padding: 6px; }
-            .card { padding: 14px; }
-            .card-title { font-size: 14px; }
-            .btn { padding: 8px 16px; font-size: 13px; }
-            .btn-sm { padding: 4px 10px; font-size: 11px; }
-            .tab-header { padding: 8px 12px; }
-            .tab-header .tab-title { font-size: 15px; }
-            .wheel-result { font-size: 18px; padding: 10px 16px; min-height: 44px; }
-            .grid-container { max-height: 40vh; }
-            .grid-cell .item-icon { font-size: 12px; }
-            .grid-cell .item-name { display: none; }
-            .grid-cell .cell-number { font-size: 5px; }
-            .participants-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
-            .participant-chip { font-size: 10px; padding: 4px 8px; }
-            .tab-dropdown .dropdown-item { font-size: 13px; padding: 6px 12px; }
-            .winner-modal-content { padding: 28px 20px; }
-            .winner-title { font-size: 24px; }
-            .winner-name { font-size: 28px; }
-            .winner-emoji { font-size: 44px; }
-            .admin-panel { padding: 10px; }
-            .admin-panel input { font-size: 12px; padding: 6px 10px; }
-            .admin-panel .sector-list { grid-template-columns: 1fr; }
+            body {
+                padding: 6px;
+            }
+            .card {
+                padding: 14px;
+            }
+            .btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+            .btn-sm {
+                padding: 4px 10px;
+                font-size: 11px;
+            }
+            .tab-header {
+                padding: 8px 12px;
+            }
+            .tab-header .tab-title {
+                font-size: 15px;
+            }
+            .wheel-result {
+                font-size: 18px;
+                padding: 10px 16px;
+                min-height: 44px;
+            }
+            .grid-container {
+                max-height: 40vh;
+            }
+            .grid-cell .item-icon {
+                font-size: 12px;
+            }
+            .grid-cell .item-name {
+                display: none;
+            }
+            .grid-cell .cell-number {
+                font-size: 5px;
+            }
+            .participants-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+            .participant-chip {
+                font-size: 10px;
+                padding: 4px 8px;
+            }
+            .winner-modal-content {
+                padding: 28px 20px;
+            }
+            .winner-title {
+                font-size: 24px;
+            }
+            .winner-name {
+                font-size: 28px;
+            }
+            .winner-emoji {
+                font-size: 44px;
+            }
+            .admin-panel {
+                padding: 10px;
+            }
+            .admin-panel input {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            .admin-panel .sector-list {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 480px) {
-            .grid-container { gap: 2px; padding: 2px; max-height: 35vh; }
-            .grid-cell .item-icon { font-size: 9px; }
-            .grid-cell .cell-number { font-size: 4px; }
-            .wheel-wrapper { max-width: 260px; }
-            .wheel-center { width: 40px; height: 40px; font-size: 12px; }
-            .wheel-result { font-size: 14px; padding: 8px 12px; min-height: 36px; }
-            .participants-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 4px; }
-            .participant-chip { font-size: 8px; padding: 3px 6px; border-radius: 10px; }
-            .tab-header { padding: 6px 10px; }
-            .tab-header .tab-title { font-size: 13px; }
-            .tab-dropdown .dropdown-item { font-size: 12px; padding: 5px 10px; }
-            .winner-title { font-size: 18px; }
-            .winner-name { font-size: 20px; }
-            .winner-emoji { font-size: 32px; }
-            .winner-modal-content { padding: 20px 14px; }
+            .grid-container {
+                gap: 2px;
+                padding: 2px;
+                max-height: 35vh;
+            }
+            .grid-cell .item-icon {
+                font-size: 9px;
+            }
+            .grid-cell .cell-number {
+                font-size: 4px;
+            }
+            .wheel-wrapper {
+                max-width: 260px;
+            }
+            .wheel-center {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+            .wheel-result {
+                font-size: 14px;
+                padding: 8px 12px;
+                min-height: 36px;
+            }
+            .participants-grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+                gap: 4px;
+            }
+            .participant-chip {
+                font-size: 8px;
+                padding: 3px 6px;
+                border-radius: 10px;
+            }
+            .tab-header {
+                padding: 6px 10px;
+            }
+            .tab-header .tab-title {
+                font-size: 13px;
+            }
+            .tab-dropdown .dropdown-item {
+                font-size: 12px;
+                padding: 5px 10px;
+            }
+            .winner-title {
+                font-size: 18px;
+            }
+            .winner-name {
+                font-size: 20px;
+            }
+            .winner-emoji {
+                font-size: 32px;
+            }
+            .winner-modal-content {
+                padding: 20px 14px;
+            }
         }
     </style>
 </head>
@@ -755,7 +785,6 @@
     <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
     <div class="tab-content active" id="tab1">
         <div class="card">
-            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
             <div class="tab-header" id="tabHeader1">
                 <div class="tab-title">
                     <span class="icon">🎯</span>
@@ -765,30 +794,22 @@
             </div>
 
             <div class="tab-dropdown" id="tabDropdown1">
-                <div class="dropdown-item active" data-tab="tab1">
-                    <span class="icon">🎯</span> Ключевое слово
-                </div>
-                <div class="dropdown-item" data-tab="tab2">
-                    <span class="icon">🎡</span> Колесо фортуны
-                </div>
-                <div class="dropdown-item" data-tab="tab3">
-                    <span class="icon">🏆</span> Банк 98
-                </div>
+                <div class="dropdown-item active" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
+                <div class="dropdown-item" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
+                <div class="dropdown-item" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item settings-toggle" id="settingsToggle">
                     <span class="icon">⚙️</span> <span id="settingsToggleLabel">Скрыть настройки</span>
                 </div>
             </div>
 
-            <!-- АДМИН-ПАНЕЛЬ -->
             <div class="admin-panel" id="adminPanel">
                 <div class="admin-row">
-                    <input type="text" id="keywordInput" placeholder="Кодовое слово..." value="!лут">
+                    <input type="text" id="keywordInput" placeholder="Кодовое слово..." value="!лут" />
                     <button class="btn btn-success btn-sm" id="saveKeywordBtn">Сохранить</button>
                 </div>
             </div>
 
-            <!-- КНОПКИ УПРАВЛЕНИЯ -->
             <div class="control-buttons">
                 <button class="btn btn-primary btn-sm" id="startKeywordBtn">▶ Старт</button>
                 <button class="btn btn-danger btn-sm" id="stopKeywordBtn">⏹ Стоп</button>
@@ -813,36 +834,25 @@
     <!-- ===== ВКЛАДКА 2: КОЛЕСО ФОРТУНЫ ===== -->
     <div class="tab-content" id="tab2">
         <div class="card">
-            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
             <div class="tab-header" id="tabHeader2">
-                <div class="tab-title">
-                    <span class="icon">🎡</span>
-                    <span>Колесо фортуны</span>
-                </div>
+                <div class="tab-title"><span class="icon">🎡</span> Колесо фортуны</div>
                 <span class="tab-arrow">▼</span>
             </div>
 
             <div class="tab-dropdown" id="tabDropdown2">
-                <div class="dropdown-item" data-tab="tab1">
-                    <span class="icon">🎯</span> Ключевое слово
-                </div>
-                <div class="dropdown-item active" data-tab="tab2">
-                    <span class="icon">🎡</span> Колесо фортуны
-                </div>
-                <div class="dropdown-item" data-tab="tab3">
-                    <span class="icon">🏆</span> Банк 98
-                </div>
+                <div class="dropdown-item" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
+                <div class="dropdown-item active" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
+                <div class="dropdown-item" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item settings-toggle" id="settingsToggle2">
                     <span class="icon">⚙️</span> <span id="settingsToggleLabel2">Скрыть настройки</span>
                 </div>
             </div>
 
-            <!-- АДМИН-ПАНЕЛЬ -->
             <div class="admin-panel" id="adminPanelWheel">
                 <div class="admin-row">
-                    <input type="text" id="sectorNameInput" placeholder="Название сектора...">
-                    <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="max-width:80px;">
+                    <input type="text" id="sectorNameInput" placeholder="Название сектора..." />
+                    <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="max-width:80px;" />
                     <button class="btn btn-success btn-sm" id="addSectorBtn">➕</button>
                     <button class="btn btn-danger btn-sm" id="resetWheelBtn">🗑</button>
                 </div>
@@ -862,32 +872,21 @@
     <!-- ===== ВКЛАДКА 3: БАНК 98 ===== -->
     <div class="tab-content" id="tab3">
         <div class="card">
-            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
             <div class="tab-header" id="tabHeader3">
-                <div class="tab-title">
-                    <span class="icon">🏆</span>
-                    <span>Банк 98</span>
-                </div>
+                <div class="tab-title"><span class="icon">🏆</span> Банк 98</div>
                 <span class="tab-arrow">▼</span>
             </div>
 
             <div class="tab-dropdown" id="tabDropdown3">
-                <div class="dropdown-item" data-tab="tab1">
-                    <span class="icon">🎯</span> Ключевое слово
-                </div>
-                <div class="dropdown-item" data-tab="tab2">
-                    <span class="icon">🎡</span> Колесо фортуны
-                </div>
-                <div class="dropdown-item active" data-tab="tab3">
-                    <span class="icon">🏆</span> Банк 98
-                </div>
+                <div class="dropdown-item" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
+                <div class="dropdown-item" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
+                <div class="dropdown-item active" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item settings-toggle" id="settingsToggle3">
                     <span class="icon">⚙️</span> <span id="settingsToggleLabel3">Скрыть настройки</span>
                 </div>
             </div>
 
-            <!-- КНОПКИ УПРАВЛЕНИЯ -->
             <div class="control-buttons">
                 <button class="btn btn-gold" id="startBankBtn">🎲 Запустить!</button>
                 <button class="btn btn-danger" id="resetBankBtn">↻ Сброс</button>
@@ -922,72 +921,58 @@
     <!-- ===== JAVASCRIPT ===== -->
     <!-- ========================================= -->
     <script>
-        // ==========================================
-        // 0. ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (заполняются из ENV)
-        // ==========================================
-
-        // ⚠️ ЭТИ ПЕРЕМЕННЫЕ БУДУТ ЗАМЕНЕНЫ НА VERCEL ENV
-        // Названия переменных для Vercel:
-        // - TWITCH_CLIENT_ID
-        // - TWITCH_ACCESS_TOKEN
-        // - TWITCH_CHANNEL
-        // - TWITCH_WEBHOOK_SECRET
+        // ============================================================
+        // 0. ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (заполняются из ENV на Vercel)
+        // ============================================================
+        // 
+        // Названия переменных в Vercel (Environment Variables):
+        //   TWITCH_CLIENT_ID        - Client ID из Twitch Developer Console
+        //   TWITCH_ACCESS_TOKEN     - OAuth-токен (начинается с oauth:)
+        //   TWITCH_CHANNEL          - ник канала (без #)
+        //   TWITCH_WEBHOOK_SECRET   - секретная фраза для подписи Webhook
+        //
+        // Для локальной разработки можно задать вручную (не коммитить!):
+        // ============================================================
 
         const ENV = {
-            TWITCH_CLIENT_ID: '',        // ← сюда подставится из process.env.TWITCH_CLIENT_ID
-            TWITCH_ACCESS_TOKEN: '',      // ← сюда подставится из process.env.TWITCH_ACCESS_TOKEN
-            TWITCH_CHANNEL: '',           // ← сюда подставится из process.env.TWITCH_CHANNEL
-            TWITCH_WEBHOOK_SECRET: '',    // ← сюда подставится из process.env.TWITCH_WEBHOOK_SECRET
+            TWITCH_CLIENT_ID: '',
+            TWITCH_ACCESS_TOKEN: '',
+            TWITCH_CHANNEL: '',
+            TWITCH_WEBHOOK_SECRET: '',
         };
 
-        // Для локальной разработки — можно задать вручную (не коммитить!)
-        // ENV.TWITCH_CLIENT_ID = 'твой_client_id';
-        // ENV.TWITCH_ACCESS_TOKEN = 'oauth:твой_токен';
-        // ENV.TWITCH_CHANNEL = 'ник_стримера';
-        // ENV.TWITCH_WEBHOOK_SECRET = 'секретная_фраза';
-
-        // ==========================================
+        // ============================================================
         // 1. ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ
-        // ==========================================
+        // ============================================================
 
-        // Переключение вкладок через дропдаун
         document.querySelectorAll('.dropdown-item[data-tab]').forEach(item => {
             item.addEventListener('click', function() {
                 const tabId = this.dataset.tab;
                 const tabName = this.textContent.trim();
 
-                // Обновляем активную вкладку
                 document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                 document.getElementById(tabId).classList.add('active');
 
-                // Обновляем активный пункт в дропдауне
                 document.querySelectorAll('.dropdown-item[data-tab]').forEach(el => el.classList.remove('active'));
                 this.classList.add('active');
 
-                // Обновляем заголовок текущей вкладки
                 const currentTabHeader = document.querySelector(`#${tabId} .tab-title span:last-child`);
-                if (currentTabHeader) {
-                    currentTabHeader.textContent = tabName;
-                }
+                if (currentTabHeader) currentTabHeader.textContent = tabName;
 
-                // Закрываем все дропдауны
                 document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
                 document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
 
-                // Перерисовываем
                 if (tabId === 'tab2') drawWheel();
                 if (tabId === 'tab3') renderBankGrid();
             });
         });
 
-        // Открытие/закрытие дропдауна по клику на заголовок
         document.querySelectorAll('.tab-header').forEach(header => {
             header.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const dropdown = this.nextElementSibling;
                 const isOpen = dropdown.classList.contains('open');
 
-                // Закрываем все другие дропдауны
                 document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
                 document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
 
@@ -998,15 +983,14 @@
             });
         });
 
-        // Закрытие дропдауна при клике вне его
         document.addEventListener('click', function() {
             document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
             document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
         });
 
-        // ==========================================
+        // ============================================================
         // 2. НАСТРОЙКИ (показ/скрытие админ-панели)
-        // ==========================================
+        // ============================================================
 
         let isAdminVisible = true;
 
@@ -1028,19 +1012,12 @@
             });
         });
 
-        // По умолчанию настройки видны
-        document.querySelectorAll('.admin-panel').forEach(el => el.classList.remove('hidden'));
-
-        // ==========================================
+        // ============================================================
         // 3. СОСТОЯНИЕ
-        // ==========================================
+        // ============================================================
 
         const state = {
-            keyword: {
-                active: false,
-                currentKeyword: '!лут',
-                participants: [],
-            },
+            keyword: { active: false, currentKeyword: '!лут', participants: [] },
             wheel: {
                 sectors: [
                     { label: '1000 голды', weight: 3, color: '#ff6b6b' },
@@ -1061,9 +1038,9 @@
             }
         };
 
-        // ==========================================
+        // ============================================================
         // 4. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
-        // ==========================================
+        // ============================================================
 
         const keywordInput = document.getElementById('keywordInput');
         const saveKeywordBtn = document.getElementById('saveKeywordBtn');
@@ -1186,14 +1163,14 @@
             if (e.target === this) this.classList.remove('active');
         });
 
-        // ==========================================
+        // ============================================================
         // 5. ПОДКЛЮЧЕНИЕ К TWITCH (EventSub + IRC fallback)
-        // ==========================================
+        // ============================================================
 
         let isTwitchConnected = false;
         let ircSocket = null;
 
-        // EventSub — обработка через Webhook (Vercel API)
+        // EventSub — подписка через Vercel API
         async function subscribeToEventSub() {
             if (!ENV.TWITCH_CLIENT_ID || !ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
                 console.log('ℹ️ EventSub не настроен. Заполните ENV.');
@@ -1209,6 +1186,7 @@
                         accessToken: ENV.TWITCH_ACCESS_TOKEN,
                         channel: ENV.TWITCH_CHANNEL,
                         webhookSecret: ENV.TWITCH_WEBHOOK_SECRET,
+                        callbackUrl: 'https://stream-helper-psi.vercel.app/api/twitch/webhook'
                     })
                 });
                 const result = await response.json();
@@ -1222,7 +1200,7 @@
             }
         }
 
-        // IRC fallback (если EventSub не работает)
+        // IRC fallback
         function connectToTwitchIRC() {
             if (!ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
                 console.log('ℹ️ IRC не настроен. Заполните ENV.');
@@ -1290,9 +1268,7 @@
 
         // Запускаем подключение
         if (ENV.TWITCH_CLIENT_ID && ENV.TWITCH_ACCESS_TOKEN && ENV.TWITCH_CHANNEL) {
-            // Сначала пробуем EventSub
             subscribeToEventSub();
-            // IRC как бэкап (если EventSub не сработает)
             setTimeout(connectToTwitchIRC, 3000);
         } else {
             console.log('ℹ️ Twitch не настроен. Используется демо-режим.');
@@ -1317,9 +1293,9 @@
 
         renderParticipants();
 
-        // ==========================================
+        // ============================================================
         // 6. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
-        // ==========================================
+        // ============================================================
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
@@ -1549,9 +1525,9 @@
         renderSectors();
         drawWheel();
 
-        // ==========================================
+        // ============================================================
         // 7. МЕХАНИКА 3: БАНК 98
-        // ==========================================
+        // ============================================================
 
         const bankGrid = document.getElementById('bankGrid');
         const activeCells = document.getElementById('activeCells');
@@ -1689,9 +1665,9 @@
         resetBankBtn.addEventListener('click', resetBank);
         renderBankGrid();
 
-        // ==========================================
+        // ============================================================
         // 8. КОНСОЛЬ
-        // ==========================================
+        // ============================================================
 
         console.log('🎮 Стример-хаб загружен!');
         console.log('📦 Состояние:', state);
