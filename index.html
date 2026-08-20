@@ -21,137 +21,10 @@
             overflow-x: hidden;
         }
 
-        /* ===== ВЫПАДАЮЩЕЕ МЕНЮ ===== */
-        .menu-toggle {
-            position: fixed;
-            top: 12px;
-            left: 12px;
-            z-index: 9999;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(12px);
-            color: #fff;
-            font-size: 22px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-        }
-
-        .menu-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.05);
-        }
-
-        .menu-toggle.active {
-            background: rgba(145, 70, 255, 0.3);
-            border-color: rgba(145, 70, 255, 0.3);
-        }
-
-        .menu-dropdown {
-            position: fixed;
-            top: 62px;
-            left: 12px;
-            z-index: 9998;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(16px);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 12px;
-            min-width: 220px;
-            max-width: 90vw;
-            transform: translateY(-10px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-        }
-
-        .menu-dropdown.open {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .menu-dropdown .menu-section {
-            margin-bottom: 10px;
-        }
-
-        .menu-dropdown .menu-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .menu-dropdown .menu-label {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.25);
-            margin-bottom: 6px;
-            padding: 0 4px;
-        }
-
-        .menu-dropdown .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            cursor: pointer;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .menu-dropdown .menu-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.06);
-            color: #fff;
-        }
-
-        .menu-dropdown .menu-item.active {
-            background: rgba(145, 70, 255, 0.15);
-            border-color: rgba(145, 70, 255, 0.2);
-            color: #fff;
-        }
-
-        .menu-dropdown .menu-item .icon {
-            font-size: 16px;
-            width: 24px;
-            text-align: center;
-        }
-
-        .menu-dropdown .menu-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.05);
-            margin: 8px 0;
-        }
-
-        .menu-dropdown .menu-item.settings-toggle {
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 12px;
-        }
-
-        .menu-dropdown .menu-item.settings-toggle:hover {
-            color: #fff;
-        }
-
-        .menu-dropdown .menu-item.settings-toggle.active-settings {
-            color: #9146ff;
-        }
-
         /* ===== КОНТЕЙНЕРЫ ВКЛАДОК ===== */
         .tab-content {
             display: none;
             animation: fadeIn 0.3s ease;
-            padding-top: 56px;
         }
 
         .tab-content.active {
@@ -185,6 +58,104 @@
 
         .card-title .icon {
             font-size: 20px;
+        }
+
+        /* ===== ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ ===== */
+        .tab-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .tab-header .tab-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tab-header .tab-arrow {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .tab-header.open .tab-arrow {
+            transform: rotate(180deg);
+        }
+
+        .tab-dropdown {
+            display: none;
+            padding: 8px 0 0 0;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .tab-dropdown.open {
+            display: block;
+        }
+
+        .tab-dropdown .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            border: 1px solid transparent;
+        }
+
+        .tab-dropdown .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .tab-dropdown .dropdown-item.active {
+            background: rgba(145, 70, 255, 0.12);
+            border-color: rgba(145, 70, 255, 0.15);
+            color: #fff;
+        }
+
+        .tab-dropdown .dropdown-item .icon {
+            font-size: 16px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .tab-dropdown .dropdown-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            margin: 6px 0;
+        }
+
+        .tab-dropdown .dropdown-item.settings-toggle {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+        }
+
+        .tab-dropdown .dropdown-item.settings-toggle:hover {
+            color: #fff;
+        }
+
+        .tab-dropdown .dropdown-item.settings-toggle.active-settings {
+            color: #9146ff;
         }
 
         /* ===== КНОПКИ ===== */
@@ -741,6 +712,8 @@
             .card-title { font-size: 14px; }
             .btn { padding: 8px 16px; font-size: 13px; }
             .btn-sm { padding: 4px 10px; font-size: 11px; }
+            .tab-header { padding: 8px 12px; }
+            .tab-header .tab-title { font-size: 15px; }
             .wheel-result { font-size: 18px; padding: 10px 16px; min-height: 44px; }
             .grid-container { max-height: 40vh; }
             .grid-cell .item-icon { font-size: 12px; }
@@ -748,9 +721,7 @@
             .grid-cell .cell-number { font-size: 5px; }
             .participants-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
             .participant-chip { font-size: 10px; padding: 4px 8px; }
-            .menu-dropdown { left: 8px; min-width: 180px; }
-            .menu-toggle { top: 8px; left: 8px; width: 38px; height: 38px; font-size: 18px; }
-            .tab-content { padding-top: 48px; }
+            .tab-dropdown .dropdown-item { font-size: 13px; padding: 6px 12px; }
             .winner-modal-content { padding: 28px 20px; }
             .winner-title { font-size: 24px; }
             .winner-name { font-size: 28px; }
@@ -769,10 +740,9 @@
             .wheel-result { font-size: 14px; padding: 8px 12px; min-height: 36px; }
             .participants-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 4px; }
             .participant-chip { font-size: 8px; padding: 3px 6px; border-radius: 10px; }
-            .menu-dropdown { left: 4px; min-width: 150px; padding: 8px; }
-            .menu-dropdown .menu-item { font-size: 11px; padding: 6px 10px; }
-            .menu-toggle { top: 6px; left: 6px; width: 32px; height: 32px; font-size: 15px; }
-            .tab-content { padding-top: 42px; }
+            .tab-header { padding: 6px 10px; }
+            .tab-header .tab-title { font-size: 13px; }
+            .tab-dropdown .dropdown-item { font-size: 12px; padding: 5px 10px; }
             .winner-title { font-size: 18px; }
             .winner-name { font-size: 20px; }
             .winner-emoji { font-size: 32px; }
@@ -782,43 +752,32 @@
 </head>
 <body>
 
-    <!-- ===== ВЫПАДАЮЩЕЕ МЕНЮ ===== -->
-    <button class="menu-toggle" id="menuToggle" aria-label="Меню">☰</button>
-
-    <div class="menu-dropdown" id="menuDropdown">
-        <!-- Вкладки -->
-        <div class="menu-section">
-            <div class="menu-label">Вкладки</div>
-            <div class="menu-item active" data-tab="tab1">
-                <span class="icon">🎯</span> Ключевое слово
-            </div>
-            <div class="menu-item" data-tab="tab2">
-                <span class="icon">🎡</span> Колесо фортуны
-            </div>
-            <div class="menu-item" data-tab="tab3">
-                <span class="icon">🏆</span> Банк 98
-            </div>
-        </div>
-
-        <div class="menu-divider"></div>
-
-        <!-- Настройки -->
-        <div class="menu-section">
-            <div class="menu-label">Настройки</div>
-            <div class="menu-item settings-toggle" id="settingsToggle">
-                <span class="icon">⚙️</span> <span id="settingsToggleLabel">Скрыть настройки</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
-    <!-- ========================================= -->
     <div class="tab-content active" id="tab1">
         <div class="card">
-            <div class="card-title">
-                <span class="icon">🎯</span>
-                Розыгрыш по ключевому слову
+            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
+            <div class="tab-header" id="tabHeader1">
+                <div class="tab-title">
+                    <span class="icon">🎯</span>
+                    <span id="currentTabLabel">Ключевое слово</span>
+                </div>
+                <span class="tab-arrow">▼</span>
+            </div>
+
+            <div class="tab-dropdown" id="tabDropdown1">
+                <div class="dropdown-item active" data-tab="tab1">
+                    <span class="icon">🎯</span> Ключевое слово
+                </div>
+                <div class="dropdown-item" data-tab="tab2">
+                    <span class="icon">🎡</span> Колесо фортуны
+                </div>
+                <div class="dropdown-item" data-tab="tab3">
+                    <span class="icon">🏆</span> Банк 98
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item settings-toggle" id="settingsToggle">
+                    <span class="icon">⚙️</span> <span id="settingsToggleLabel">Скрыть настройки</span>
+                </div>
             </div>
 
             <!-- АДМИН-ПАНЕЛЬ -->
@@ -851,14 +810,32 @@
         </div>
     </div>
 
-    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 2: КОЛЕСО ФОРТУНЫ ===== -->
-    <!-- ========================================= -->
     <div class="tab-content" id="tab2">
         <div class="card">
-            <div class="card-title">
-                <span class="icon">🎡</span>
-                Колесо фортуны
+            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
+            <div class="tab-header" id="tabHeader2">
+                <div class="tab-title">
+                    <span class="icon">🎡</span>
+                    <span>Колесо фортуны</span>
+                </div>
+                <span class="tab-arrow">▼</span>
+            </div>
+
+            <div class="tab-dropdown" id="tabDropdown2">
+                <div class="dropdown-item" data-tab="tab1">
+                    <span class="icon">🎯</span> Ключевое слово
+                </div>
+                <div class="dropdown-item active" data-tab="tab2">
+                    <span class="icon">🎡</span> Колесо фортуны
+                </div>
+                <div class="dropdown-item" data-tab="tab3">
+                    <span class="icon">🏆</span> Банк 98
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item settings-toggle" id="settingsToggle2">
+                    <span class="icon">⚙️</span> <span id="settingsToggleLabel2">Скрыть настройки</span>
+                </div>
             </div>
 
             <!-- АДМИН-ПАНЕЛЬ -->
@@ -882,15 +859,32 @@
         </div>
     </div>
 
-    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 3: БАНК 98 ===== -->
-    <!-- ========================================= -->
     <div class="tab-content" id="tab3">
         <div class="card">
-            <div class="card-title">
-                <span class="icon">🏆</span>
-                Банк 98
-                <span style="font-size:12px; color:rgba(255,255,255,0.25); margin-left:auto;">98 ячеек</span>
+            <!-- ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ -->
+            <div class="tab-header" id="tabHeader3">
+                <div class="tab-title">
+                    <span class="icon">🏆</span>
+                    <span>Банк 98</span>
+                </div>
+                <span class="tab-arrow">▼</span>
+            </div>
+
+            <div class="tab-dropdown" id="tabDropdown3">
+                <div class="dropdown-item" data-tab="tab1">
+                    <span class="icon">🎯</span> Ключевое слово
+                </div>
+                <div class="dropdown-item" data-tab="tab2">
+                    <span class="icon">🎡</span> Колесо фортуны
+                </div>
+                <div class="dropdown-item active" data-tab="tab3">
+                    <span class="icon">🏆</span> Банк 98
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item settings-toggle" id="settingsToggle3">
+                    <span class="icon">⚙️</span> <span id="settingsToggleLabel3">Скрыть настройки</span>
+                </div>
             </div>
 
             <!-- КНОПКИ УПРАВЛЕНИЯ -->
@@ -929,41 +923,85 @@
     <!-- ========================================= -->
     <script>
         // ==========================================
-        // 0. НАСТРОЙКИ TWITCH API
+        // 0. ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (заполняются из ENV)
         // ==========================================
 
-        // ⚠️ ЗАПОЛНИ ЭТИ ДАННЫЕ!
-        // Client ID можно получить в Twitch Developer Console
-        // Access Token — через twitchtokengenerator.com (выбрать скоупы chat:read, chat:edit)
-        const TWITCH_CONFIG = {
-            clientId: 'ТВОЙ_CLIENT_ID',        // например: 'abc123def456'
-            accessToken: 'ТВОЙ_OAUTH_ТОКЕН',    // например: 'oauth:xyz789...'
-            channel: 'НИК_СТРИМЕРА'             // без #, например: 'n_burov'
+        // ⚠️ ЭТИ ПЕРЕМЕННЫЕ БУДУТ ЗАМЕНЕНЫ НА VERCEL ENV
+        // Названия переменных для Vercel:
+        // - TWITCH_CLIENT_ID
+        // - TWITCH_ACCESS_TOKEN
+        // - TWITCH_CHANNEL
+        // - TWITCH_WEBHOOK_SECRET
+
+        const ENV = {
+            TWITCH_CLIENT_ID: '',        // ← сюда подставится из process.env.TWITCH_CLIENT_ID
+            TWITCH_ACCESS_TOKEN: '',      // ← сюда подставится из process.env.TWITCH_ACCESS_TOKEN
+            TWITCH_CHANNEL: '',           // ← сюда подставится из process.env.TWITCH_CHANNEL
+            TWITCH_WEBHOOK_SECRET: '',    // ← сюда подставится из process.env.TWITCH_WEBHOOK_SECRET
         };
 
+        // Для локальной разработки — можно задать вручную (не коммитить!)
+        // ENV.TWITCH_CLIENT_ID = 'твой_client_id';
+        // ENV.TWITCH_ACCESS_TOKEN = 'oauth:твой_токен';
+        // ENV.TWITCH_CHANNEL = 'ник_стримера';
+        // ENV.TWITCH_WEBHOOK_SECRET = 'секретная_фраза';
+
         // ==========================================
-        // 1. МЕНЮ
+        // 1. ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ
         // ==========================================
 
-        const menuToggle = document.getElementById('menuToggle');
-        const menuDropdown = document.getElementById('menuDropdown');
-        let isMenuOpen = false;
+        // Переключение вкладок через дропдаун
+        document.querySelectorAll('.dropdown-item[data-tab]').forEach(item => {
+            item.addEventListener('click', function() {
+                const tabId = this.dataset.tab;
+                const tabName = this.textContent.trim();
 
-        menuToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            isMenuOpen = !isMenuOpen;
-            menuDropdown.classList.toggle('open', isMenuOpen);
-            this.classList.toggle('active', isMenuOpen);
-            this.textContent = isMenuOpen ? '✕' : '☰';
+                // Обновляем активную вкладку
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.getElementById(tabId).classList.add('active');
+
+                // Обновляем активный пункт в дропдауне
+                document.querySelectorAll('.dropdown-item[data-tab]').forEach(el => el.classList.remove('active'));
+                this.classList.add('active');
+
+                // Обновляем заголовок текущей вкладки
+                const currentTabHeader = document.querySelector(`#${tabId} .tab-title span:last-child`);
+                if (currentTabHeader) {
+                    currentTabHeader.textContent = tabName;
+                }
+
+                // Закрываем все дропдауны
+                document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
+
+                // Перерисовываем
+                if (tabId === 'tab2') drawWheel();
+                if (tabId === 'tab3') renderBankGrid();
+            });
         });
 
-        document.addEventListener('click', function(e) {
-            if (isMenuOpen && !menuDropdown.contains(e.target) && e.target !== menuToggle) {
-                isMenuOpen = false;
-                menuDropdown.classList.remove('open');
-                menuToggle.classList.remove('active');
-                menuToggle.textContent = '☰';
-            }
+        // Открытие/закрытие дропдауна по клику на заголовок
+        document.querySelectorAll('.tab-header').forEach(header => {
+            header.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.nextElementSibling;
+                const isOpen = dropdown.classList.contains('open');
+
+                // Закрываем все другие дропдауны
+                document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
+
+                if (!isOpen) {
+                    dropdown.classList.add('open');
+                    this.classList.add('open');
+                }
+            });
+        });
+
+        // Закрытие дропдауна при клике вне его
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
+            document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
         });
 
         // ==========================================
@@ -971,50 +1009,30 @@
         // ==========================================
 
         let isAdminVisible = true;
-        const settingsToggle = document.getElementById('settingsToggle');
-        const settingsToggleLabel = document.getElementById('settingsToggleLabel');
-        const adminPanels = document.querySelectorAll('.admin-panel');
 
         function toggleSettings() {
             isAdminVisible = !isAdminVisible;
-            adminPanels.forEach(el => el.classList.toggle('hidden', !isAdminVisible));
-            settingsToggleLabel.textContent = isAdminVisible ? 'Скрыть настройки' : 'Показать настройки';
-            settingsToggle.classList.toggle('active-settings', !isAdminVisible);
+            document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('hidden', !isAdminVisible));
+            document.querySelectorAll('.settings-toggle .settings-label').forEach(el => {
+                el.textContent = isAdminVisible ? 'Скрыть настройки' : 'Показать настройки';
+            });
+            document.querySelectorAll('.settings-toggle').forEach(el => {
+                el.classList.toggle('active-settings', !isAdminVisible);
+            });
         }
 
-        settingsToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleSettings();
-        });
-
-        // По умолчанию настройки видны
-        adminPanels.forEach(el => el.classList.remove('hidden'));
-
-        // ==========================================
-        // 3. ВКЛАДКИ ЧЕРЕЗ МЕНЮ
-        // ==========================================
-
-        document.querySelectorAll('.menu-item[data-tab]').forEach(item => {
-            item.addEventListener('click', function() {
-                document.querySelectorAll('.menu-item[data-tab]').forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
-
-                const tabId = this.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-
-                isMenuOpen = false;
-                menuDropdown.classList.remove('open');
-                menuToggle.classList.remove('active');
-                menuToggle.textContent = '☰';
-
-                if (tabId === 'tab2') drawWheel();
-                if (tabId === 'tab3') renderBankGrid();
+        document.querySelectorAll('.settings-toggle').forEach(el => {
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleSettings();
             });
         });
 
+        // По умолчанию настройки видны
+        document.querySelectorAll('.admin-panel').forEach(el => el.classList.remove('hidden'));
+
         // ==========================================
-        // 4. СОСТОЯНИЕ
+        // 3. СОСТОЯНИЕ
         // ==========================================
 
         const state = {
@@ -1044,7 +1062,7 @@
         };
 
         // ==========================================
-        // 5. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
+        // 4. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
         // ==========================================
 
         const keywordInput = document.getElementById('keywordInput');
@@ -1169,25 +1187,51 @@
         });
 
         // ==========================================
-        // 6. ПОДКЛЮЧЕНИЕ К TWITCH CHAT (IRC)
+        // 5. ПОДКЛЮЧЕНИЕ К TWITCH (EventSub + IRC fallback)
         // ==========================================
 
-        let ircSocket = null;
         let isTwitchConnected = false;
+        let ircSocket = null;
 
-        function connectToTwitchChat() {
-            // Проверяем, заполнены ли настройки
-            if (!TWITCH_CONFIG.clientId || TWITCH_CONFIG.clientId === 'ТВОЙ_CLIENT_ID') {
-                console.log('ℹ️ Twitch API не настроен. Заполните TWITCH_CONFIG в коде.');
+        // EventSub — обработка через Webhook (Vercel API)
+        async function subscribeToEventSub() {
+            if (!ENV.TWITCH_CLIENT_ID || !ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
+                console.log('ℹ️ EventSub не настроен. Заполните ENV.');
                 return;
             }
 
-            if (!TWITCH_CONFIG.accessToken || TWITCH_CONFIG.accessToken === 'ТВОЙ_OAUTH_ТОКЕН') {
-                console.log('ℹ️ Twitch Access Token не настроен. Получите токен на twitchtokengenerator.com');
+            try {
+                const response = await fetch('/api/twitch/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientId: ENV.TWITCH_CLIENT_ID,
+                        accessToken: ENV.TWITCH_ACCESS_TOKEN,
+                        channel: ENV.TWITCH_CHANNEL,
+                        webhookSecret: ENV.TWITCH_WEBHOOK_SECRET,
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ EventSub подписка создана');
+                } else {
+                    console.warn('⚠️ EventSub ошибка:', result.error);
+                }
+            } catch (error) {
+                console.error('❌ EventSub ошибка:', error);
+            }
+        }
+
+        // IRC fallback (если EventSub не работает)
+        function connectToTwitchIRC() {
+            if (!ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
+                console.log('ℹ️ IRC не настроен. Заполните ENV.');
                 return;
             }
 
-            console.log('🔗 Подключение к Twitch чату...');
+            if (isTwitchConnected) return;
+
+            console.log('🔗 Подключение к Twitch IRC (fallback)...');
 
             try {
                 const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
@@ -1195,9 +1239,9 @@
                 socket.onopen = () => {
                     console.log('✅ Подключено к Twitch IRC');
                     socket.send(`CAP REQ :twitch.tv/tags twitch.tv/commands`);
-                    socket.send(`PASS oauth:${TWITCH_CONFIG.accessToken}`);
-                    socket.send(`NICK ${TWITCH_CONFIG.channel}`);
-                    socket.send(`JOIN #${TWITCH_CONFIG.channel}`);
+                    socket.send(`PASS oauth:${ENV.TWITCH_ACCESS_TOKEN}`);
+                    socket.send(`NICK ${ENV.TWITCH_CHANNEL}`);
+                    socket.send(`JOIN #${ENV.TWITCH_CHANNEL}`);
                     isTwitchConnected = true;
                 };
 
@@ -1209,15 +1253,12 @@
                         return;
                     }
 
-                    // Парсим сообщение
                     const privmsgMatch = data.match(/PRIVMSG #\w+ :(.+)/);
                     if (privmsgMatch) {
                         const message = privmsgMatch[1];
-                        // Извлекаем имя пользователя из тегов
                         const userMatch = data.match(/display-name=([^;]+)/);
                         const username = userMatch ? userMatch[1] : 'Неизвестный';
 
-                        // Проверяем ключевое слово
                         const keyword = state.keyword.currentKeyword;
                         if (state.keyword.active && message.toLowerCase().includes(keyword.toLowerCase())) {
                             console.log(`📨 ${username}: ${message}`);
@@ -1228,37 +1269,42 @@
 
                 socket.onclose = () => {
                     if (isTwitchConnected) {
-                        console.log('🔌 Отключено от Twitch чата. Переподключение через 5 сек...');
+                        console.log('🔌 Отключено от Twitch IRC. Переподключение через 5 сек...');
                     }
                     isTwitchConnected = false;
-                    setTimeout(connectToTwitchChat, 5000);
+                    setTimeout(connectToTwitchIRC, 5000);
                 };
 
                 socket.onerror = (error) => {
-                    console.error('❌ Ошибка WebSocket:', error);
+                    console.error('❌ Ошибка IRC:', error);
                     socket.close();
                 };
 
                 ircSocket = socket;
 
             } catch (error) {
-                console.error('❌ Ошибка подключения к Twitch:', error);
-                setTimeout(connectToTwitchChat, 10000);
+                console.error('❌ Ошибка подключения к IRC:', error);
+                setTimeout(connectToTwitchIRC, 10000);
             }
         }
 
-        // Запускаем подключение к Twitch
-        connectToTwitchChat();
+        // Запускаем подключение
+        if (ENV.TWITCH_CLIENT_ID && ENV.TWITCH_ACCESS_TOKEN && ENV.TWITCH_CHANNEL) {
+            // Сначала пробуем EventSub
+            subscribeToEventSub();
+            // IRC как бэкап (если EventSub не сработает)
+            setTimeout(connectToTwitchIRC, 3000);
+        } else {
+            console.log('ℹ️ Twitch не настроен. Используется демо-режим.');
+        }
 
-        // Демо-участники (для тестирования без Twitch)
+        // Демо-режим (если Twitch не подключён)
         const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
             'LightBringer'
         ];
         let demoIndex = 0;
 
-        // Демо-режим работает только если Twitch не подключён
         setInterval(() => {
-            // Если Twitch подключён — демо не нужен
             if (isTwitchConnected) return;
             if (!state.keyword.active) return;
             const user = demoUsers[demoIndex % demoUsers.length];
@@ -1272,7 +1318,7 @@
         renderParticipants();
 
         // ==========================================
-        // 7. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ (SPIN в центре)
+        // 6. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
         // ==========================================
 
         const canvas = document.getElementById('wheelCanvas');
@@ -1349,7 +1395,6 @@
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Стрелка
             ctx.fillStyle = '#ff4757';
             ctx.shadowColor = 'rgba(255,71,87,0.3)';
             ctx.shadowBlur = 15;
@@ -1438,7 +1483,6 @@
             }
         }
 
-        // Клик по SPIN в центре колеса
         wheelCenter.addEventListener('click', spinWheel);
 
         function addSector(label, weight) {
@@ -1506,7 +1550,7 @@
         drawWheel();
 
         // ==========================================
-        // 8. МЕХАНИКА 3: БАНК 98
+        // 7. МЕХАНИКА 3: БАНК 98
         // ==========================================
 
         const bankGrid = document.getElementById('bankGrid');
@@ -1646,21 +1690,23 @@
         renderBankGrid();
 
         // ==========================================
-        // 9. КОНСОЛЬ
+        // 8. КОНСОЛЬ
         // ==========================================
 
         console.log('🎮 Стример-хаб загружен!');
         console.log('📦 Состояние:', state);
-        console.log('🔘 Меню в левом верхнем углу');
+        console.log('📌 Нажмите на название вкладки для открытия меню');
         console.log('⚙️ Настройки скрываются через меню');
         console.log('🎯 Кнопки управления всегда видны');
         console.log('🔄 Колесо запускается кликом по SPIN в центре');
 
-        if (TWITCH_CONFIG.clientId && TWITCH_CONFIG.clientId !== 'ТВОЙ_CLIENT_ID') {
+        if (ENV.TWITCH_CLIENT_ID && ENV.TWITCH_CLIENT_ID !== '') {
             console.log('✅ Twitch API настроен');
-            console.log(`📡 Канал: ${TWITCH_CONFIG.channel}`);
+            console.log(`📡 Канал: ${ENV.TWITCH_CHANNEL}`);
+            console.log(`🔑 Client ID: ${ENV.TWITCH_CLIENT_ID}`);
+            console.log(`🔐 Webhook Secret: ${ENV.TWITCH_WEBHOOK_SECRET ? '✅ установлен' : '❌ не установлен'}`);
         } else {
-            console.log('ℹ️ Twitch API не настроен. Заполните TWITCH_CONFIG в коде.');
+            console.log('ℹ️ Twitch API не настроен. Используется демо-режим.');
         }
 
         window.state = state;
@@ -1668,5 +1714,6 @@
         window.startBankDraw = startBankDraw;
         window.spinWheel = spinWheel;
     </script>
+
 </body>
 </html>
