@@ -1167,7 +1167,7 @@
         // ==========================================
         // 0. ПАРАМЕТРЫ URL И РЕЖИМ ОВЕРЛЕЯ
         // ==========================================
-
+    
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
             return {
@@ -1175,14 +1175,14 @@
                 view: params.get('view') || null,
             };
         }
-
+    
         const urlParams = getUrlParams();
-
+    
         // Включаем режим оверлея
         if (urlParams.overlay) {
             document.body.classList.add('overlay-mode');
         }
-
+    
         // Открываем нужную вкладку
         if (urlParams.view) {
             const tabMap = {
@@ -1202,36 +1202,67 @@
                 });
             }
         }
-
+    
         // ==========================================
-        // 0.1 BROADCAST CHANNEL
+        // 0.1 API КОМАНДЫ (синхронизация через Vercel)
         // ==========================================
-
-        const channel = new BroadcastChannel('streamer-hub');
-
-        // Отправка команд
-        function sendCommand(action, data) {
-            channel.postMessage({ action, data, timestamp: Date.now() });
-            console.log('📤 Отправлена команда:', action, data || '');
+    
+        // Определяем базовый URL для API
+        // Если мы на GitHub Pages (n-burov.github.io), используем относительный путь
+        // Если локально, используем localhost
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3000/api/command'  // для локальной разработки
+            : '/api/command';                      // для Vercel / GitHub Pages
+    
+        // Отправка команды на сервер
+        async function sendCommand(action, data) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, data }),
+                });
+                const result = await response.json();
+                console.log('📤 Команда отправлена:', action, data || '');
+                return result;
+            } catch (error) {
+                console.error('❌ Ошибка отправки команды:', error);
+                // Если API недоступен — пробуем BroadcastChannel как fallback
+                try {
+                    channel.postMessage({ action, data, timestamp: Date.now() });
+                    console.log('📤 (Fallback) Команда отправлена в BroadcastChannel:', action);
+                } catch (e) {
+                    console.error('❌ Ошибка fallback:', e);
+                }
+            }
         }
-
-        // Приём команд
-        channel.addEventListener('message', (e) => {
-            const { action, data } = e.data;
-            console.log('📥 Получена команда:', action, data || '');
-
-            // Игнорируем свои же сообщения в оверлее (чтобы не зациклиться)
-            if (urlParams.overlay && action === 'syncState') return;
-
+    
+        // Получение команды с сервера (только для оверлея)
+        async function fetchCommand() {
+            try {
+                const response = await fetch(API_URL);
+                const command = await response.json();
+    
+                if (command.action) {
+                    console.log('📥 Получена команда:', command.action, command.data || '');
+                    executeCommand(command);
+                }
+                return command;
+            } catch (error) {
+                console.error('❌ Ошибка получения команды:', error);
+            }
+        }
+    
+        // Выполнение полученной команды
+        function executeCommand(command) {
+            const { action, data } = command;
+    
             switch (action) {
                 case 'syncState':
-                    // Синхронизация состояния
                     Object.assign(state, data);
-                    // Обновляем UI
                     renderParticipants();
                     drawWheel();
                     renderBankGrid();
-                    // Обновляем статус
                     if (state.keyword.active) {
                         keywordStatus.textContent = 'Активен';
                         keywordStatus.style.color = '#00ff64';
@@ -1244,7 +1275,7 @@
                         startBtn.disabled = false;
                     }
                     break;
-
+    
                 case 'startKeyword':
                     state.keyword.active = true;
                     state.keyword.currentKeyword = data.keyword;
@@ -1255,7 +1286,7 @@
                     startBtn.textContent = '▶️ Идёт набор...';
                     startBtn.disabled = true;
                     break;
-
+    
                 case 'stopKeyword':
                     state.keyword.active = false;
                     keywordStatus.textContent = 'Остановлен';
@@ -1263,31 +1294,30 @@
                     startBtn.textContent = '▶️ Старт';
                     startBtn.disabled = false;
                     break;
-
+    
                 case 'drawKeyword':
-                    const winner = data.winner;
-                    document.getElementById('winnerModalName').textContent = winner;
+                    document.getElementById('winnerModalName').textContent = data.winner;
                     document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
                     document.getElementById('winnerModal').classList.add('active');
                     createConfetti();
                     break;
-
+    
                 case 'addParticipant':
                     addParticipant(data.username);
                     break;
-
+    
                 case 'spinWheel':
                     spinWheel();
                     break;
-
+    
                 case 'startBankDraw':
                     startBankDraw();
                     break;
-
+    
                 case 'resetBank':
                     resetBank();
                     break;
-
+    
                 case 'showWinner':
                     document.getElementById('winnerModalName').textContent = data.name;
                     document.getElementById('winnerModalSub').textContent = data.sub || '🎉 Поздравляем!';
@@ -1295,12 +1325,46 @@
                     createConfetti();
                     break;
             }
-        });
-
+        }
+    
+        // ===== BroadcastChannel (fallback, если API недоступен) =====
+        let channel;
+        try {
+            channel = new BroadcastChannel('streamer-hub');
+            
+            channel.addEventListener('message', (e) => {
+                // Игнорируем свои же сообщения в оверлее
+                if (urlParams.overlay) return;
+                const { action, data } = e.data;
+                console.log('📥 (Fallback) Получена команда из BroadcastChannel:', action);
+                executeCommand({ action, data });
+            });
+            console.log('📡 BroadcastChannel: streamer-hub (fallback)');
+        } catch (e) {
+            console.log('ℹ️ BroadcastChannel не поддерживается, используем только API');
+        }
+    
+        // ===== Опрос команд (только для оверлея) =====
+        if (urlParams.overlay) {
+            // Первый опрос через 1 секунду
+            setTimeout(() => {
+                fetchCommand();
+            }, 1000);
+    
+            // Опрос каждые 1.5 секунды
+            setInterval(fetchCommand, 1500);
+            console.log('🔄 Оверлей: опрос команд каждые 1.5 сек');
+        } else {
+            // На основном сайте — отправляем синхронизацию состояния при загрузке
+            setTimeout(() => {
+                sendCommand('syncState', state);
+            }, 500);
+        }
+    
         // ==========================================
         // 1. СОСТОЯНИЕ
         // ==========================================
-
+    
         const state = {
             keyword: {
                 active: false,
@@ -1326,11 +1390,11 @@
                 revealed: false,
             }
         };
-
+    
         // ==========================================
         // 2. ТАБЫ
         // ==========================================
-
+    
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 if (urlParams.overlay) return;
@@ -1338,7 +1402,7 @@
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
                 document.getElementById(this.dataset.tab).classList.add('active');
-
+    
                 if (this.dataset.tab === 'tab2') {
                     drawWheel();
                 }
@@ -1347,11 +1411,11 @@
                 }
             });
         });
-
+    
         // ==========================================
         // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
         // ==========================================
-
+    
         const keywordInput = document.getElementById('keywordInput');
         const startBtn = document.getElementById('startKeywordBtn');
         const stopBtn = document.getElementById('stopKeywordBtn');
@@ -1359,16 +1423,15 @@
         const participantsGrid = document.getElementById('participantsGrid');
         const participantCount = document.getElementById('participantCount');
         const keywordStatus = document.getElementById('keywordStatus');
-
+    
         function addParticipant(name) {
             if (!state.keyword.active) return;
             if (state.keyword.participants.includes(name)) return;
             state.keyword.participants.push(name);
             renderParticipants();
-            // Отправляем синхронизацию
             sendCommand('addParticipant', { username: name });
         }
-
+    
         function renderParticipants() {
             const list = state.keyword.participants;
             participantCount.textContent = list.length;
@@ -1379,7 +1442,7 @@
             }
             participantsGrid.innerHTML = list.map(name => `<div class="participant-chip">${name}</div>`).join('');
         }
-
+    
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
             for (let i = 0; i < 50; i++) {
@@ -1402,7 +1465,7 @@
                 setTimeout(() => confetti.remove(), 5000);
             }
         }
-
+    
         startBtn.addEventListener('click', function() {
             const kw = keywordInput.value.trim();
             if (!kw) { alert('Введите кодовое слово!'); return; }
@@ -1414,20 +1477,20 @@
             keywordStatus.style.color = '#00ff64';
             this.textContent = '▶️ Идёт набор...';
             this.disabled = true;
-
+    
             sendCommand('startKeyword', { keyword: kw });
         });
-
+    
         stopBtn.addEventListener('click', function() {
             state.keyword.active = false;
             keywordStatus.textContent = 'Остановлен';
             keywordStatus.style.color = '#ff4757';
             startBtn.textContent = '▶️ Старт';
             startBtn.disabled = false;
-
+    
             sendCommand('stopKeyword');
         });
-
+    
         drawBtn.addEventListener('click', function() {
             const list = state.keyword.participants;
             if (list.length === 0) { alert('Нет участников!'); return; }
@@ -1436,18 +1499,18 @@
             document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
             document.getElementById('winnerModal').classList.add('active');
             createConfetti();
-
+    
             sendCommand('drawKeyword', { winner });
         });
-
+    
         document.getElementById('closeWinnerBtn').addEventListener('click', function() {
             document.getElementById('winnerModal').classList.remove('active');
         });
-
+    
         document.getElementById('winnerModal').addEventListener('click', function(e) {
             if (e.target === this) this.classList.remove('active');
         });
-
+    
         // Демо-сообщения (только не в оверлее)
         const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
             'LightBringer'
@@ -1464,11 +1527,11 @@
                 demoIndex++;
             }, 2000);
         }
-
+    
         // ==========================================
         // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
         // ==========================================
-
+    
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
         const spinBtn = document.getElementById('spinBtn');
@@ -1476,7 +1539,7 @@
         const defaultColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
             '#ff9f43', '#10ac84', '#ee5a24'
         ];
-
+    
         function drawWheel() {
             const sectors = state.wheel.sectors;
             if (sectors.length === 0) {
@@ -1545,7 +1608,7 @@
             ctx.arc(300, 35, 6, 0, Math.PI * 2);
             ctx.fill();
         }
-
+    
         function spinWheel() {
             if (state.wheel.isSpinning) return;
             if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
@@ -1573,7 +1636,7 @@
                 const duration = 3000 + Math.random() * 1000;
                 const startTime = Date.now();
                 const startRotation = state.wheel.currentRotation;
-
+    
                 function animate() {
                     const elapsed = Date.now() - startTime;
                     const progress = Math.min(elapsed / duration, 1);
@@ -1602,7 +1665,7 @@
                 console.error(error);
             }
         }
-
+    
         // Обработчик клика по SPIN с отправкой команды
         spinBtn.addEventListener('click', function() {
             if (urlParams.overlay) {
@@ -1612,10 +1675,10 @@
             spinWheel();
             sendCommand('spinWheel');
         });
-
+    
         // Экспортируем spinWheel для вызова по команде
         window.spinWheel = spinWheel;
-
+    
         function addSector(label, weight) {
             if (!label.trim()) { alert('Введите название!'); return; }
             if (weight < 1) { alert('Вес >= 1'); return; }
@@ -1627,13 +1690,13 @@
             renderSectors();
             drawWheel();
         }
-
+    
         function removeSector(index) {
             state.wheel.sectors.splice(index, 1);
             renderSectors();
             drawWheel();
         }
-
+    
         function renderSectors() {
             const container = document.getElementById('sectorList');
             const sectors = state.wheel.sectors;
@@ -1650,14 +1713,14 @@
                     <button class="remove-btn" data-index="${i}">✕</button>
                 </div>
             `).join('');
-
+    
             container.querySelectorAll('.remove-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     removeSector(parseInt(this.dataset.index));
                 });
             });
         }
-
+    
         document.getElementById('addSectorBtn').addEventListener('click', function() {
             const nameInput = document.getElementById('sectorNameInput');
             const weightInput = document.getElementById('sectorWeightInput');
@@ -1665,7 +1728,7 @@
             nameInput.value = '';
             weightInput.value = '1';
         });
-
+    
         document.getElementById('resetWheelBtn').addEventListener('click', function() {
             if (confirm('Удалить все сектора?')) {
                 state.wheel.sectors = [];
@@ -1675,14 +1738,14 @@
                 wheelResult.textContent = '🎡 Нажмите SPIN';
             }
         });
-
+    
         renderSectors();
         drawWheel();
-
+    
         // ==========================================
         // 5. МЕХАНИКА 3: БАНК 98
         // ==========================================
-
+    
         const bankGrid = document.getElementById('bankGrid');
         const totalCells = document.getElementById('totalCells');
         const activeCells = document.getElementById('activeCells');
@@ -1690,15 +1753,15 @@
         const winnerDisplay = document.getElementById('winnerDisplay');
         const startBankBtn = document.getElementById('startBankBtn');
         const resetBankBtn = document.getElementById('resetBankBtn');
-
+    
         const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
             '🏆', '💍', '🧪', '📜', '🪄'
         ];
-
+    
         const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
             'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
         ];
-
+    
         function generateBankItems() {
             const items = [];
             for (let i = 0; i < 98; i++) {
@@ -1711,7 +1774,7 @@
             }
             return items;
         }
-
+    
         function shuffleArray(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1719,7 +1782,7 @@
             }
             return arr;
         }
-
+    
         function renderBankGrid() {
             const items = state.bank.items;
             if (items.length === 0) {
@@ -1729,12 +1792,12 @@
                 state.bank.winnerIndex = -1;
                 state.bank.revealed = false;
             }
-
+    
             totalCells.textContent = items.length;
             const active = items.length - state.bank.eliminated.length;
             activeCells.textContent = active;
             eliminatedCells.textContent = state.bank.eliminated.length;
-
+    
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
                 winnerDisplay.style.color = '#f9ca24';
@@ -1742,7 +1805,7 @@
                 winnerDisplay.textContent = '—';
                 winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
             }
-
+    
             bankGrid.innerHTML = items.map((item, index) => {
                 const isEliminated = state.bank.eliminated.includes(index);
                 const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
@@ -1758,7 +1821,7 @@
                 `;
             }).join('');
         }
-
+    
         function resetBank() {
             if (state.bank.isRunning) return;
             state.bank.items = generateBankItems();
@@ -1771,35 +1834,35 @@
             startBankBtn.disabled = false;
             sendCommand('resetBank');
         }
-
+    
         function startBankDraw() {
             if (state.bank.isRunning) return;
             if (state.bank.items.length === 0) {
                 resetBank();
                 return;
             }
-
+    
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 resetBank();
                 setTimeout(() => startBankDraw(), 300);
                 return;
             }
-
+    
             state.bank.isRunning = true;
             state.bank.revealed = false;
             startBankBtn.textContent = '⏳ Идёт розыгрыш...';
             startBankBtn.disabled = true;
-
+    
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
             state.bank.winnerIndex = winnerIdx;
-
+    
             const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIdx);
             shuffleArray(toEliminate);
-
+    
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
-
+    
             const interval = setInterval(() => {
                 if (currentIndex >= totalToEliminate) {
                     clearInterval(interval);
@@ -1808,60 +1871,58 @@
                     state.bank.isRunning = false;
                     startBankBtn.textContent = '🎲 Запустить розыгрыш!';
                     startBankBtn.disabled = false;
-
+    
                     const winner = state.bank.items[winnerIdx];
                     const winnerName = `${winner.icon} #${winnerIdx + 1}`;
                     document.getElementById('winnerModalName').textContent = winnerName;
                     document.getElementById('winnerModalSub').textContent = `🎉 ${winner.icon} ${winner.name}!`;
                     document.getElementById('winnerModal').classList.add('active');
                     createConfetti();
-
+    
                     sendCommand('showWinner', { name: winnerName, sub: `🎉 ${winner.icon} ${winner.name}!` });
                     return;
                 }
-
+    
                 const idxToEliminate = toEliminate[currentIndex];
                 if (!state.bank.eliminated.includes(idxToEliminate)) {
                     state.bank.eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
-
+    
                 renderBankGrid();
                 const active = state.bank.items.length - state.bank.eliminated.length;
                 activeCells.textContent = active;
                 eliminatedCells.textContent = state.bank.eliminated.length;
-
+    
             }, 60 + Math.random() * 40);
         }
-
+    
         startBankBtn.addEventListener('click', function() {
             if (urlParams.overlay) {
-                // В оверлее не даём запускать через кнопку (только по команде)
                 return;
             }
             startBankDraw();
             sendCommand('startBankDraw');
         });
-
+    
         resetBankBtn.addEventListener('click', function() {
             if (urlParams.overlay) {
-                // В оверлее не даём сбрасывать через кнопку (только по команде)
                 return;
             }
             resetBank();
             sendCommand('resetBank');
         });
-
+    
         // Экспортируем для вызова по команде
         window.startBankDraw = startBankDraw;
         window.resetBank = resetBank;
-
+    
         resetBank();
-
+    
         // ==========================================
         // 6. АДМИНКА
         // ==========================================
-
+    
         document.getElementById('adminToggle').addEventListener('click', function() {
             const password = prompt('Введите пароль админа:');
             if (password === 'admin123') {
@@ -1870,28 +1931,29 @@
                 alert('❌ Неверный пароль!');
             }
         });
-
+    
         // ==========================================
         // 7. КОНСОЛЬ
         // ==========================================
-
+    
         console.log('🎮 Стример-хаб загружен!');
         console.log('📦 Состояние:', state);
         console.log('🔧 Параметры URL:', urlParams);
-        console.log('📡 BroadcastChannel: streamer-hub');
+        console.log('🔗 API URL:', API_URL);
         if (urlParams.overlay) {
             console.log('🎬 РЕЖИМ ОВЕРЛЕЯ ВКЛЮЧЕН');
-            console.log(`📺 Показывается вкладка: ${urlParams.view || 'все'}`);
-            console.log('ℹ️ В оверлее кнопки управления отключены — команды приходят через BroadcastChannel');
+            console.log('📺 Показывается вкладка:', urlParams.view || 'все');
+            console.log('🔄 Опрос команд каждые 1.5 секунды');
         } else {
             console.log('🖥️ РЕЖИМ УПРАВЛЕНИЯ');
-            console.log('📤 Команды отправляются в BroadcastChannel для синхронизации с оверлеем');
+            console.log('📤 Команды отправляются через API');
         }
         window.state = state;
         window.resetBank = resetBank;
         window.startBankDraw = startBankDraw;
         window.spinWheel = spinWheel;
         window.sendCommand = sendCommand;
+        window.fetchCommand = fetchCommand;
     </script>
 
 </body>
