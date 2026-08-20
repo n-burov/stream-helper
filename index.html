@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Стример-хаб | WoW Розыгрыши</title>
+    <title>Стример-хаб | Оверлей</title>
     <style>
         /* ===== БАЗА ===== */
         * {
@@ -14,280 +14,72 @@
 
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
+            background: transparent !important;
             min-height: 100vh;
             color: #fff;
-            padding: 20px;
+            padding: 10px;
+            overflow: hidden;
         }
 
-        /* ===== ОВЕРЛЕЙ-РЕЖИМ ===== */
-        body.overlay-mode {
-            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%) !important;
-            padding: 10px !important;
-        }
-
-        body.overlay-mode .header {
-            display: none !important;
-        }
-
-        body.overlay-mode .admin-login {
-            display: none !important;
-        }
-
-        body.overlay-mode .tabs {
-            display: none !important;
-        }
-
-        body.overlay-mode .tab-content {
-            display: block !important;
-            animation: none !important;
-        }
-
-        body.overlay-mode .tab-content:not(.active) {
-            display: none !important;
-        }
-
-        body.overlay-mode .card {
-            background: rgba(255, 255, 255, 0.04) !important;
-            backdrop-filter: blur(10px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.06) !important;
-            padding: 15px !important;
-            margin-bottom: 10px !important;
-        }
-
-        body.overlay-mode .card-title {
-            font-size: 16px !important;
-            margin-bottom: 10px !important;
-        }
-
-        body.overlay-mode .card-title .icon {
-            font-size: 20px !important;
-        }
-
-        body.overlay-mode .draw-status {
-            padding: 10px 15px !important;
-            margin-bottom: 10px !important;
-        }
-
-        body.overlay-mode .draw-status .info span {
-            font-size: 12px !important;
-        }
-
-        /* ===== ОВЕРЛЕЙ: КЛЮЧЕВОЕ СЛОВО ===== */
-        body.overlay-mode .keyword-setup .btn:not(.btn-gold) {
-            display: none !important;
-        }
-
-        body.overlay-mode .keyword-setup input {
-            display: none !important;
-        }
-
-        body.overlay-mode .keyword-setup {
-            justify-content: center !important;
-        }
-
-        body.overlay-mode #participantsGrid {
-            max-height: 60vh !important;
-        }
-
-        body.overlay-mode .participant-chip {
-            font-size: 14px !important;
-            padding: 10px 18px !important;
-        }
-
-        /* ===== ОВЕРЛЕЙ: КОЛЕСО ===== */
-        body.overlay-mode .wheel-settings,
-        body.overlay-mode #addSectorBtn,
-        body.overlay-mode #resetWheelBtn,
-        body.overlay-mode .sector-input .remove-btn,
-        body.overlay-mode #sectorNameInput,
-        body.overlay-mode #sectorWeightInput {
-            display: none !important;
-        }
-
-        body.overlay-mode .wheel-center {
-            width: 50px !important;
-            height: 50px !important;
-            font-size: 16px !important;
-        }
-
-        body.overlay-mode .wheel-result {
-            font-size: 24px !important;
-            padding: 12px 24px !important;
-            min-height: 50px !important;
-        }
-
-        body.overlay-mode .wheel-wrapper {
-            width: 300px !important;
-            height: 300px !important;
-        }
-
-        /* ===== ОВЕРЛЕЙ: БАНК 98 ===== */
-        body.overlay-mode .grid-container {
-            max-width: 100% !important;
-            gap: 3px !important;
-            padding: 4px !important;
-            max-height: 65vh !important;
-            overflow-y: auto !important;
-        }
-
-        body.overlay-mode .grid-cell {
-            aspect-ratio: 1 / 1 !important;
-            min-height: 0 !important;
-            min-width: 0 !important;
-            padding: 1px !important;
-            border-radius: 3px !important;
-        }
-
-        body.overlay-mode .grid-cell .item-icon {
-            font-size: 16px !important;
-            line-height: 1 !important;
-        }
-
-        body.overlay-mode .grid-cell .item-name {
-            display: none !important;
-        }
-
-        body.overlay-mode .grid-cell .cell-number {
-            font-size: 6px !important;
-            bottom: 1px !important;
-            right: 2px !important;
-        }
-
-        body.overlay-mode .grid-cell.eliminated {
-            transform: scale(0.6) !important;
-            opacity: 0.05 !important;
-        }
-
-        body.overlay-mode .grid-cell.winner {
-            transform: scale(1.1) !important;
-        }
-
-        /* Кнопки управления в оверлее банка — ВИДНЫ */
-        body.overlay-mode #startBankBtn,
-        body.overlay-mode #resetBankBtn {
-            display: inline-block !important;
-            font-size: 14px !important;
-            padding: 8px 20px !important;
-        }
-
-        body.overlay-mode #addItemBtn,
-        body.overlay-mode #openCaseBtn,
-        body.overlay-mode #itemNameInput,
-        body.overlay-mode #itemIconInput,
-        body.overlay-mode #itemQualityInput,
-        body.overlay-mode .cases-container {
-            display: none !important;
-        }
-
-        /* ===== ШАПКА ===== */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            background: rgba(255, 255, 255, 0.05);
+        /* ===== КАРТОЧКИ ===== */
+        .card {
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 15px;
+            margin-bottom: 10px;
         }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #9146ff, #00d4ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-badge {
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            background: rgba(0, 255, 100, 0.15);
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 100, 0.3);
-            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #00ff64;
-            animation: pulse-dot 2s infinite;
+        .card-title .icon {
+            font-size: 18px;
         }
 
-        @keyframes pulse-dot {
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            50% {
-                opacity: 0.5;
-                transform: scale(0.8);
-            }
-        }
-
-        .admin-login {
-            padding: 8px 20px;
-            background: rgba(145, 70, 255, 0.2);
-            border: 1px solid rgba(145, 70, 255, 0.3);
-            border-radius: 10px;
-            color: #9146ff;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-
-        .admin-login:hover {
-            background: rgba(145, 70, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        /* ===== ТАБЫ ===== */
-        .tabs {
+        /* ===== ВКЛАДКИ ОВЕРЛЕЯ ===== */
+        .overlay-tabs {
             display: flex;
-            gap: 12px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        .tab-btn {
-            padding: 12px 28px;
+        .overlay-tab-btn {
+            padding: 6px 16px;
             border: none;
-            border-radius: 12px;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 16px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             border: 1px solid transparent;
         }
 
-        .tab-btn:hover {
+        .overlay-tab-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            transform: translateY(-2px);
         }
 
-        .tab-btn.active {
-            background: linear-gradient(135deg, rgba(145, 70, 255, 0.3), rgba(0, 212, 255, 0.3));
-            border-color: rgba(145, 70, 255, 0.5);
+        .overlay-tab-btn.active {
+            background: rgba(145, 70, 255, 0.2);
+            border-color: rgba(145, 70, 255, 0.3);
             color: #fff;
-            box-shadow: 0 4px 20px rgba(145, 70, 255, 0.2);
         }
 
         /* ===== КОНТЕЙНЕРЫ ВКЛАДОК ===== */
         .tab-content {
             display: none;
-            animation: fadeIn 0.4s ease;
+            animation: fadeIn 0.3s ease;
         }
 
         .tab-content.active {
@@ -295,302 +87,129 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ===== КАРТОЧКИ ===== */
-        .card {
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 30px;
-            margin-bottom: 25px;
-        }
-
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .card-title .icon {
-            font-size: 28px;
-        }
-
-        /* ===== КНОПКИ ===== */
-        .btn {
-            padding: 12px 28px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #fff;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #9146ff, #7a3bcb);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(145, 70, 255, 0.4);
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, #f9ca24, #f0932b);
-            color: #1a1f35;
-        }
-
-        .btn-gold:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(249, 202, 36, 0.4);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ff4757, #c0392b);
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* ===== УЧАСТНИКИ ===== */
         .participants-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin: 20px 0;
-            max-height: 300px;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 6px;
+            margin: 10px 0;
+            max-height: 50vh;
             overflow-y: auto;
-            padding: 5px;
+            padding: 4px;
         }
 
         .participants-grid::-webkit-scrollbar {
-            width: 6px;
+            width: 4px;
         }
 
         .participants-grid::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.4);
+            background: rgba(145, 70, 255, 0.3);
             border-radius: 10px;
         }
 
         .participant-chip {
-            padding: 8px 14px;
+            padding: 6px 12px;
             background: rgba(145, 70, 255, 0.15);
-            border: 1px solid rgba(145, 70, 255, 0.2);
-            border-radius: 20px;
-            font-size: 13px;
+            border: 1px solid rgba(145, 70, 255, 0.15);
+            border-radius: 16px;
+            font-size: 12px;
             text-align: center;
             transition: all 0.3s;
             animation: chipIn 0.3s ease;
-        }
-
-        .participant-chip:hover {
-            background: rgba(145, 70, 255, 0.25);
-            transform: scale(1.05);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         @keyframes chipIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .participant-count {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         /* ===== КОЛЕСО ===== */
-        .wheel-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-        }
-
         .wheel-wrapper {
             position: relative;
-            width: 400px;
-            height: 400px;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
         }
 
         #wheelCanvas {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
-            transition: box-shadow 0.3s;
+            box-shadow: 0 0 40px rgba(145, 70, 255, 0.15);
         }
 
         #wheelCanvas.spinning {
-            box-shadow: 0 0 80px rgba(145, 70, 255, 0.5);
-        }
-
-        .wheel-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #9146ff, #00d4ff);
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 30px rgba(145, 70, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.3s;
-            user-select: none;
-        }
-
-        .wheel-center:hover:not(.disabled) {
-            transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 0 50px rgba(145, 70, 255, 0.5);
-        }
-
-        .wheel-center:active:not(.disabled) {
-            transform: translate(-50%, -50%) scale(0.95);
-        }
-
-        .wheel-center.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .wheel-settings {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-            width: 100%;
-        }
-
-        .sector-input {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 10px;
-        }
-
-        .sector-input input {
-            flex: 1;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            font-size: 14px;
-        }
-
-        .sector-input input:focus {
-            outline: none;
-            border-color: #9146ff;
-        }
-
-        .sector-input .remove-btn {
-            background: none;
-            border: none;
-            color: #ff4757;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 4px;
-            transition: all 0.3s;
-        }
-
-        .sector-input .remove-btn:hover {
-            transform: scale(1.2);
+            box-shadow: 0 0 60px rgba(145, 70, 255, 0.3);
         }
 
         .wheel-result {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 700;
-            padding: 20px 40px;
-            background: rgba(0, 212, 255, 0.1);
-            border: 2px solid rgba(0, 212, 255, 0.3);
-            border-radius: 16px;
+            padding: 12px 24px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
             text-align: center;
-            min-height: 80px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
+            margin-top: 15px;
             transition: all 0.3s;
         }
 
         .wheel-result.winner {
-            background: rgba(249, 202, 36, 0.15);
+            background: rgba(249, 202, 36, 0.12);
             border-color: #f9ca24;
-            box-shadow: 0 0 40px rgba(249, 202, 36, 0.2);
-            animation: resultPop 0.6s ease;
+            box-shadow: 0 0 30px rgba(249, 202, 36, 0.1);
+            animation: resultPop 0.5s ease;
         }
 
         @keyframes resultPop {
-            0% {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-            50% {
-                transform: scale(1.1);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         /* ===== БАНК 98 ===== */
         .draw-status {
             display: flex;
-            align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 15px;
-            padding: 15px 20px;
+            gap: 8px;
+            padding: 8px 12px;
             background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 10px;
+            font-size: 12px;
         }
 
         .draw-status .info {
             display: flex;
-            gap: 25px;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
         .draw-status .info span {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .draw-status .info strong {
             color: #fff;
-            font-weight: 600;
         }
 
         .draw-status .info .highlight {
@@ -600,81 +219,72 @@
         .grid-container {
             display: grid;
             grid-template-columns: repeat(14, 1fr);
-            gap: 5px;
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 8px;
+            gap: 3px;
+            padding: 4px;
             background: rgba(255, 255, 255, 0.02);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            max-height: 70vh;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            max-height: 55vh;
             overflow-y: auto;
         }
 
         .grid-container::-webkit-scrollbar {
-            width: 4px;
+            width: 3px;
         }
 
         .grid-container::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.3);
+            background: rgba(145, 70, 255, 0.2);
             border-radius: 10px;
         }
 
         .grid-cell {
             aspect-ratio: 1 / 1;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: default;
             position: relative;
-            padding: 2px;
+            padding: 1px;
             overflow: hidden;
             min-height: 0;
             min-width: 0;
         }
 
         .grid-cell .cell-number {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.15);
+            font-size: 6px;
+            color: rgba(255, 255, 255, 0.1);
             position: absolute;
-            bottom: 2px;
-            right: 4px;
+            bottom: 1px;
+            right: 2px;
             font-weight: 400;
             line-height: 1;
         }
 
         .grid-cell .item-icon {
-            font-size: 24px;
+            font-size: 16px;
             line-height: 1.2;
         }
 
         .grid-cell .item-name {
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.2);
+            font-size: 5px;
+            color: rgba(255, 255, 255, 0.15);
             text-align: center;
             max-width: 90%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            margin-top: 2px;
             line-height: 1.2;
         }
 
-        .grid-cell.active {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.06);
-        }
-
         .grid-cell.eliminated {
-            background: rgba(255, 0, 0, 0.03);
+            background: rgba(255, 0, 0, 0.02);
             border-color: rgba(255, 0, 0, 0.02);
-            transform: scale(0.7);
-            opacity: 0.08;
+            transform: scale(0.6);
+            opacity: 0.05;
             transition: all 0.3s ease;
         }
 
@@ -685,10 +295,10 @@
         }
 
         .grid-cell.winner {
-            background: rgba(249, 202, 36, 0.2);
+            background: rgba(249, 202, 36, 0.15);
             border-color: #f9ca24;
-            transform: scale(1.15);
-            box-shadow: 0 0 30px rgba(249, 202, 36, 0.25);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(249, 202, 36, 0.15);
             animation: winnerPulse 0.8s ease-in-out infinite alternate;
             z-index: 2;
         }
@@ -698,82 +308,13 @@
         }
 
         @keyframes winnerPulse {
-            0% {
-                box-shadow: 0 0 15px rgba(249, 202, 36, 0.15);
-                transform: scale(1.08);
-            }
-            100% {
-                box-shadow: 0 0 40px rgba(249, 202, 36, 0.4);
-                transform: scale(1.2);
-            }
+            0% { box-shadow: 0 0 10px rgba(249, 202, 36, 0.1); transform: scale(1.05); }
+            100% { box-shadow: 0 0 30px rgba(249, 202, 36, 0.25); transform: scale(1.15); }
         }
 
         @keyframes bounce {
-            0% {
-                transform: translateY(0);
-            }
-            100% {
-                transform: translateY(-4px);
-            }
-        }
-
-        /* ===== КЕЙСЫ (оставлены для совместимости) ===== */
-        .cases-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-
-        .cases-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .cases-container::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.4);
-            border-radius: 10px;
-        }
-
-        .case-slot {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            transition: all 0.3s;
-            cursor: default;
-        }
-
-        .case-slot:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-4px);
-            border-color: rgba(145, 70, 255, 0.3);
-        }
-
-        .case-slot .item-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            background: rgba(145, 70, 255, 0.1);
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-        }
-
-        .case-slot .item-name {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .case-slot .item-quality {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 4px;
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-3px); }
         }
 
         /* ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== */
@@ -789,7 +330,7 @@
             z-index: 2000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 0.4s ease;
         }
 
         .winner-modal.active {
@@ -798,78 +339,59 @@
 
         .winner-modal-content {
             text-align: center;
-            padding: 60px 80px;
-            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.2) 0%, transparent 70%);
-            border-radius: 40px;
-            border: 2px solid rgba(249, 202, 36, 0.3);
-            box-shadow: 0 0 80px rgba(249, 202, 36, 0.15);
-            animation: winnerPop 0.6s ease;
+            padding: 40px 60px;
+            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.15) 0%, transparent 70%);
+            border-radius: 32px;
+            border: 2px solid rgba(249, 202, 36, 0.2);
+            box-shadow: 0 0 60px rgba(249, 202, 36, 0.1);
+            animation: winnerPop 0.5s ease;
             position: relative;
             max-width: 90vw;
         }
 
         @keyframes winnerPop {
-            0% {
-                transform: scale(0.5) rotate(-10deg);
-                opacity: 0;
-            }
-            60% {
-                transform: scale(1.1) rotate(2deg);
-            }
-            100% {
-                transform: scale(1) rotate(0deg);
-                opacity: 1;
-            }
+            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            60% { transform: scale(1.05) rotate(1deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
         .winner-emoji {
-            font-size: 80px;
+            font-size: 64px;
             animation: bounce 1s infinite;
         }
 
-        @keyframes bounce {
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-20px);
-            }
-        }
-
         .winner-title {
-            font-size: 48px;
+            font-size: 36px;
             font-weight: 900;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 20px 0 10px;
-            letter-spacing: 4px;
-            text-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
+            margin: 15px 0 5px;
+            letter-spacing: 3px;
         }
 
         .winner-name {
-            font-size: 56px;
+            font-size: 40px;
             font-weight: 700;
             color: #fff;
-            margin: 20px 0;
-            text-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
+            margin: 10px 0;
+            text-shadow: 0 0 30px rgba(145, 70, 255, 0.2);
         }
 
         .winner-sub {
-            font-size: 20px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 10px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
         }
 
         .winner-close-btn {
             position: absolute;
-            top: 20px;
-            right: 30px;
+            top: 15px;
+            right: 25px;
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 28px;
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 24px;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -881,188 +403,49 @@
 
         /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(110vh) rotate(720deg);
-                opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
         /* ===== АДАПТИВ ===== */
-        @media (max-width: 1200px) {
-            .grid-container {
-                max-width: 750px;
-                gap: 4px;
-                padding: 6px;
-            }
-            .grid-cell .item-icon {
-                font-size: 20px;
-            }
-            .grid-cell .item-name {
-                font-size: 7px;
-            }
-            .grid-cell .cell-number {
-                font-size: 8px;
-            }
-            body.overlay-mode .grid-cell .item-icon {
-                font-size: 14px !important;
-            }
-        }
-
         @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 16px;
-                padding: 16px 20px;
-                text-align: center;
-            }
-
-            .tabs {
-                justify-content: center;
-            }
-
-            .tab-btn {
-                padding: 10px 18px;
-                font-size: 14px;
-                flex: 1;
-                min-width: 80px;
-                text-align: center;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .grid-container {
-                max-width: 600px;
-                gap: 3px;
-                padding: 5px;
-                max-height: 60vh;
-            }
-            .grid-cell .item-icon {
-                font-size: 18px;
-            }
-            .grid-cell .item-name {
-                display: none;
-            }
-            .grid-cell .cell-number {
-                font-size: 7px;
-                bottom: 1px;
-                right: 2px;
-            }
-
-            body.overlay-mode .grid-container {
-                max-height: 55vh !important;
-            }
-            body.overlay-mode .grid-cell .item-icon {
-                font-size: 13px !important;
-            }
-
-            body.overlay-mode .wheel-wrapper {
-                width: 250px !important;
-                height: 250px !important;
-            }
-
-            .draw-status {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-            .draw-status .info {
-                justify-content: center;
-            }
-
-            .winner-modal-content {
-                padding: 40px 30px;
-            }
-            .winner-title {
-                font-size: 32px;
-            }
-            .winner-name {
-                font-size: 36px;
-            }
-            .winner-emoji {
-                font-size: 60px;
-            }
+            body { padding: 5px; }
+            .card { padding: 10px; }
+            .wheel-wrapper { width: 220px; height: 220px; }
+            .wheel-result { font-size: 18px; padding: 8px 16px; min-height: 40px; }
+            .grid-container { max-height: 45vh; }
+            .grid-cell .item-icon { font-size: 12px; }
+            .participants-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+            .participant-chip { font-size: 10px; padding: 4px 8px; }
+            .winner-modal-content { padding: 30px 20px; }
+            .winner-title { font-size: 28px; }
+            .winner-name { font-size: 30px; }
+            .winner-emoji { font-size: 48px; }
         }
 
         @media (max-width: 480px) {
-            .grid-container {
-                max-width: 450px;
-                gap: 2px;
-                padding: 3px;
-            }
-            .grid-cell .item-icon {
-                font-size: 14px;
-            }
-            .grid-cell .cell-number {
-                font-size: 5px;
-                bottom: 1px;
-                right: 1px;
-            }
-            .grid-cell.eliminated {
-                transform: scale(0.6);
-            }
-            .grid-cell.winner {
-                transform: scale(1.05);
-            }
-
-            body.overlay-mode .grid-container {
-                max-height: 50vh !important;
-            }
-            body.overlay-mode .grid-cell .item-icon {
-                font-size: 10px !important;
-            }
-            body.overlay-mode .grid-cell .cell-number {
-                font-size: 4px !important;
-            }
-
-            body.overlay-mode .wheel-wrapper {
-                width: 200px !important;
-                height: 200px !important;
-            }
-
-            body.overlay-mode .wheel-center {
-                width: 40px !important;
-                height: 40px !important;
-                font-size: 12px !important;
-            }
-
-            body.overlay-mode .wheel-result {
-                font-size: 18px !important;
-                padding: 10px 16px !important;
-                min-height: 40px !important;
-            }
-
-            body.overlay-mode #startBankBtn,
-            body.overlay-mode #resetBankBtn {
-                font-size: 12px !important;
-                padding: 6px 14px !important;
-            }
+            .wheel-wrapper { width: 160px; height: 160px; }
+            .wheel-result { font-size: 14px; padding: 6px 12px; min-height: 32px; }
+            .grid-cell .item-icon { font-size: 9px; }
+            .grid-cell .cell-number { font-size: 4px; }
+            .grid-container { max-height: 40vh; gap: 2px; }
+            .participants-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); }
+            .participant-chip { font-size: 8px; padding: 3px 6px; }
+            .winner-title { font-size: 20px; }
+            .winner-name { font-size: 22px; }
+            .winner-emoji { font-size: 36px; }
+            .winner-modal-content { padding: 20px 15px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== ШАПКА ===== -->
-    <header class="header">
-        <div class="logo">🎮 Стример-хаб</div>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            Онлайн
-        </div>
-        <button class="admin-login" id="adminToggle">🔐 Админ</button>
-    </header>
-
-    <!-- ===== ТАБЫ ===== -->
-    <nav class="tabs">
-        <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
-        <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
-        <button class="tab-btn" data-tab="tab3">🏆 Банк 98</button>
-    </nav>
+    <!-- ===== ВКЛАДКИ ОВЕРЛЕЯ ===== -->
+    <div class="overlay-tabs" id="overlayTabs">
+        <button class="overlay-tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
+        <button class="overlay-tab-btn" data-tab="tab2">🎡 Колесо</button>
+        <button class="overlay-tab-btn" data-tab="tab3">🏆 Банк 98</button>
+    </div>
 
     <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
@@ -1072,19 +455,16 @@
             <div class="card-title">
                 <span class="icon">🎯</span>
                 Розыгрыш по ключевому слову
+                <span style="margin-left:auto; font-size:12px; color:rgba(255,255,255,0.3);" id="keywordStatus">Остановлен</span>
             </div>
-            <div class="keyword-setup" style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
-                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут" style="flex:1; min-width:200px; padding:12px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:16px;">
-                <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт</button>
-                <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
-                <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
-                <span style="font-size:14px; color:rgba(255,255,255,0.5);">Участников: <strong id="participantCount">0</strong></span>
-                <span style="font-size:14px; color:rgba(255,255,255,0.5);">Статус: <span id="keywordStatus" style="color:#ff4757;">Остановлен</span></span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                <span class="participant-count">Участников: <strong id="participantCount">0</strong></span>
+                <span class="participant-count">Кодовое слово: <strong id="displayKeyword">!лут</strong></span>
             </div>
             <div class="participants-grid" id="participantsGrid">
-                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:20px; font-size:12px;">
+                    Ожидаем участников 😴
+                </div>
             </div>
         </div>
     </div>
@@ -1094,26 +474,14 @@
     <!-- ========================================= -->
     <div class="tab-content" id="tab2">
         <div class="card">
-            <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
-            <div class="wheel-container">
-                <div class="wheel-wrapper">
-                    <canvas id="wheelCanvas" width="600" height="600"></canvas>
-                    <div class="wheel-center" id="spinBtn">SPIN</div>
-                </div>
-                <div class="wheel-result" id="wheelResult">🎡 Нажмите SPIN</div>
+            <div class="card-title">
+                <span class="icon">🎡</span>
+                Колесо фортуны
             </div>
-        </div>
-        <div class="card">
-            <div class="card-title"><span class="icon">⚙️</span> Настройка секторов</div>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                <input type="text" id="sectorNameInput" placeholder="Название..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <button class="btn btn-primary" id="addSectorBtn">➕ Добавить</button>
-                <button class="btn btn-danger" id="resetWheelBtn">🗑️ Сброс</button>
+            <div class="wheel-wrapper">
+                <canvas id="wheelCanvas" width="600" height="600"></canvas>
             </div>
-            <div class="wheel-settings" id="sectorList">
-                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">Добавьте сектора</div>
-            </div>
+            <div class="wheel-result" id="wheelResult">🎡 Ожидание</div>
         </div>
     </div>
 
@@ -1125,24 +493,17 @@
             <div class="card-title">
                 <span class="icon">🏆</span>
                 Банк 98
-                <span style="font-size:14px; color:rgba(255,255,255,0.4); font-weight:400; margin-left:10px;">
-                    🎲 98 ячеек, одна победит!
+                <span style="font-size:11px; color:rgba(255,255,255,0.3); margin-left:auto;">
+                    🎲 98 ячеек
                 </span>
             </div>
-
             <div class="draw-status">
                 <div class="info">
-                    <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
                     <span>✅ Активных: <strong id="activeCells">98</strong></span>
                     <span>❌ Выбыло: <strong id="eliminatedCells">0</strong></span>
                     <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.3);">—</strong></span>
                 </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
-                    <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
-                </div>
             </div>
-
             <div class="grid-container" id="bankGrid">
                 <!-- Ячейки генерируются JS -->
             </div>
@@ -1154,7 +515,7 @@
         <div class="winner-modal-content">
             <div class="winner-emoji">🏆</div>
             <div class="winner-title">ПОБЕДИТЕЛЬ!</div>
-            <div class="winner-name" id="winnerModalName">Ячейка #1</div>
+            <div class="winner-name" id="winnerModalName">Игрок</div>
             <div class="winner-sub" id="winnerModalSub">🎉 Поздравляем!</div>
             <button class="winner-close-btn" id="closeWinnerBtn">✕</button>
         </div>
@@ -1165,206 +526,61 @@
     <!-- ========================================= -->
     <script>
         // ==========================================
-        // 0. ПАРАМЕТРЫ URL И РЕЖИМ ОВЕРЛЕЯ
+        // 0. ХРАНИЛИЩЕ ДАННЫХ (localStorage)
         // ==========================================
-    
-        function getUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                overlay: params.get('overlay') === 'true',
-                view: params.get('view') || null,
-            };
-        }
-    
-        const urlParams = getUrlParams();
-    
-        // Включаем режим оверлея
-        if (urlParams.overlay) {
-            document.body.classList.add('overlay-mode');
-        }
-    
-        // Открываем нужную вкладку
-        if (urlParams.view) {
-            const tabMap = {
-                'keyword': 'tab1',
-                'wheel': 'tab2',
-                'bank': 'tab3'
-            };
-            const tabId = tabMap[urlParams.view];
-            if (tabId) {
-                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                const targetTab = document.getElementById(tabId);
-                if (targetTab) {
-                    targetTab.classList.add('active');
-                }
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.tab === tabId);
-                });
-            }
-        }
-    
-        // ==========================================
-        // 0.1 API КОМАНДЫ (синхронизация через Vercel)
-        // ==========================================
-    
-        // Определяем базовый URL для API
-        // Если мы на GitHub Pages (n-burov.github.io), используем относительный путь
-        // Если локально, используем localhost
-        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:3000/api/command'  // для локальной разработки
-            : '/api/command';                      // для Vercel / GitHub Pages
-    
-        // Отправка команды на сервер
-        async function sendCommand(action, data) {
+
+        const STORAGE_KEY = 'streamer_hub_state';
+
+        function loadState() {
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, data }),
-                });
-                const result = await response.json();
-                console.log('📤 Команда отправлена:', action, data || '');
-                return result;
-            } catch (error) {
-                console.error('❌ Ошибка отправки команды:', error);
-                // Если API недоступен — пробуем BroadcastChannel как fallback
-                try {
-                    channel.postMessage({ action, data, timestamp: Date.now() });
-                    console.log('📤 (Fallback) Команда отправлена в BroadcastChannel:', action);
-                } catch (e) {
-                    console.error('❌ Ошибка fallback:', e);
-                }
-            }
-        }
-    
-        // Получение команды с сервера (только для оверлея)
-        async function fetchCommand() {
-            try {
-                const response = await fetch(API_URL);
-                const command = await response.json();
-    
-                if (command.action) {
-                    console.log('📥 Получена команда:', command.action, command.data || '');
-                    executeCommand(command);
-                }
-                return command;
-            } catch (error) {
-                console.error('❌ Ошибка получения команды:', error);
-            }
-        }
-    
-        // Выполнение полученной команды
-        function executeCommand(command) {
-            const { action, data } = command;
-    
-            switch (action) {
-                case 'syncState':
-                    Object.assign(state, data);
-                    renderParticipants();
-                    drawWheel();
-                    renderBankGrid();
-                    if (state.keyword.active) {
-                        keywordStatus.textContent = 'Активен';
-                        keywordStatus.style.color = '#00ff64';
-                        startBtn.textContent = '▶️ Идёт набор...';
-                        startBtn.disabled = true;
-                    } else {
-                        keywordStatus.textContent = 'Остановлен';
-                        keywordStatus.style.color = '#ff4757';
-                        startBtn.textContent = '▶️ Старт';
-                        startBtn.disabled = false;
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    // Обновляем состояние из сохранённых данных
+                    if (parsed.keyword) {
+                        state.keyword = parsed.keyword;
                     }
-                    break;
-    
-                case 'startKeyword':
-                    state.keyword.active = true;
-                    state.keyword.currentKeyword = data.keyword;
-                    state.keyword.participants = [];
-                    renderParticipants();
-                    keywordStatus.textContent = 'Активен';
-                    keywordStatus.style.color = '#00ff64';
-                    startBtn.textContent = '▶️ Идёт набор...';
-                    startBtn.disabled = true;
-                    break;
-    
-                case 'stopKeyword':
-                    state.keyword.active = false;
-                    keywordStatus.textContent = 'Остановлен';
-                    keywordStatus.style.color = '#ff4757';
-                    startBtn.textContent = '▶️ Старт';
-                    startBtn.disabled = false;
-                    break;
-    
-                case 'drawKeyword':
-                    document.getElementById('winnerModalName').textContent = data.winner;
-                    document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
-                    document.getElementById('winnerModal').classList.add('active');
-                    createConfetti();
-                    break;
-    
-                case 'addParticipant':
-                    addParticipant(data.username);
-                    break;
-    
-                case 'spinWheel':
-                    spinWheel();
-                    break;
-    
-                case 'startBankDraw':
-                    startBankDraw();
-                    break;
-    
-                case 'resetBank':
-                    resetBank();
-                    break;
-    
-                case 'showWinner':
-                    document.getElementById('winnerModalName').textContent = data.name;
-                    document.getElementById('winnerModalSub').textContent = data.sub || '🎉 Поздравляем!';
-                    document.getElementById('winnerModal').classList.add('active');
-                    createConfetti();
-                    break;
+                    if (parsed.wheel) {
+                        state.wheel.sectors = parsed.wheel.sectors || state.wheel.sectors;
+                        state.wheel.currentRotation = parsed.wheel.currentRotation || 0;
+                    }
+                    if (parsed.bank) {
+                        state.bank.items = parsed.bank.items || [];
+                        state.bank.winnerIndex = parsed.bank.winnerIndex || -1;
+                        state.bank.eliminated = parsed.bank.eliminated || [];
+                        state.bank.revealed = parsed.bank.revealed || false;
+                    }
+                    console.log('📂 Загружено состояние из localStorage');
+                }
+            } catch (e) {
+                console.warn('Ошибка загрузки состояния:', e);
             }
         }
-    
-        // ===== BroadcastChannel (fallback, если API недоступен) =====
-        let channel;
-        try {
-            channel = new BroadcastChannel('streamer-hub');
-            
-            channel.addEventListener('message', (e) => {
-                // Игнорируем свои же сообщения в оверлее
-                if (urlParams.overlay) return;
-                const { action, data } = e.data;
-                console.log('📥 (Fallback) Получена команда из BroadcastChannel:', action);
-                executeCommand({ action, data });
-            });
-            console.log('📡 BroadcastChannel: streamer-hub (fallback)');
-        } catch (e) {
-            console.log('ℹ️ BroadcastChannel не поддерживается, используем только API');
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    keyword: state.keyword,
+                    wheel: {
+                        sectors: state.wheel.sectors,
+                        currentRotation: state.wheel.currentRotation,
+                    },
+                    bank: {
+                        items: state.bank.items,
+                        winnerIndex: state.bank.winnerIndex,
+                        eliminated: state.bank.eliminated,
+                        revealed: state.bank.revealed,
+                    }
+                }));
+            } catch (e) {
+                console.warn('Ошибка сохранения состояния:', e);
+            }
         }
-    
-        // ===== Опрос команд (только для оверлея) =====
-        if (urlParams.overlay) {
-            // Первый опрос через 1 секунду
-            setTimeout(() => {
-                fetchCommand();
-            }, 1000);
-    
-            // Опрос каждые 1.5 секунды
-            setInterval(fetchCommand, 1500);
-            console.log('🔄 Оверлей: опрос команд каждые 1.5 сек');
-        } else {
-            // На основном сайте — отправляем синхронизацию состояния при загрузке
-            setTimeout(() => {
-                sendCommand('syncState', state);
-            }, 500);
-        }
-    
+
         // ==========================================
         // 1. СОСТОЯНИЕ
         // ==========================================
-    
+
         const state = {
             keyword: {
                 active: false,
@@ -1390,19 +606,21 @@
                 revealed: false,
             }
         };
-    
+
+        // Загружаем сохранённое состояние
+        loadState();
+
         // ==========================================
-        // 2. ТАБЫ
+        // 2. ВКЛАДКИ ОВЕРЛЕЯ
         // ==========================================
-    
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+
+        document.querySelectorAll('.overlay-tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                if (urlParams.overlay) return;
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.overlay-tab-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 this.classList.add('active');
                 document.getElementById(this.dataset.tab).classList.add('active');
-    
+
                 if (this.dataset.tab === 'tab2') {
                     drawWheel();
                 }
@@ -1411,41 +629,257 @@
                 }
             });
         });
-    
+
         // ==========================================
         // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
         // ==========================================
-    
-        const keywordInput = document.getElementById('keywordInput');
-        const startBtn = document.getElementById('startKeywordBtn');
-        const stopBtn = document.getElementById('stopKeywordBtn');
-        const drawBtn = document.getElementById('drawKeywordBtn');
+
         const participantsGrid = document.getElementById('participantsGrid');
         const participantCount = document.getElementById('participantCount');
         const keywordStatus = document.getElementById('keywordStatus');
-    
-        function addParticipant(name) {
-            if (!state.keyword.active) return;
-            if (state.keyword.participants.includes(name)) return;
-            state.keyword.participants.push(name);
-            renderParticipants();
-            sendCommand('addParticipant', { username: name });
-        }
-    
+        const displayKeyword = document.getElementById('displayKeyword');
+
         function renderParticipants() {
             const list = state.keyword.participants;
             participantCount.textContent = list.length;
+            displayKeyword.textContent = state.keyword.currentKeyword;
+            keywordStatus.textContent = state.keyword.active ? '🟢 Активен' : '🔴 Остановлен';
+            keywordStatus.style.color = state.keyword.active ? '#00ff64' : '#ff4757';
+
             if (list.length === 0) {
-                participantsGrid.innerHTML =
-                    `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>`;
+                participantsGrid.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:20px; font-size:12px;">
+                        Ожидаем участников 😴
+                    </div>
+                `;
                 return;
             }
+
             participantsGrid.innerHTML = list.map(name => `<div class="participant-chip">${name}</div>`).join('');
+            saveState();
         }
-    
+
+        // ==========================================
+        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // ==========================================
+
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const wheelResult = document.getElementById('wheelResult');
+        const defaultColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
+            '#ff9f43', '#10ac84', '#ee5a24'
+        ];
+
+        function drawWheel() {
+            const sectors = state.wheel.sectors;
+            if (sectors.length === 0) {
+                ctx.clearRect(0, 0, 600, 600);
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                ctx.beginPath();
+                ctx.arc(300, 300, 250, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Нет секторов', 300, 300);
+                return;
+            }
+            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+            let startAngle = state.wheel.currentRotation;
+            ctx.clearRect(0, 0, 600, 600);
+            sectors.forEach((sector, i) => {
+                const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
+                const endAngle = startAngle + sliceAngle;
+                ctx.beginPath();
+                ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 280, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                const midAngle = startAngle + sliceAngle / 2;
+                const textRadius = 200;
+                const x = 300 + Math.cos(midAngle) * textRadius;
+                const y = 300 + Math.sin(midAngle) * textRadius;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 4;
+                const label = sector.label.length > 12 ? sector.label.slice(0, 10) + '…' : sector.label;
+                ctx.fillText(label, 0, 0);
+                ctx.restore();
+                startAngle = endAngle;
+            });
+            ctx.beginPath();
+            ctx.arc(300, 300, 280, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = '#ff4757';
+            ctx.shadowColor = 'rgba(255,71,87,0.3)';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(300, 10);
+            ctx.lineTo(285, 30);
+            ctx.lineTo(315, 30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.arc(300, 35, 4, 0, Math.PI * 2);
+            ctx.fill();
+            saveState();
+        }
+
+        // ==========================================
+        // 5. МЕХАНИКА 3: БАНК 98
+        // ==========================================
+
+        const bankGrid = document.getElementById('bankGrid');
+        const activeCells = document.getElementById('activeCells');
+        const eliminatedCells = document.getElementById('eliminatedCells');
+        const winnerDisplay = document.getElementById('winnerDisplay');
+
+        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
+            '🏆', '💍', '🧪', '📜', '🪄'
+        ];
+
+        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
+            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
+        ];
+
+        function generateBankItems() {
+            const items = [];
+            for (let i = 0; i < 98; i++) {
+                const idx = Math.floor(Math.random() * itemIcons.length);
+                items.push({
+                    id: i,
+                    icon: itemIcons[idx],
+                    name: itemNames[idx],
+                });
+            }
+            return items;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function renderBankGrid() {
+            const items = state.bank.items;
+            if (items.length === 0) {
+                state.bank.items = generateBankItems();
+                shuffleArray(state.bank.items);
+                state.bank.eliminated = [];
+                state.bank.winnerIndex = -1;
+                state.bank.revealed = false;
+            }
+
+            const active = items.length - state.bank.eliminated.length;
+            activeCells.textContent = active;
+            eliminatedCells.textContent = state.bank.eliminated.length;
+
+            if (state.bank.revealed && state.bank.winnerIndex >= 0) {
+                winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
+                winnerDisplay.style.color = '#f9ca24';
+            } else {
+                winnerDisplay.textContent = '—';
+                winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
+            }
+
+            bankGrid.innerHTML = items.map((item, index) => {
+                const isEliminated = state.bank.eliminated.includes(index);
+                const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
+                let classes = 'grid-cell';
+                if (isEliminated) classes += ' eliminated';
+                if (isWinner) classes += ' winner';
+                return `
+                    <div class="${classes}" data-index="${index}">
+                        <span class="item-icon">${item.icon}</span>
+                        <span class="item-name">${item.name}</span>
+                        <span class="cell-number">#${index + 1}</span>
+                    </div>
+                `;
+            }).join('');
+            saveState();
+        }
+
+        // ==========================================
+        // 6. СЛУШАТЕЛЬ СОБЫТИЙ (для админки)
+        // ==========================================
+
+        // Слушаем изменения localStorage от админки
+        window.addEventListener('storage', function(e) {
+            if (e.key === STORAGE_KEY && e.newValue) {
+                try {
+                    const data = JSON.parse(e.newValue);
+                    console.log('📥 Получено обновление из админки:', data);
+
+                    // Обновляем состояние
+                    if (data.keyword) {
+                        state.keyword = data.keyword;
+                    }
+                    if (data.wheel) {
+                        state.wheel.sectors = data.wheel.sectors || state.wheel.sectors;
+                        state.wheel.currentRotation = data.wheel.currentRotation || 0;
+                    }
+                    if (data.bank) {
+                        state.bank.items = data.bank.items || [];
+                        state.bank.winnerIndex = data.bank.winnerIndex || -1;
+                        state.bank.eliminated = data.bank.eliminated || [];
+                        state.bank.revealed = data.bank.revealed || false;
+                    }
+
+                    // Перерисовываем UI
+                    renderParticipants();
+                    drawWheel();
+                    renderBankGrid();
+
+                    // Если есть победитель в банке — показываем модалку
+                    if (state.bank.revealed && state.bank.winnerIndex >= 0) {
+                        const winner = state.bank.items[state.bank.winnerIndex];
+                        if (winner) {
+                            document.getElementById('winnerModalName').textContent = `${winner.icon} #${state.bank.winnerIndex + 1}`;
+                            document.getElementById('winnerModalSub').textContent = `🎉 ${winner.icon} ${winner.name}!`;
+                            document.getElementById('winnerModal').classList.add('active');
+                            createConfetti();
+                        }
+                    }
+
+                    // Если есть победитель в ключевом слове — показываем модалку
+                    if (data.showWinner) {
+                        document.getElementById('winnerModalName').textContent = data.showWinner;
+                        document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
+                        document.getElementById('winnerModal').classList.add('active');
+                        createConfetti();
+                    }
+
+                } catch (e) {
+                    console.warn('Ошибка обработки события storage:', e);
+                }
+            }
+        });
+
+        // ==========================================
+        // 7. КОНФЕТТИ
+        // ==========================================
+
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
-            for (let i = 0; i < 50; i++) {
+            for (let i = 0; i < 40; i++) {
                 const confetti = document.createElement('div');
                 confetti.style.cssText = `
                     position: fixed;
@@ -1465,495 +899,38 @@
                 setTimeout(() => confetti.remove(), 5000);
             }
         }
-    
-        startBtn.addEventListener('click', function() {
-            const kw = keywordInput.value.trim();
-            if (!kw) { alert('Введите кодовое слово!'); return; }
-            state.keyword.active = true;
-            state.keyword.currentKeyword = kw;
-            state.keyword.participants = [];
-            renderParticipants();
-            keywordStatus.textContent = 'Активен';
-            keywordStatus.style.color = '#00ff64';
-            this.textContent = '▶️ Идёт набор...';
-            this.disabled = true;
-    
-            sendCommand('startKeyword', { keyword: kw });
-        });
-    
-        stopBtn.addEventListener('click', function() {
-            state.keyword.active = false;
-            keywordStatus.textContent = 'Остановлен';
-            keywordStatus.style.color = '#ff4757';
-            startBtn.textContent = '▶️ Старт';
-            startBtn.disabled = false;
-    
-            sendCommand('stopKeyword');
-        });
-    
-        drawBtn.addEventListener('click', function() {
-            const list = state.keyword.participants;
-            if (list.length === 0) { alert('Нет участников!'); return; }
-            const winner = list[Math.floor(Math.random() * list.length)];
-            document.getElementById('winnerModalName').textContent = winner;
-            document.getElementById('winnerModalSub').textContent = '🎉 Поздравляем!';
-            document.getElementById('winnerModal').classList.add('active');
-            createConfetti();
-    
-            sendCommand('drawKeyword', { winner });
-        });
-    
+
+        // ==========================================
+        // 8. ЗАКРЫТИЕ МОДАЛКИ
+        // ==========================================
+
         document.getElementById('closeWinnerBtn').addEventListener('click', function() {
             document.getElementById('winnerModal').classList.remove('active');
         });
-    
+
         document.getElementById('winnerModal').addEventListener('click', function(e) {
-            if (e.target === this) this.classList.remove('active');
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
         });
-    
-        // Демо-сообщения (только не в оверлее)
-        const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
-            'LightBringer'
-        ];
-        let demoIndex = 0;
-        if (!urlParams.overlay) {
-            setInterval(() => {
-                if (!state.keyword.active) return;
-                const user = demoUsers[demoIndex % demoUsers.length];
-                const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
-                if (msg.toLowerCase().includes(state.keyword.currentKeyword.toLowerCase())) {
-                    addParticipant(user);
-                }
-                demoIndex++;
-            }, 2000);
-        }
-    
+
         // ==========================================
-        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // 9. ИНИЦИАЛИЗАЦИЯ
         // ==========================================
-    
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
-        const spinBtn = document.getElementById('spinBtn');
-        const wheelResult = document.getElementById('wheelResult');
-        const defaultColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0', '#00d2d3',
-            '#ff9f43', '#10ac84', '#ee5a24'
-        ];
-    
-        function drawWheel() {
-            const sectors = state.wheel.sectors;
-            if (sectors.length === 0) {
-                ctx.clearRect(0, 0, 600, 600);
-                ctx.fillStyle = 'rgba(255,255,255,0.05)';
-                ctx.beginPath();
-                ctx.arc(300, 300, 250, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                ctx.font = '24px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('Добавьте сектора', 300, 300);
-                return;
-            }
-            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-            let startAngle = state.wheel.currentRotation;
-            ctx.clearRect(0, 0, 600, 600);
-            sectors.forEach((sector, i) => {
-                const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
-                const endAngle = startAngle + sliceAngle;
-                ctx.beginPath();
-                ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 280, startAngle, endAngle);
-                ctx.closePath();
-                ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                const midAngle = startAngle + sliceAngle / 2;
-                const textRadius = 200;
-                const x = 300 + Math.cos(midAngle) * textRadius;
-                const y = 300 + Math.sin(midAngle) * textRadius;
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 18px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 4;
-                const label = sector.label.length > 12 ? sector.label.slice(0, 10) + '…' : sector.label;
-                ctx.fillText(label, 0, 0);
-                ctx.restore();
-                startAngle = endAngle;
-            });
-            ctx.beginPath();
-            ctx.arc(300, 300, 280, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-            ctx.fillStyle = '#ff4757';
-            ctx.shadowColor = 'rgba(255,71,87,0.5)';
-            ctx.shadowBlur = 20;
-            ctx.beginPath();
-            ctx.moveTo(300, 10);
-            ctx.lineTo(280, 40);
-            ctx.lineTo(320, 40);
-            ctx.closePath();
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(255,255,255,0.2)';
-            ctx.beginPath();
-            ctx.arc(300, 35, 6, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    
-        function spinWheel() {
-            if (state.wheel.isSpinning) return;
-            if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
-            state.wheel.isSpinning = true;
-            spinBtn.classList.add('disabled');
-            canvas.classList.add('spinning');
-            wheelResult.className = '';
-            try {
-                const sectors = state.wheel.sectors;
-                const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-                let rand = Math.random() * totalWeight;
-                let winnerIndex = 0;
-                let accumulated = 0;
-                for (let i = 0; i < sectors.length; i++) {
-                    accumulated += sectors[i].weight;
-                    if (rand <= accumulated) { winnerIndex = i; break; }
-                }
-                const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
-                let winnerStartAngle = 0;
-                for (let i = 0; i < winnerIndex; i++) {
-                    winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
-                }
-                const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
-                const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
-                const duration = 3000 + Math.random() * 1000;
-                const startTime = Date.now();
-                const startRotation = state.wheel.currentRotation;
-    
-                function animate() {
-                    const elapsed = Date.now() - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    const eased = 1 - Math.pow(1 - progress, 5);
-                    const currentAngle = startRotation + (targetAngle - startRotation) * eased;
-                    state.wheel.currentRotation = currentAngle;
-                    drawWheel();
-                    if (progress < 1) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        state.wheel.currentRotation = targetAngle % (Math.PI * 2);
-                        drawWheel();
-                        const winner = sectors[winnerIndex];
-                        wheelResult.className = 'winner';
-                        wheelResult.innerHTML = `🎉 ${winner.label}!`;
-                        state.wheel.isSpinning = false;
-                        spinBtn.classList.remove('disabled');
-                        canvas.classList.remove('spinning');
-                    }
-                }
-                animate();
-            } catch (error) {
-                state.wheel.isSpinning = false;
-                spinBtn.classList.remove('disabled');
-                canvas.classList.remove('spinning');
-                console.error(error);
-            }
-        }
-    
-        // Обработчик клика по SPIN с отправкой команды
-        spinBtn.addEventListener('click', function() {
-            if (urlParams.overlay) {
-                // В оверлее не даём крутить через кнопку (только по команде)
-                return;
-            }
-            spinWheel();
-            sendCommand('spinWheel');
-        });
-    
-        // Экспортируем spinWheel для вызова по команде
-        window.spinWheel = spinWheel;
-    
-        function addSector(label, weight) {
-            if (!label.trim()) { alert('Введите название!'); return; }
-            if (weight < 1) { alert('Вес >= 1'); return; }
-            state.wheel.sectors.push({
-                label: label.trim(),
-                weight: weight,
-                color: defaultColors[state.wheel.sectors.length % defaultColors.length]
-            });
-            renderSectors();
-            drawWheel();
-        }
-    
-        function removeSector(index) {
-            state.wheel.sectors.splice(index, 1);
-            renderSectors();
-            drawWheel();
-        }
-    
-        function renderSectors() {
-            const container = document.getElementById('sectorList');
-            const sectors = state.wheel.sectors;
-            if (sectors.length === 0) {
-                container.innerHTML =
-                    `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">Добавьте сектора</div>`;
-                return;
-            }
-            container.innerHTML = sectors.map((s, i) => `
-                <div class="sector-input">
-                    <span style="color:${s.color}; font-weight:600;">●</span>
-                    <input type="text" value="${s.label}" disabled>
-                    <span style="font-size:13px; color:rgba(255,255,255,0.4);">×${s.weight}</span>
-                    <button class="remove-btn" data-index="${i}">✕</button>
-                </div>
-            `).join('');
-    
-            container.querySelectorAll('.remove-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    removeSector(parseInt(this.dataset.index));
-                });
-            });
-        }
-    
-        document.getElementById('addSectorBtn').addEventListener('click', function() {
-            const nameInput = document.getElementById('sectorNameInput');
-            const weightInput = document.getElementById('sectorWeightInput');
-            addSector(nameInput.value, parseInt(weightInput.value) || 1);
-            nameInput.value = '';
-            weightInput.value = '1';
-        });
-    
-        document.getElementById('resetWheelBtn').addEventListener('click', function() {
-            if (confirm('Удалить все сектора?')) {
-                state.wheel.sectors = [];
-                renderSectors();
-                drawWheel();
-                wheelResult.className = '';
-                wheelResult.textContent = '🎡 Нажмите SPIN';
-            }
-        });
-    
-        renderSectors();
+
+        renderParticipants();
         drawWheel();
-    
-        // ==========================================
-        // 5. МЕХАНИКА 3: БАНК 98
-        // ==========================================
-    
-        const bankGrid = document.getElementById('bankGrid');
-        const totalCells = document.getElementById('totalCells');
-        const activeCells = document.getElementById('activeCells');
-        const eliminatedCells = document.getElementById('eliminatedCells');
-        const winnerDisplay = document.getElementById('winnerDisplay');
-        const startBankBtn = document.getElementById('startBankBtn');
-        const resetBankBtn = document.getElementById('resetBankBtn');
-    
-        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
-            '🏆', '💍', '🧪', '📜', '🪄'
-        ];
-    
-        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
-            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
-        ];
-    
-        function generateBankItems() {
-            const items = [];
-            for (let i = 0; i < 98; i++) {
-                const idx = Math.floor(Math.random() * itemIcons.length);
-                items.push({
-                    id: i,
-                    icon: itemIcons[idx],
-                    name: itemNames[idx],
-                });
-            }
-            return items;
-        }
-    
-        function shuffleArray(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-    
-        function renderBankGrid() {
-            const items = state.bank.items;
-            if (items.length === 0) {
-                state.bank.items = generateBankItems();
-                shuffleArray(state.bank.items);
-                state.bank.eliminated = [];
-                state.bank.winnerIndex = -1;
-                state.bank.revealed = false;
-            }
-    
-            totalCells.textContent = items.length;
-            const active = items.length - state.bank.eliminated.length;
-            activeCells.textContent = active;
-            eliminatedCells.textContent = state.bank.eliminated.length;
-    
-            if (state.bank.revealed && state.bank.winnerIndex >= 0) {
-                winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
-                winnerDisplay.style.color = '#f9ca24';
-            } else {
-                winnerDisplay.textContent = '—';
-                winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
-            }
-    
-            bankGrid.innerHTML = items.map((item, index) => {
-                const isEliminated = state.bank.eliminated.includes(index);
-                const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
-                let classes = 'grid-cell';
-                if (isEliminated) classes += ' eliminated';
-                if (isWinner) classes += ' winner';
-                return `
-                    <div class="${classes}" data-index="${index}">
-                        <span class="item-icon">${item.icon}</span>
-                        <span class="item-name">${item.name}</span>
-                        <span class="cell-number">#${index + 1}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-    
-        function resetBank() {
-            if (state.bank.isRunning) return;
-            state.bank.items = generateBankItems();
-            shuffleArray(state.bank.items);
-            state.bank.eliminated = [];
-            state.bank.winnerIndex = -1;
-            state.bank.revealed = false;
-            renderBankGrid();
-            startBankBtn.textContent = '🎲 Запустить розыгрыш!';
-            startBankBtn.disabled = false;
-            sendCommand('resetBank');
-        }
-    
-        function startBankDraw() {
-            if (state.bank.isRunning) return;
-            if (state.bank.items.length === 0) {
-                resetBank();
-                return;
-            }
-    
-            if (state.bank.revealed && state.bank.winnerIndex >= 0) {
-                resetBank();
-                setTimeout(() => startBankDraw(), 300);
-                return;
-            }
-    
-            state.bank.isRunning = true;
-            state.bank.revealed = false;
-            startBankBtn.textContent = '⏳ Идёт розыгрыш...';
-            startBankBtn.disabled = true;
-    
-            const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
-            state.bank.winnerIndex = winnerIdx;
-    
-            const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
-            const toEliminate = allIndices.filter(i => i !== winnerIdx);
-            shuffleArray(toEliminate);
-    
-            let currentIndex = 0;
-            const totalToEliminate = toEliminate.length;
-    
-            const interval = setInterval(() => {
-                if (currentIndex >= totalToEliminate) {
-                    clearInterval(interval);
-                    state.bank.revealed = true;
-                    renderBankGrid();
-                    state.bank.isRunning = false;
-                    startBankBtn.textContent = '🎲 Запустить розыгрыш!';
-                    startBankBtn.disabled = false;
-    
-                    const winner = state.bank.items[winnerIdx];
-                    const winnerName = `${winner.icon} #${winnerIdx + 1}`;
-                    document.getElementById('winnerModalName').textContent = winnerName;
-                    document.getElementById('winnerModalSub').textContent = `🎉 ${winner.icon} ${winner.name}!`;
-                    document.getElementById('winnerModal').classList.add('active');
-                    createConfetti();
-    
-                    sendCommand('showWinner', { name: winnerName, sub: `🎉 ${winner.icon} ${winner.name}!` });
-                    return;
-                }
-    
-                const idxToEliminate = toEliminate[currentIndex];
-                if (!state.bank.eliminated.includes(idxToEliminate)) {
-                    state.bank.eliminated.push(idxToEliminate);
-                }
-                currentIndex++;
-    
-                renderBankGrid();
-                const active = state.bank.items.length - state.bank.eliminated.length;
-                activeCells.textContent = active;
-                eliminatedCells.textContent = state.bank.eliminated.length;
-    
-            }, 60 + Math.random() * 40);
-        }
-    
-        startBankBtn.addEventListener('click', function() {
-            if (urlParams.overlay) {
-                return;
-            }
-            startBankDraw();
-            sendCommand('startBankDraw');
-        });
-    
-        resetBankBtn.addEventListener('click', function() {
-            if (urlParams.overlay) {
-                return;
-            }
-            resetBank();
-            sendCommand('resetBank');
-        });
-    
-        // Экспортируем для вызова по команде
-        window.startBankDraw = startBankDraw;
-        window.resetBank = resetBank;
-    
-        resetBank();
-    
-        // ==========================================
-        // 6. АДМИНКА
-        // ==========================================
-    
-        document.getElementById('adminToggle').addEventListener('click', function() {
-            const password = prompt('Введите пароль админа:');
-            if (password === 'admin123') {
-                alert('🔓 Добро пожаловать в админ-панель!');
-            } else if (password !== null) {
-                alert('❌ Неверный пароль!');
-            }
-        });
-    
-        // ==========================================
-        // 7. КОНСОЛЬ
-        // ==========================================
-    
-        console.log('🎮 Стример-хаб загружен!');
+        renderBankGrid();
+
+        console.log('🎬 Оверлей загружен!');
         console.log('📦 Состояние:', state);
-        console.log('🔧 Параметры URL:', urlParams);
-        console.log('🔗 API URL:', API_URL);
-        if (urlParams.overlay) {
-            console.log('🎬 РЕЖИМ ОВЕРЛЕЯ ВКЛЮЧЕН');
-            console.log('📺 Показывается вкладка:', urlParams.view || 'все');
-            console.log('🔄 Опрос команд каждые 1.5 секунды');
-        } else {
-            console.log('🖥️ РЕЖИМ УПРАВЛЕНИЯ');
-            console.log('📤 Команды отправляются через API');
-        }
+        console.log('🔄 Слушаем изменения localStorage (ключ: streamer_hub_state)');
+
+        // Экспорт для отладки
         window.state = state;
-        window.resetBank = resetBank;
-        window.startBankDraw = startBankDraw;
-        window.spinWheel = spinWheel;
-        window.sendCommand = sendCommand;
-        window.fetchCommand = fetchCommand;
+        window.renderParticipants = renderParticipants;
+        window.drawWheel = drawWheel;
+        window.renderBankGrid = renderBankGrid;
     </script>
 
 </body>
