@@ -1,15 +1,11 @@
 import { Redis } from '@upstash/redis';
 
-// ===== ПРАВИЛЬНО: используем REST API URL, а не KV_URL =====
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL,      // <- https://faithful-hound-124604.upstash.io
-  token: process.env.KV_REST_API_TOKEN,   // <- gQAAAA...
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
 });
 
-const COMMAND_KEY = 'last_command';
-
 export default async function handler(req, res) {
-  // ===== CORS =====
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,61 +14,69 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST =====
+  // ===== POST — обновить состояние механики =====
   if (req.method === 'POST') {
     try {
-      const { action, data } = req.body;
+      const { mechanic, data } = req.body;
 
-      if (!action) {
-        return res.status(400).json({ error: 'action is required' });
+      if (!mechanic || !data) {
+        return res.status(400).json({ error: 'mechanic and data are required' });
       }
 
-      const command = {
-        action,
-        data: data || null,
-        timestamp: Date.now(),
-      };
+      const key = `${mechanic}_state`;
+      await redis.set(key, JSON.stringify(data));
+      console.log(`📥 Состояние ${mechanic} обновлено:`, data);
 
-      await redis.set(COMMAND_KEY, JSON.stringify(command));
-      console.log('📥 Команда сохранена:', action);
-
-      return res.status(200).json({ success: true, action });
+      return res.status(200).json({ success: true, mechanic });
     } catch (error) {
       console.error('❌ POST ошибка:', error);
       return res.status(500).json({ error: 'Redis error', message: error.message });
     }
   }
 
-  // ===== GET =====
+  // ===== GET — получить состояние механики =====
   if (req.method === 'GET') {
     try {
-      const raw = await redis.get(COMMAND_KEY);
+      const { mechanic } = req.query;
 
-      if (raw === null || raw === undefined) {
+      if (!mechanic) {
+        return res.status(400).json({ error: 'mechanic query param is required' });
+      }
+
+      const key = `${mechanic}_state`;
+      const raw = await redis.get(key);
+
+      if (!raw) {
         return res.status(200).json({ action: null });
       }
 
-      let command;
+      let data;
       if (typeof raw === 'string') {
-        command = JSON.parse(raw);
+        data = JSON.parse(raw);
       } else {
-        command = raw;
+        data = raw;
       }
 
-      await redis.del(COMMAND_KEY);
-      console.log('📤 Команда отправлена:', command.action);
-
-      return res.status(200).json(command);
+      return res.status(200).json(data);
     } catch (error) {
       console.error('❌ GET ошибка:', error);
       return res.status(500).json({ error: 'Redis error', message: error.message });
     }
   }
 
-  // ===== DELETE =====
+  // ===== DELETE — сбросить состояние =====
   if (req.method === 'DELETE') {
     try {
-      await redis.del(COMMAND_KEY);
+      const { mechanic } = req.query;
+
+      if (!mechanic) {
+        return res.status(400).json({ error: 'mechanic query param is required' });
+      }
+
+      const key = `${mechanic}_state`;
+      await redis.del(key);
+      console.log(`🗑️ Состояние ${mechanic} сброшено`);
+
       return res.status(200).json({ success: true });
     } catch (error) {
       return res.status(500).json({ error: 'Redis error', message: error.message });
