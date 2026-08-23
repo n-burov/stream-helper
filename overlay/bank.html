@@ -218,8 +218,7 @@
                 const winnerData = {
                     name: name,
                     emoji: emoji || '🏆',
-                    title: title || 'ПОБЕДИТЕЛЬ!',
-                    subtitle: subtitle || '🎉 Поздравляем!',
+                    title: title || 'ВЫИГРЫШ',
                     tag: tag || '🏆 Банк 98',
                     icon: iconUrl || null,
                     color: color || null,
@@ -258,9 +257,6 @@
             const winnerName = winnerData ? `${winnerData.name || '#'} #${winnerIndex + 1}` : `#${winnerIndex + 1}`;
             const winnerIcon = winnerData ? winnerData.icon : null;
             const winnerColor = winnerData ? winnerData.color : 'ffffff';
-            const winnerSub = winnerData ?
-                `🎉 ${winnerData.icon ? `<img src="${winnerData.icon}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;image-rendering:pixelated;" />` : ''} ${winnerData.name || '#'}!` :
-                `🎉 Ячейка #${winnerIndex + 1}`;
 
             console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
 
@@ -293,8 +289,8 @@
                     sendWinnerToCommonOverlay(
                         winnerName,
                         '🏆',
-                        'ПОБЕДИТЕЛЬ!',
-                        winnerSub,
+                        'ВЫИГРЫШ',
+                        null,
                         '🏆 Банк 98',
                         winnerIcon,
                         winnerColor
