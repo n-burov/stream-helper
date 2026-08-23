@@ -63,16 +63,16 @@
         }
 
         .grid-cell .item-icon {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             object-fit: contain;
             display: block;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
             image-rendering: pixelated;
         }
 
         .grid-cell .item-name {
-            font-size: 5px;
+            font-size: 8px;
             text-align: center;
             max-width: 95%;
             overflow: hidden;
@@ -89,7 +89,11 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 4.5px;
+            font-size: 7px;
+        }
+
+        .grid-cell .cell-number {
+            display: none !important;
         }
 
         .grid-cell.eliminated {
@@ -132,9 +136,9 @@
             .bank-wrapper { padding: 8px; border-radius: 14px; }
             .grid-container { gap: 2px; min-width: 200px; }
             .grid-cell { min-height: 22px; min-width: 22px; border-radius: 3px; }
-            .grid-cell .item-icon { width: 16px; height: 16px; }
-            .grid-cell .item-name { font-size: 4px; }
-            .grid-cell .item-name.line2 { font-size: 3.5px; }
+            .grid-cell .item-icon { width: 18px; height: 18px; }
+            .grid-cell .item-name { font-size: 6px; }
+            .grid-cell .item-name.line2 { font-size: 5px; }
         }
 
         @media (max-width: 480px) {
@@ -142,7 +146,7 @@
             .grid-container { gap: 1.5px; min-width: 140px; }
             .grid-cell { min-height: 16px; min-width: 16px; border-radius: 2px; padding: 1px; }
             .grid-cell .item-icon { width: 12px; height: 12px; }
-            .grid-cell .item-name { font-size: 3px; }
+            .grid-cell .item-name { font-size: 4px; }
             .grid-cell .item-name.line2 { display: none; }
         }
     </style>
@@ -187,12 +191,12 @@
                 const isEliminated = eliminated.includes(index);
                 const isWinner = revealed && index === winnerIndex;
 
-                const data = itemsData && itemsData[index] ? itemsData[index] : { color: 'ffffff', name: item.name || '#' };
+                const data = itemsData && itemsData[index] ? itemsData[index] : { color: 'ffffff', name: item.name || '#',
+                    icon: '' };
                 const color = data.color || 'ffffff';
                 const iconUrl = data.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
 
                 // Если название длинное — делаем вторую строку
-                const nameParts = data.name ? data.name.split(' ') : [];
                 const isLongName = data.name && data.name.length > 14;
 
                 let classes = 'grid-cell';
@@ -289,7 +293,7 @@
             const winnerIcon = winnerData ? winnerData.icon : null;
             const winnerColor = winnerData ? winnerData.color : 'ffffff';
             const winnerSub = winnerData ?
-                `🎉 ${winnerData.icon ? `<img src="${winnerData.icon}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;image-rendering:pixelated;" />` : ''} ${winnerData.name}!` :
+                `🎉 <img src="${winnerData.icon}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;image-rendering:pixelated;" /> ${winnerData.name}!` :
                 `🎉 Ячейка #${winnerIndex + 1}`;
 
             console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
