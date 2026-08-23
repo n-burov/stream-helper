@@ -25,9 +25,9 @@ export default async function handler(req, res) {
 
       const key = `${mechanic}_state`;
       await redis.set(key, JSON.stringify(data));
-      console.log(`📥 Состояние ${mechanic} обновлено`);
+      console.log(`📥 Состояние ${mechanic} обновлено:`, data.status || 'unknown');
 
-      // Если есть победитель — отправляем его в отдельный канал для оверлея
+      // Если есть победитель — отправляем в общий оверлей
       if (data.winner) {
         const winnerData = {
           name: data.winner,
