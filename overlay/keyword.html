@@ -133,60 +133,6 @@
             font-weight: 700;
         }
 
-        .winner-announce {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.88);
-            backdrop-filter: blur(24px);
-            border: 2px solid rgba(249, 202, 36, 0.3);
-            border-radius: 24px;
-            padding: 28px 48px;
-            text-align: center;
-            animation: winnerPop 0.5s ease;
-            z-index: 1000;
-            min-width: 240px;
-        }
-
-        .winner-announce.active {
-            display: block;
-        }
-
-        @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-
-        .winner-announce .emoji {
-            font-size: 44px;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .winner-announce .title {
-            font-size: 24px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #f9ca24, #f0932b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .winner-announce .name {
-            font-size: 32px;
-            font-weight: 700;
-            color: #fff;
-            margin-top: 2px;
-            text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
-        }
-
-        @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
         @media (max-width: 600px) {
             .keyword-wrapper {
                 padding: 10px 14px;
@@ -209,10 +155,6 @@
             .status-badge { font-size: 11px; }
             .count-badge { font-size: 11px; }
             .count-badge strong { font-size: 15px; }
-            .winner-announce { padding: 16px 24px; min-width: 180px; border-radius: 16px; }
-            .winner-announce .name { font-size: 22px; }
-            .winner-announce .title { font-size: 18px; }
-            .winner-announce .emoji { font-size: 32px; }
         }
 
         @media (max-width: 400px) {
@@ -224,10 +166,6 @@
             .status-badge { font-size: 9px; }
             .count-badge { font-size: 9px; }
             .count-badge strong { font-size: 12px; }
-            .winner-announce { padding: 12px 16px; min-width: 140px; border-radius: 12px; }
-            .winner-announce .name { font-size: 18px; }
-            .winner-announce .title { font-size: 14px; }
-            .winner-announce .emoji { font-size: 24px; }
         }
     </style>
 </head>
@@ -250,12 +188,6 @@
         </div>
     </div>
 
-    <div class="winner-announce" id="winnerAnnounce">
-        <span class="emoji">🏆</span>
-        <div class="title">ПОБЕДИТЕЛЬ!</div>
-        <div class="name" id="winnerName">Игрок</div>
-    </div>
-
     <script>
         const MECHANIC = 'keyword';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
@@ -263,33 +195,6 @@
         const displayKeyword = document.getElementById('displayKeyword');
         const statusBadge = document.getElementById('statusBadge');
         const participantCount = document.getElementById('participantCount');
-        const winnerAnnounce = document.getElementById('winnerAnnounce');
-        const winnerName = document.getElementById('winnerName');
-
-        let lastWinner = null;
-
-        function createConfetti() {
-            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
-            for (let i = 0; i < 40; i++) {
-                const confetti = document.createElement('div');
-                confetti.style.cssText = `
-                    position: fixed;
-                    width: ${5 + Math.random() * 8}px;
-                    height: ${5 + Math.random() * 8}px;
-                    background: ${colors[Math.floor(Math.random() * colors.length)]};
-                    left: ${Math.random() * 100}vw;
-                    top: -20px;
-                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
-                    animation-delay: ${Math.random() * 0.5}s;
-                    z-index: 1001;
-                    pointer-events: none;
-                    transform: rotate(${Math.random() * 360}deg);
-                `;
-                document.body.appendChild(confetti);
-                setTimeout(() => confetti.remove(), 5000);
-            }
-        }
 
         function updateStatus(active) {
             if (active) {
@@ -307,17 +212,6 @@
             displayKeyword.textContent = data.keyword || '!лут';
             participantCount.textContent = data.participants?.length || 0;
             updateStatus(data.status === 'active');
-
-            // Показываем победителя, если появился новый
-            if (data.winner && data.winner !== lastWinner) {
-                lastWinner = data.winner;
-                winnerName.textContent = data.winner;
-                winnerAnnounce.classList.add('active');
-                createConfetti();
-                setTimeout(() => {
-                    winnerAnnounce.classList.remove('active');
-                }, 5000);
-            }
         }
 
         async function pollState() {
