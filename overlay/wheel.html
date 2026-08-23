@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оверлей | Колесо фортуны</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: transparent !important;
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 350px;
+            height: 350px;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(145, 70, 255, 0.1);
+            transition: box-shadow 0.3s;
+        }
+
+        #wheelCanvas.spinning {
+            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
+        }
+
+        /* ===== АНОНС ВЫИГРЫША ===== */
+        .winner-announce {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(249, 202, 36, 0.3);
+            border-radius: 20px;
+            padding: 30px 50px;
+            text-align: center;
+            animation: winnerPop 0.5s ease;
+            z-index: 1000;
+        }
+
+        .winner-announce.active {
+            display: block;
+        }
+
+        @keyframes winnerPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .winner-announce .emoji {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .winner-announce .title {
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .winner-announce .name {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 4px;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 480px) {
+            .wheel-wrapper {
+                width: 220px;
+                height: 220px;
+            }
+            .winner-announce { padding: 20px 30px; }
+            .winner-announce .name { font-size: 24px; }
+            .winner-announce .title { font-size: 20px; }
+            .winner-announce .emoji { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wheel-wrapper">
+        <canvas id="wheelCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <!-- АНОНС ВЫИГРЫША -->
+    <div class="winner-announce" id="winnerAnnounce">
+        <span class="emoji">🎉</span>
+        <div class="title">ВЫИГРЫШ!</div>
+        <div class="name" id="winnerName">Сектор</div>
+    </div>
+
+    <script>
+        const API_URL = '/api/webhook';
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const winnerAnnounce = document.getElementById('winnerAnnounce');
+        const winnerName = document.getElementById('winnerName');
+
+        let sectors = [];
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        const defaultColors = [
+            '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
+            '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
+            '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
+        ];
+
+        function drawWheel() {
+            if (sectors.length === 0) {
+                ctx.clearRect(0, 0, 600, 600);
+                ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                ctx.beginPath();
+                ctx.arc(300, 300, 240, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                ctx.font = '20px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Ожидание...', 300, 300);
+                return;
+            }
+
+            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+            let startAngle = currentRotation;
+
+            ctx.clearRect(0, 0, 600, 600);
+
+            sectors.forEach((sector, i) => {
+                const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
+                const endAngle = startAngle + sliceAngle;
+
+                ctx.beginPath();
+                ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 280, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                const midAngle = startAngle + sliceAngle / 2;
+                const textRadius = 195;
+                const x = 300 + Math.cos(midAngle) * textRadius;
+                const y = 300 + Math.sin(midAngle) * textRadius;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 3;
+                const label = sector.label.length > 10 ? sector.label.slice(0, 8) + '…' : sector.label;
+                ctx.fillText(label, 0, 0);
+                ctx.restore();
+
+                startAngle = endAngle;
+            });
+
+            ctx.beginPath();
+            ctx.arc(300, 300, 280, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ff4757';
+            ctx.shadowColor = 'rgba(255,71,87,0.3)';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(300, 6);
+            ctx.lineTo(285, 28);
+            ctx.lineTo(315, 28);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath();
+            ctx.arc(300, 33, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: ${5 + Math.random() * 8}px;
+                    height: ${5 + Math.random() * 8}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -20px;
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
+                    animation-delay: ${Math.random() * 0.5}s;
+                    z-index: 1001;
+                    pointer-events: none;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function showWinner(label) {
+            winnerName.textContent = label;
+            winnerAnnounce.classList.add('active');
+            createConfetti();
+            setTimeout(() => {
+                winnerAnnounce.classList.remove('active');
+            }, 5000);
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            if (sectors.length === 0) return;
+
+            isSpinning = true;
+            canvas.classList.add('spinning');
+
+            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+            let rand = Math.random() * totalWeight;
+            let winnerIndex = 0;
+            let accumulated = 0;
+            for (let i = 0; i < sectors.length; i++) {
+                accumulated += sectors[i].weight;
+                if (rand <= accumulated) { winnerIndex = i; break; }
+            }
+
+            const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
+            let winnerStartAngle = 0;
+            for (let i = 0; i < winnerIndex; i++) {
+                winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
+            }
+            const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
+            const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
+
+            const duration = 3000 + Math.random() * 1000;
+            const startTime = Date.now();
+            const startRotation = currentRotation;
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 5);
+                currentRotation = startRotation + (targetAngle - startRotation) * eased;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    currentRotation = targetAngle % (Math.PI * 2);
+                    drawWheel();
+                    isSpinning = false;
+                    canvas.classList.remove('spinning');
+                    showWinner(sectors[winnerIndex].label);
+                }
+            }
+            animate();
+        }
+
+        function executeCommand(command) {
+            const { action, data } = command;
+
+            switch (action) {
+                case 'syncState':
+                    if (data.wheel) {
+                        sectors = data.wheel.sectors || [];
+                        currentRotation = data.wheel.currentRotation || 0;
+                        drawWheel();
+                    }
+                    break;
+
+                case 'spinWheel':
+                    spinWheel();
+                    break;
+
+                case 'showWinner':
+                    showWinner(data.name);
+                    break;
+            }
+        }
+
+        // Опрос команд
+        async function pollCommands() {
+            try {
+                const response = await fetch(API_URL);
+                const command = await response.json();
+
+                if (command.action) {
+                    console.log('📥 Получена команда:', command.action);
+                    executeCommand(command);
+                }
+            } catch (error) {
+                console.error('❌ Ошибка опроса:', error);
+            }
+        }
+
+        // Запускаем опрос
+        setTimeout(pollCommands, 500);
+        setInterval(pollCommands, 1500);
+
+        // Начальная отрисовка
+        drawWheel();
+
+        console.log('🎬 Оверлей "Колесо фортуны" загружен');
+        console.log('📡 Опрос команд каждые 1.5 секунды');
+    </script>
+</body>
+</html>
