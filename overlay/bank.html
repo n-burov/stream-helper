@@ -22,6 +22,7 @@
         }
 
         .bank-wrapper {
+            display: none;
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(8px);
             border-radius: 20px;
@@ -30,6 +31,10 @@
             max-width: 100%;
             width: fit-content;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .bank-wrapper.active {
+            display: block;
         }
 
         .grid-container {
@@ -49,7 +54,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.15s ease;
             position: relative;
             padding: 2px;
             overflow: hidden;
@@ -87,9 +92,9 @@
         .grid-cell.eliminated {
             background: rgba(255, 0, 0, 0.03);
             border-color: rgba(255, 0, 0, 0.02);
-            transform: scale(0.5);
-            opacity: 0.05;
-            transition: all 0.25s ease;
+            transform: scale(0.4);
+            opacity: 0.03;
+            transition: all 0.3s ease;
         }
 
         .grid-cell.eliminated .item-icon,
@@ -201,7 +206,7 @@
 </head>
 <body>
 
-    <div class="bank-wrapper">
+    <div class="bank-wrapper" id="bankWrapper">
         <div class="grid-container" id="bankGrid">
             <!-- Генерируется JS -->
         </div>
@@ -217,6 +222,7 @@
         const MECHANIC = 'bank';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
 
+        const bankWrapper = document.getElementById('bankWrapper');
         const bankGrid = document.getElementById('bankGrid');
         const winnerAnnounce = document.getElementById('winnerAnnounce');
         const winnerName = document.getElementById('winnerName');
@@ -226,6 +232,8 @@
         let winnerIndex = -1;
         let revealed = false;
         let lastWinner = null;
+        let isRunning = false;
+        let hideTimeout = null;
 
         const itemIcons = [
             '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
@@ -282,6 +290,18 @@
             }).join('');
         }
 
+        function showBank() {
+            bankWrapper.classList.add('active');
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        function hideBank() {
+            bankWrapper.classList.remove('active');
+        }
+
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
             for (let i = 0; i < 40; i++) {
@@ -311,26 +331,92 @@
             winnerName.textContent = name;
             winnerAnnounce.classList.add('active');
             createConfetti();
-            setTimeout(() => {
+
+            // Через 5 секунд скрываем оверлей
+            if (hideTimeout) clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
                 winnerAnnounce.classList.remove('active');
+                hideBank();
+                hideTimeout = null;
             }, 5000);
         }
 
-        function renderState(data) {
-            if (!data || data.status === 'idle') return;
+        function startBankAnimation(data) {
+            if (isRunning) return;
+            if (!data || !data.items) return;
 
-            // Обновляем состояние банка
-            if (data.items) {
-                items = data.items;
-                eliminated = data.eliminated || [];
-                winnerIndex = data.winnerIndex || -1;
-                revealed = data.revealed || false;
+            isRunning = true;
+            showBank();
+
+            // Сохраняем данные
+            items = data.items;
+            winnerIndex = data.winnerIndex || Math.floor(Math.random() * items.length);
+            eliminated = [];
+            revealed = false;
+
+            // Перемешиваем порядок устранения
+            const allIndices = Array.from({ length: items.length }, (_, i) => i);
+            const toEliminate = allIndices.filter(i => i !== winnerIndex);
+            shuffleArray(toEliminate);
+
+            let currentIndex = 0;
+            const totalToEliminate = toEliminate.length;
+
+            // Плавное исчезновение — каждая ячейка с задержкой 50-80ms
+            const interval = setInterval(() => {
+                if (currentIndex >= totalToEliminate) {
+                    clearInterval(interval);
+                    // Показываем победителя
+                    revealed = true;
+                    renderBankGrid();
+
+                    const winner = items[winnerIndex];
+                    const winnerNameText = `${winner.icon} #${winnerIndex + 1}`;
+                    showWinner(winnerNameText);
+
+                    isRunning = false;
+                    return;
+                }
+
+                const idxToEliminate = toEliminate[currentIndex];
+                if (!eliminated.includes(idxToEliminate)) {
+                    eliminated.push(idxToEliminate);
+                }
+                currentIndex++;
                 renderBankGrid();
+
+            }, 50 + Math.random() * 30); // 50-80ms на ячейку
+        }
+
+        function renderState(data) {
+            if (!data || data.status === 'idle') {
+                // Если idle и оверлей виден — скрываем
+                if (bankWrapper.classList.contains('active') && !isRunning) {
+                    hideBank();
+                }
+                return;
             }
 
-            // Показываем победителя
-            if (data.winner) {
-                showWinner(data.winner);
+            // Если статус running — запускаем анимацию
+            if (data.status === 'running' && !isRunning) {
+                startBankAnimation(data);
+                return;
+            }
+
+            // Если статус completed — показываем победителя
+            if (data.status === 'completed' && data.winner) {
+                // Обновляем состояние, если оно изменилось
+                if (data.items) {
+                    items = data.items;
+                    eliminated = data.eliminated || [];
+                    winnerIndex = data.winnerIndex || -1;
+                    revealed = true;
+                    renderBankGrid();
+                }
+                // Показываем победителя, если не показан
+                if (data.winner !== lastWinner) {
+                    showWinner(data.winner);
+                }
             }
         }
 
