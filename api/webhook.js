@@ -1,8 +1,9 @@
 import { Redis } from '@upstash/redis';
 
+// ===== ПРАВИЛЬНО: используем REST API URL, а не KV_URL =====
 const redis = new Redis({
-  url: process.env.KV_URL,
-  token: process.env.KV_REST_API_TOKEN,
+  url: process.env.KV_REST_API_URL,      // <- https://faithful-hound-124604.upstash.io
+  token: process.env.KV_REST_API_TOKEN,   // <- gQAAAA...
 });
 
 const COMMAND_KEY = 'last_command';
@@ -32,7 +33,6 @@ export default async function handler(req, res) {
         timestamp: Date.now(),
       };
 
-      // Сохраняем как строку
       await redis.set(COMMAND_KEY, JSON.stringify(command));
       console.log('📥 Команда сохранена:', action);
 
@@ -48,21 +48,17 @@ export default async function handler(req, res) {
     try {
       const raw = await redis.get(COMMAND_KEY);
 
-      // Если ничего нет — возвращаем null
       if (raw === null || raw === undefined) {
         return res.status(200).json({ action: null });
       }
 
-      // Если raw уже объект — используем его, иначе парсим
       let command;
       if (typeof raw === 'string') {
         command = JSON.parse(raw);
       } else {
-        // Если raw — объект (например, уже распарсенный Redis)
         command = raw;
       }
 
-      // Удаляем команду после прочтения
       await redis.del(COMMAND_KEY);
       console.log('📤 Команда отправлена:', command.action);
 
