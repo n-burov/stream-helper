@@ -22,7 +22,6 @@
             color: #fff;
         }
 
-        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
         .keyword-wrapper {
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(10px);
@@ -39,7 +38,6 @@
             transition: all 0.3s;
         }
 
-        /* ===== ЛЕВАЯ ЧАСТЬ ===== */
         .keyword-left {
             flex: 1;
             min-width: 0;
@@ -73,7 +71,6 @@
             font-size: 15px;
         }
 
-        /* ===== ПРАВАЯ ЧАСТЬ ===== */
         .keyword-right {
             display: flex;
             flex-direction: column;
@@ -136,7 +133,6 @@
             font-weight: 700;
         }
 
-        /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
         .winner-announce {
             display: none;
             position: fixed;
@@ -159,17 +155,9 @@
         }
 
         @keyframes winnerPop {
-            0% {
-                transform: translate(-50%, -50%) scale(0.4);
-                opacity: 0;
-            }
-            60% {
-                transform: translate(-50%, -50%) scale(1.05);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
+            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
 
         .winner-announce .emoji {
@@ -194,19 +182,11 @@
             text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
 
-        /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(110vh) rotate(720deg);
-                opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        /* ===== АДАПТИВ ===== */
         @media (max-width: 600px) {
             .keyword-wrapper {
                 padding: 10px 14px;
@@ -214,17 +194,9 @@
                 border-radius: 12px;
                 flex-wrap: wrap;
             }
-            .keyword-title {
-                font-size: 20px;
-                letter-spacing: 1px;
-            }
-            .keyword-call {
-                font-size: 11px;
-            }
-            .keyword-call strong {
-                font-size: 12px;
-                padding: 1px 8px;
-            }
+            .keyword-title { font-size: 20px; letter-spacing: 1px; }
+            .keyword-call { font-size: 11px; }
+            .keyword-call strong { font-size: 12px; padding: 1px 8px; }
             .keyword-right {
                 flex-direction: row;
                 align-items: center;
@@ -234,89 +206,40 @@
                 padding-top: 4px;
                 border-top: 1px solid rgba(255, 255, 255, 0.04);
             }
-            .status-badge {
-                font-size: 11px;
-            }
-            .count-badge {
-                font-size: 11px;
-            }
-            .count-badge strong {
-                font-size: 15px;
-            }
-            .winner-announce {
-                padding: 16px 24px;
-                min-width: 180px;
-                border-radius: 16px;
-            }
-            .winner-announce .name {
-                font-size: 22px;
-            }
-            .winner-announce .title {
-                font-size: 18px;
-            }
-            .winner-announce .emoji {
-                font-size: 32px;
-            }
+            .status-badge { font-size: 11px; }
+            .count-badge { font-size: 11px; }
+            .count-badge strong { font-size: 15px; }
+            .winner-announce { padding: 16px 24px; min-width: 180px; border-radius: 16px; }
+            .winner-announce .name { font-size: 22px; }
+            .winner-announce .title { font-size: 18px; }
+            .winner-announce .emoji { font-size: 32px; }
         }
 
         @media (max-width: 400px) {
-            .keyword-wrapper {
-                padding: 8px 10px;
-                gap: 6px;
-                border-radius: 10px;
-            }
-            .keyword-title {
-                font-size: 16px;
-                letter-spacing: 0;
-            }
-            .keyword-call {
-                font-size: 10px;
-            }
-            .keyword-call strong {
-                font-size: 10px;
-                padding: 0 6px;
-            }
-            .keyword-right {
-                gap: 8px;
-            }
-            .status-badge {
-                font-size: 9px;
-            }
-            .count-badge {
-                font-size: 9px;
-            }
-            .count-badge strong {
-                font-size: 12px;
-            }
-            .winner-announce {
-                padding: 12px 16px;
-                min-width: 140px;
-                border-radius: 12px;
-            }
-            .winner-announce .name {
-                font-size: 18px;
-            }
-            .winner-announce .title {
-                font-size: 14px;
-            }
-            .winner-announce .emoji {
-                font-size: 24px;
-            }
+            .keyword-wrapper { padding: 8px 10px; gap: 6px; border-radius: 10px; }
+            .keyword-title { font-size: 16px; letter-spacing: 0; }
+            .keyword-call { font-size: 10px; }
+            .keyword-call strong { font-size: 10px; padding: 0 6px; }
+            .keyword-right { gap: 8px; }
+            .status-badge { font-size: 9px; }
+            .count-badge { font-size: 9px; }
+            .count-badge strong { font-size: 12px; }
+            .winner-announce { padding: 12px 16px; min-width: 140px; border-radius: 12px; }
+            .winner-announce .name { font-size: 18px; }
+            .winner-announce .title { font-size: 14px; }
+            .winner-announce .emoji { font-size: 24px; }
         }
     </style>
 </head>
 <body>
 
     <div class="keyword-wrapper">
-        <!-- ЛЕВАЯ ЧАСТЬ: заголовок + призыв -->
         <div class="keyword-left">
             <div class="keyword-title">РОЗЫГРЫШ</div>
             <div class="keyword-call">
                 Отправь в чат <strong id="displayKeyword">!лут</strong>
             </div>
         </div>
-
-        <!-- ПРАВАЯ ЧАСТЬ: статус + участники -->
         <div class="keyword-right">
             <span class="status-badge inactive" id="statusBadge">
                 <span class="dot"></span> Остановлен
@@ -327,25 +250,24 @@
         </div>
     </div>
 
-    <!-- ===== АНОНС ПОБЕДИТЕЛЯ ===== -->
     <div class="winner-announce" id="winnerAnnounce">
         <span class="emoji">🏆</span>
         <div class="title">ПОБЕДИТЕЛЬ!</div>
         <div class="name" id="winnerName">Игрок</div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- ===== JAVASCRIPT ===== -->
-    <!-- ========================================= -->
     <script>
-        const API_URL = '/api/webhook';
+        const MECHANIC = 'keyword';
+        const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
+
         const displayKeyword = document.getElementById('displayKeyword');
         const statusBadge = document.getElementById('statusBadge');
         const participantCount = document.getElementById('participantCount');
         const winnerAnnounce = document.getElementById('winnerAnnounce');
         const winnerName = document.getElementById('winnerName');
 
-        // ===== КОНФЕТТИ =====
+        let lastWinner = null;
+
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
             for (let i = 0; i < 40; i++) {
@@ -369,60 +291,6 @@
             }
         }
 
-        // ===== ВЫПОЛНЕНИЕ КОМАНД =====
-        function executeCommand(command) {
-            const { action, data } = command;
-
-            switch (action) {
-                case 'syncState':
-                    if (data.keyword) {
-                        displayKeyword.textContent = data.keyword.currentKeyword || '!лут';
-                        participantCount.textContent = data.keyword.participants?.length || 0;
-                        updateStatus(data.keyword.active);
-                    }
-                    break;
-
-                case 'startKeyword':
-                    displayKeyword.textContent = data.keyword || '!лут';
-                    participantCount.textContent = '0';
-                    updateStatus(true);
-                    break;
-
-                case 'stopKeyword':
-                    updateStatus(false);
-                    break;
-
-                case 'addParticipant':
-                    const current = parseInt(participantCount.textContent) || 0;
-                    participantCount.textContent = current + 1;
-                    break;
-
-                case 'drawKeyword':
-                    winnerName.textContent = data.winner;
-                    winnerAnnounce.classList.add('active');
-                    createConfetti();
-                    setTimeout(() => {
-                        winnerAnnounce.classList.remove('active');
-                    }, 5000);
-                    break;
-
-                case 'resetKeyword':
-                    participantCount.textContent = '0';
-                    updateStatus(false);
-                    break;
-
-                case 'showWinner':
-                    winnerName.textContent = data.name;
-                    winnerAnnounce.classList.add('active');
-                    createConfetti();
-                    setTimeout(() => {
-                        winnerAnnounce.classList.remove('active');
-                    }, 5000);
-                    break;
-            }
-        }
-
-        // ===== ОБНОВЛЕНИЕ СТАТУСА =====
         function updateStatus(active) {
             if (active) {
                 statusBadge.className = 'status-badge active';
@@ -433,27 +301,40 @@
             }
         }
 
-        // ===== ОПРОС КОМАНД =====
-        async function pollCommands() {
-            try {
-                const response = await fetch(API_URL);
-                const command = await response.json();
+        function renderState(data) {
+            if (!data || data.status === 'idle') return;
 
-                if (command.action) {
-                    console.log('📥 Получена команда:', command.action);
-                    executeCommand(command);
-                }
-            } catch (error) {
-                // тихо игнорируем ошибки опроса
+            displayKeyword.textContent = data.keyword || '!лут';
+            participantCount.textContent = data.participants?.length || 0;
+            updateStatus(data.status === 'active');
+
+            // Показываем победителя, если появился новый
+            if (data.winner && data.winner !== lastWinner) {
+                lastWinner = data.winner;
+                winnerName.textContent = data.winner;
+                winnerAnnounce.classList.add('active');
+                createConfetti();
+                setTimeout(() => {
+                    winnerAnnounce.classList.remove('active');
+                }, 5000);
             }
         }
 
-        // ===== ЗАПУСК =====
-        setTimeout(pollCommands, 500);
-        setInterval(pollCommands, 1500);
+        async function pollState() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                renderState(data);
+            } catch (error) {
+                // тихо
+            }
+        }
+
+        setTimeout(pollState, 500);
+        setInterval(pollState, 1500);
 
         console.log('🎬 Оверлей "Ключевое слово" загружен');
-        console.log('📡 Опрос команд каждые 1.5 секунды');
+        console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
     </script>
 </body>
 </html>
