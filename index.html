@@ -1356,28 +1356,42 @@
         function spinWheel() {
             if (state.wheel.isSpinning) return;
             if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
+        
             state.wheel.isSpinning = true;
             spinBtn.classList.add('disabled');
             canvas.classList.add('spinning');
             wheelResult.className = '';
+        
             try {
                 const sectors = state.wheel.sectors;
                 const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
+        
                 let rand = Math.random() * totalWeight;
                 let winnerIndex = 0;
                 let accumulated = 0;
                 for (let i = 0; i < sectors.length; i++) {
                     accumulated += sectors[i].weight;
-                    if (rand <= accumulated) { winnerIndex = i; break; }
+                    if (rand <= accumulated) {
+                        winnerIndex = i;
+                        break;
+                    }
                 }
+        
                 const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
                 let winnerStartAngle = 0;
                 for (let i = 0; i < winnerIndex; i++) {
                     winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
                 }
                 const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
-                const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
-                const duration = 5000 + Math.random() * 2000;
+        
+                // ===== ТОЛЬКО ЦЕЛЕВОЙ УГОЛ, БЕЗ ЛИШНИХ ОБОРОТОВ =====
+                // Оверлей сам добавит 15 оборотов
+                const targetAngle = -Math.PI / 2 - winnerMidAngle;
+        
+                // Длительность для сайта (короткая анимация)
+                const duration = 15000; // 15 секунд, синхронно с оверлеем
+        
+                // Отправляем в оверлей
                 updateMechanic('wheel', {
                     status: 'spinning',
                     sectors: state.wheel.sectors,
@@ -1386,36 +1400,43 @@
                     winnerLabel: sectors[winnerIndex].label,
                     duration: duration,
                 });
+        
+                // Анимация на сайте (короткая, чтобы не отставать)
                 const startTime = Date.now();
                 const startRotation = state.wheel.currentRotation;
-
+        
                 function animate() {
                     const elapsed = Date.now() - startTime;
                     const progress = Math.min(elapsed / duration, 1);
                     const eased = 1 - Math.pow(1 - progress, 5);
-                    const currentAngle = startRotation + (targetAngle - startRotation) * eased;
+                    const currentAngle = startRotation + (targetAngle + Math.PI * 2 * 15 - startRotation) * eased;
+        
                     state.wheel.currentRotation = currentAngle;
                     drawWheel();
+        
                     if (progress < 1) {
                         requestAnimationFrame(animate);
                     } else {
-                        state.wheel.currentRotation = targetAngle % (Math.PI * 2);
+                        state.wheel.currentRotation = (targetAngle + Math.PI * 2 * 15) % (Math.PI * 2);
                         drawWheel();
+        
                         const winner = sectors[winnerIndex];
                         state.wheel.winner = winner.label;
                         wheelResult.className = 'winner';
                         wheelResult.innerHTML = `🎉 ${winner.label}!`;
+        
                         state.wheel.isSpinning = false;
                         spinBtn.classList.remove('disabled');
                         canvas.classList.remove('spinning');
+        
                         showWinnerOnSite(winner.label);
+        
                         updateMechanic('wheel', {
                             status: 'completed',
                             sectors: state.wheel.sectors,
                             winner: winner.label,
                             emoji: '🎉',
-                            title: 'ВЫИГРЫШ!',
-                            subtitle: '🎊 Поздравляем!',
+                            title: 'ВЫИГРЫШ',
                             tag: '🎡 Колесо фортуны',
                         });
                     }
