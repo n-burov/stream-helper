@@ -160,11 +160,11 @@
         const bankWrapper = document.getElementById('bankWrapper');
         const bankGrid = document.getElementById('bankGrid');
 
-        // ===== СОСТОЯНИЕ =====
         let currentAnimationId = null;
         let isAnimating = false;
         let hideTimeout = null;
         let lastProcessedTimestamp = 0;
+        let isDoneSent = false;
 
         const itemIcons = [
             '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
@@ -235,6 +235,25 @@
             }
         }
 
+        // ===== ОТПРАВКА done НА САЙТ =====
+        async function sendDone() {
+            if (isDoneSent) return;
+            isDoneSent = true;
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mechanic: 'bank',
+                        data: { status: 'done' }
+                    }),
+                });
+                console.log('✅ Отправлено done на сайт');
+            } catch (error) {
+                console.error('❌ Ошибка отправки done:', error);
+            }
+        }
+
         // ===== ОТПРАВКА ПОБЕДИТЕЛЯ В ОБЩИЙ ОВЕРЛЕЙ =====
         async function sendWinnerToCommonOverlay(name, emoji, title, subtitle, tag) {
             try {
@@ -272,6 +291,7 @@
                     clearTimeout(hideTimeout);
                     hideTimeout = null;
                 }
+                isDoneSent = false;
             }
 
             const winner = items[winnerIndex];
@@ -282,6 +302,7 @@
 
             lastProcessedTimestamp = timestamp;
             isAnimating = true;
+            isDoneSent = false;
             showBank();
 
             const eliminated = [];
@@ -305,7 +326,7 @@
                     renderGrid(items, eliminated, winnerIndex, true);
                     isAnimating = false;
 
-                    // ===== ОТПРАВЛЯЕМ ПОБЕДИТЕЛЯ В ОБЩИЙ ОВЕРЛЕЙ =====
+                    // ===== ОТПРАВЛЯЕМ ПОБЕДИТЕЛЯ =====
                     sendWinnerToCommonOverlay(
                         winnerName,
                         '🏆',
@@ -313,6 +334,9 @@
                         winnerSub,
                         '🏆 Банк 98'
                     );
+
+                    // ===== ОТПРАВЛЯЕМ done НА САЙТ =====
+                    sendDone();
 
                     // ===== СКРЫВАЕМСЯ ЧЕРЕЗ 3 СЕКУНДЫ =====
                     if (hideTimeout) clearTimeout(hideTimeout);
@@ -339,7 +363,7 @@
         function renderState(data) {
             if (!data) return;
 
-            if (data.status === 'idle') {
+            if (data.status === 'idle' || data.status === 'done') {
                 if (isAnimating) {
                     if (currentAnimationId) {
                         clearInterval(currentAnimationId);
@@ -353,6 +377,7 @@
                 }
                 hideBank();
                 lastProcessedTimestamp = 0;
+                isDoneSent = false;
                 return;
             }
 
