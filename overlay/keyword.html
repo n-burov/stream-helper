@@ -18,7 +18,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 12px;
             color: #fff;
         }
 
@@ -26,73 +26,77 @@
         .keyword-wrapper {
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 20px 28px;
-            min-width: 240px;
-            max-width: 460px;
+            padding: 14px 22px;
+            min-width: 200px;
+            max-width: 520px;
             width: 100%;
-            text-align: center;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 16px;
             transition: all 0.3s;
         }
 
-        /* ===== ЗАГОЛОВОК ===== */
+        /* ===== ЛЕВАЯ ЧАСТЬ ===== */
+        .keyword-left {
+            flex: 1;
+            min-width: 0;
+        }
+
         .keyword-title {
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 900;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
-            text-shadow: 0 0 40px rgba(249, 202, 36, 0.1);
+            line-height: 1.2;
         }
 
-        /* ===== ПРИЗЫВ ===== */
         .keyword-call {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 10px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
             font-weight: 400;
+            line-height: 1.3;
         }
 
         .keyword-call strong {
             color: #fff;
             font-weight: 700;
             background: rgba(145, 70, 255, 0.2);
-            padding: 2px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(145, 70, 255, 0.15);
-            font-size: 18px;
+            padding: 1px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(145, 70, 255, 0.12);
+            font-size: 15px;
         }
 
-        /* ===== СТАТУС И УЧАСТНИКИ ===== */
-        .keyword-status-row {
+        /* ===== ПРАВАЯ ЧАСТЬ ===== */
+        .keyword-right {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 6px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            flex-shrink: 0;
         }
 
         .status-badge {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 6px;
+            line-height: 1.3;
         }
 
         .status-badge .dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             display: inline-block;
+            flex-shrink: 0;
         }
 
         .status-badge.active .dot {
@@ -118,16 +122,17 @@
         }
 
         .count-badge {
-            font-size: 14px;
+            font-size: 13px;
             color: rgba(255, 255, 255, 0.5);
             display: flex;
             align-items: center;
             gap: 4px;
+            line-height: 1.3;
         }
 
         .count-badge strong {
             color: #fff;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
         }
 
@@ -142,11 +147,11 @@
             backdrop-filter: blur(24px);
             border: 2px solid rgba(249, 202, 36, 0.3);
             border-radius: 24px;
-            padding: 32px 56px;
+            padding: 28px 48px;
             text-align: center;
             animation: winnerPop 0.5s ease;
             z-index: 1000;
-            min-width: 280px;
+            min-width: 240px;
         }
 
         .winner-announce.active {
@@ -168,13 +173,13 @@
         }
 
         .winner-announce .emoji {
-            font-size: 52px;
+            font-size: 44px;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .winner-announce .title {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 900;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
@@ -182,10 +187,10 @@
         }
 
         .winner-announce .name {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 700;
             color: #fff;
-            margin-top: 4px;
+            margin-top: 2px;
             text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
 
@@ -204,58 +209,13 @@
         /* ===== АДАПТИВ ===== */
         @media (max-width: 600px) {
             .keyword-wrapper {
-                padding: 14px 18px;
-                min-width: 180px;
-                border-radius: 16px;
-            }
-            .keyword-title {
-                font-size: 24px;
-                letter-spacing: 2px;
-            }
-            .keyword-call {
-                font-size: 13px;
-            }
-            .keyword-call strong {
-                font-size: 14px;
-                padding: 1px 10px;
-            }
-            .keyword-status-row {
-                gap: 12px;
-                font-size: 12px;
-            }
-            .status-badge {
-                font-size: 12px;
-            }
-            .count-badge {
-                font-size: 12px;
-            }
-            .count-badge strong {
-                font-size: 16px;
-            }
-            .winner-announce {
-                padding: 20px 28px;
-                min-width: 200px;
-                border-radius: 18px;
-            }
-            .winner-announce .name {
-                font-size: 26px;
-            }
-            .winner-announce .title {
-                font-size: 20px;
-            }
-            .winner-announce .emoji {
-                font-size: 38px;
-            }
-        }
-
-        @media (max-width: 400px) {
-            .keyword-wrapper {
-                padding: 10px 12px;
-                min-width: 140px;
+                padding: 10px 14px;
+                gap: 10px;
                 border-radius: 12px;
+                flex-wrap: wrap;
             }
             .keyword-title {
-                font-size: 18px;
+                font-size: 20px;
                 letter-spacing: 1px;
             }
             .keyword-call {
@@ -265,33 +225,82 @@
                 font-size: 12px;
                 padding: 1px 8px;
             }
-            .keyword-status-row {
-                gap: 8px;
-                font-size: 10px;
-                padding-top: 6px;
+            .keyword-right {
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                justify-content: flex-start;
+                padding-top: 4px;
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
             }
             .status-badge {
-                font-size: 10px;
+                font-size: 11px;
             }
             .count-badge {
-                font-size: 10px;
+                font-size: 11px;
             }
             .count-badge strong {
-                font-size: 14px;
+                font-size: 15px;
             }
             .winner-announce {
-                padding: 14px 18px;
-                min-width: 160px;
-                border-radius: 14px;
+                padding: 16px 24px;
+                min-width: 180px;
+                border-radius: 16px;
             }
             .winner-announce .name {
-                font-size: 20px;
+                font-size: 22px;
             }
             .winner-announce .title {
-                font-size: 16px;
+                font-size: 18px;
             }
             .winner-announce .emoji {
-                font-size: 30px;
+                font-size: 32px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .keyword-wrapper {
+                padding: 8px 10px;
+                gap: 6px;
+                border-radius: 10px;
+            }
+            .keyword-title {
+                font-size: 16px;
+                letter-spacing: 0;
+            }
+            .keyword-call {
+                font-size: 10px;
+            }
+            .keyword-call strong {
+                font-size: 10px;
+                padding: 0 6px;
+            }
+            .keyword-right {
+                gap: 8px;
+            }
+            .status-badge {
+                font-size: 9px;
+            }
+            .count-badge {
+                font-size: 9px;
+            }
+            .count-badge strong {
+                font-size: 12px;
+            }
+            .winner-announce {
+                padding: 12px 16px;
+                min-width: 140px;
+                border-radius: 12px;
+            }
+            .winner-announce .name {
+                font-size: 18px;
+            }
+            .winner-announce .title {
+                font-size: 14px;
+            }
+            .winner-announce .emoji {
+                font-size: 24px;
             }
         }
     </style>
@@ -299,16 +308,16 @@
 <body>
 
     <div class="keyword-wrapper">
-        <!-- ЗАГОЛОВОК -->
-        <div class="keyword-title">РОЗЫГРЫШ</div>
-
-        <!-- ПРИЗЫВ -->
-        <div class="keyword-call">
-            Отправь в чат <strong id="displayKeyword">!лут</strong>
+        <!-- ЛЕВАЯ ЧАСТЬ: заголовок + призыв -->
+        <div class="keyword-left">
+            <div class="keyword-title">РОЗЫГРЫШ</div>
+            <div class="keyword-call">
+                Отправь в чат <strong id="displayKeyword">!лут</strong>
+            </div>
         </div>
 
-        <!-- СТАТУС И УЧАСТНИКИ -->
-        <div class="keyword-status-row">
+        <!-- ПРАВАЯ ЧАСТЬ: статус + участники -->
+        <div class="keyword-right">
             <span class="status-badge inactive" id="statusBadge">
                 <span class="dot"></span> Остановлен
             </span>
