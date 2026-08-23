@@ -762,6 +762,63 @@
             font-size: 14px;
         }
 
+        /* ===== ПОЛЯ ДЛЯ ID ПРЕДМЕТОВ ===== */
+        .item-ids-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 15px;
+        }
+
+        .item-ids-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .item-ids-grid::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .item-id-field {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .item-id-field .num {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.2);
+            min-width: 28px;
+        }
+
+        .item-id-field input {
+            flex: 1;
+            padding: 4px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 12px;
+            min-width: 0;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .item-id-field input:focus {
+            outline: none;
+            border-color: #9146ff;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -824,6 +881,10 @@
                 flex-wrap: wrap;
                 gap: 4px;
             }
+            .item-ids-grid {
+                grid-template-columns: 1fr 1fr;
+                max-height: 300px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -861,6 +922,18 @@
             }
             .grid-cell.winner {
                 transform: scale(1.05);
+            }
+            .item-ids-grid {
+                grid-template-columns: 1fr;
+                max-height: 250px;
+            }
+            .item-id-field .num {
+                font-size: 8px;
+                min-width: 22px;
+            }
+            .item-id-field input {
+                font-size: 10px;
+                padding: 2px 4px;
             }
         }
     </style>
@@ -977,6 +1050,19 @@
                 </span>
             </div>
 
+            <!-- ===== КНОПКИ УПРАВЛЕНИЯ ===== -->
+            <div class="control-buttons">
+                <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
+                <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
+                <button class="btn btn-primary" id="loadItemsBtn">📥 Загрузить предметы</button>
+            </div>
+
+            <!-- ===== 98 ПОЛЕЙ ДЛЯ ID ПРЕДМЕТОВ ===== -->
+            <div class="item-ids-grid" id="itemIdsGrid">
+                <!-- Генерируются JS -->
+            </div>
+
+            <!-- ===== СТАТУС БАНКА ===== -->
             <div class="draw-status">
                 <div class="info">
                     <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
@@ -984,12 +1070,9 @@
                     <span>❌ Выбыло: <strong id="eliminatedCells">0</strong></span>
                     <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.3);">—</strong></span>
                 </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
-                    <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
-                </div>
             </div>
 
+            <!-- ===== СЕТКА БАНКА ===== -->
             <div class="grid-container" id="bankGrid">
                 <!-- Ячейки генерируются JS -->
             </div>
@@ -1057,11 +1140,14 @@
             },
             bank: {
                 items: [],
+                itemsData: [],
+                itemIds: [],
                 winnerIndex: -1,
                 eliminated: [],
                 isRunning: false,
                 revealed: false,
                 winner: null,
+                isLoading: false,
             },
             history: [],
         };
@@ -1243,10 +1329,8 @@
             const winner = list[Math.floor(Math.random() * list.length)];
             state.keyword.winner = winner;
 
-            // Показываем на сайте
             showWinnerOnSite(winner);
 
-            // Отправляем в общий оверлей
             updateMechanic('keyword', {
                 status: 'completed',
                 keyword: state.keyword.currentKeyword,
@@ -1446,7 +1530,6 @@
 
                 const duration = 5000 + Math.random() * 2000;
 
-                // Отправляем в оверлей колеса
                 updateMechanic('wheel', {
                     status: 'spinning',
                     sectors: state.wheel.sectors,
@@ -1456,7 +1539,6 @@
                     duration: duration,
                 });
 
-                // Анимация на сайте
                 const startTime = Date.now();
                 const startRotation = state.wheel.currentRotation;
 
@@ -1484,10 +1566,8 @@
                         spinBtn.classList.remove('disabled');
                         canvas.classList.remove('spinning');
 
-                        // Показываем на сайте
                         showWinnerOnSite(winner.label);
 
-                        // Отправляем в общий оверлей
                         updateMechanic('wheel', {
                             status: 'completed',
                             sectors: state.wheel.sectors,
@@ -1594,7 +1674,7 @@
         drawWheel();
 
         // ==========================================
-        // 5. МЕХАНИКА 3: БАНК 98
+        // 5. МЕХАНИКА 3: БАНК 98 (С ID ПРЕДМЕТОВ)
         // ==========================================
 
         const bankGrid = document.getElementById('bankGrid');
@@ -1604,28 +1684,114 @@
         const winnerDisplay = document.getElementById('winnerDisplay');
         const startBankBtn = document.getElementById('startBankBtn');
         const resetBankBtn = document.getElementById('resetBankBtn');
+        const loadItemsBtn = document.getElementById('loadItemsBtn');
+        const itemIdsGrid = document.getElementById('itemIdsGrid');
 
-        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
-            '🏆', '💍', '🧪', '📜', '🪄'
-        ];
-
-        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
-            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
-        ];
-
-        function generateBankItems() {
-            const items = [];
+        // ===== ГЕНЕРАЦИЯ 98 ПОЛЕЙ ДЛЯ ID =====
+        function generateItemIdFields() {
+            let html = '';
             for (let i = 0; i < 98; i++) {
-                const idx = Math.floor(Math.random() * itemIcons.length);
-                items.push({
-                    id: i,
-                    icon: itemIcons[idx],
-                    name: itemNames[idx],
-                });
+                const defaultId = 22794 + i;
+                html += `
+                    <div class="item-id-field">
+                        <span class="num">#${i+1}</span>
+                        <input type="number" class="item-id-input" data-index="${i}" value="${defaultId}" />
+                    </div>
+                `;
             }
-            return items;
+            itemIdsGrid.innerHTML = html;
         }
 
+        // ===== ЗАГРУЗКА ПРЕДМЕТОВ ИЗ API =====
+        async function loadItemsFromAPI() {
+            if (state.bank.isLoading) return;
+            state.bank.isLoading = true;
+            loadItemsBtn.textContent = '⏳ Загрузка...';
+            loadItemsBtn.disabled = true;
+
+            const inputs = document.querySelectorAll('.item-id-input');
+            const ids = Array.from(inputs).map(input => parseInt(input.value) || 22794);
+
+            state.bank.itemIds = ids;
+            state.bank.itemsData = [];
+            state.bank.items = [];
+
+            let loadedCount = 0;
+            const total = ids.length;
+
+            for (const id of ids) {
+                try {
+                    const response = await fetch(`https://sirus.su/api/base/22/details/item/${id}`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+
+                    if (data && data.item) {
+                        const item = data.item;
+                        const quality = item.quality || 0;
+                        const color = item.color || 'ffffff';
+                        const name = item.name || `Предмет #${id}`;
+                        const icon = item.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
+
+                        state.bank.itemsData.push({
+                            id: id,
+                            name: name,
+                            icon: icon,
+                            color: color,
+                            quality: quality,
+                        });
+                        state.bank.items.push({
+                            id: id,
+                            icon: icon,
+                            name: name,
+                        });
+                    } else {
+                        state.bank.itemsData.push({
+                            id: id,
+                            name: `#${id}`,
+                            icon: '❓',
+                            color: '666666',
+                            quality: 0,
+                        });
+                        state.bank.items.push({
+                            id: id,
+                            icon: '❓',
+                            name: `#${id}`,
+                        });
+                    }
+                } catch (error) {
+                    console.warn(`❌ Ошибка загрузки предмета ${id}:`, error);
+                    state.bank.itemsData.push({
+                        id: id,
+                        name: `Ошибка #${id}`,
+                        icon: '❌',
+                        color: 'ff0000',
+                        quality: 0,
+                    });
+                    state.bank.items.push({
+                        id: id,
+                        icon: '❌',
+                        name: `#${id}`,
+                    });
+                }
+                loadedCount++;
+                loadItemsBtn.textContent = `⏳ Загрузка... ${loadedCount}/${total}`;
+            }
+
+            state.bank.isLoading = false;
+            loadItemsBtn.textContent = '📥 Загрузить предметы';
+            loadItemsBtn.disabled = false;
+
+            // Перемешиваем ячейки и рендерим
+            shuffleArray(state.bank.items);
+            state.bank.eliminated = [];
+            state.bank.winnerIndex = -1;
+            state.bank.revealed = false;
+            state.bank.winner = null;
+            renderBankGrid();
+            console.log('✅ Загружено', state.bank.itemsData.length, 'предметов');
+        }
+
+        // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
         function shuffleArray(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1634,14 +1800,16 @@
             return arr;
         }
 
+        // ===== РЕНДЕР СЕТКИ БАНКА =====
         function renderBankGrid() {
             const items = state.bank.items;
             if (items.length === 0) {
-                state.bank.items = generateBankItems();
-                shuffleArray(state.bank.items);
-                state.bank.eliminated = [];
-                state.bank.winnerIndex = -1;
-                state.bank.revealed = false;
+                bankGrid.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
+                        Загрузите предметы (кнопка "Загрузить предметы")
+                    </div>
+                `;
+                return;
             }
 
             totalCells.textContent = items.length;
@@ -1650,32 +1818,46 @@
             eliminatedCells.textContent = state.bank.eliminated.length;
 
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
-                winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
-                winnerDisplay.style.color = '#f9ca24';
+                const winner = state.bank.itemsData[state.bank.winnerIndex];
+                if (winner) {
+                    const color = winner.color || 'ffffff';
+                    winnerDisplay.textContent = `${winner.icon} #${state.bank.winnerIndex + 1}`;
+                    winnerDisplay.style.color = `#${color}`;
+                } else {
+                    winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
+                    winnerDisplay.style.color = '#f9ca24';
+                }
             } else {
                 winnerDisplay.textContent = '—';
                 winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
             }
 
+            const itemsData = state.bank.itemsData || [];
             bankGrid.innerHTML = items.map((item, index) => {
                 const isEliminated = state.bank.eliminated.includes(index);
                 const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
+
+                const itemData = itemsData[index] || { color: 'ffffff', name: item.name || '#' };
+                const color = itemData.color || 'ffffff';
+
                 let classes = 'grid-cell';
                 if (isEliminated) classes += ' eliminated';
                 if (isWinner) classes += ' winner';
+
                 return `
-                    <div class="${classes}" data-index="${index}">
+                    <div class="${classes}" data-index="${index}" ${isWinner ? `style="border-color: #${color}; box-shadow: 0 0 20px rgba(${parseInt(color.slice(0,2), 16)}, ${parseInt(color.slice(2,4), 16)}, ${parseInt(color.slice(4,6), 16)}, 0.3);"` : ''}>
                         <span class="item-icon">${item.icon}</span>
-                        <span class="item-name">${item.name}</span>
+                        <span class="item-name" style="color: #${color};">${item.name}</span>
                         <span class="cell-number">#${index + 1}</span>
                     </div>
                 `;
             }).join('');
         }
 
+        // ===== resetBank =====
         function resetBank() {
             if (state.bank.isRunning) return;
-            state.bank.items = generateBankItems();
+            state.bank.items = [...state.bank.items];
             shuffleArray(state.bank.items);
             state.bank.eliminated = [];
             state.bank.winnerIndex = -1;
@@ -1688,6 +1870,7 @@
             updateMechanic('bank', {
                 status: 'idle',
                 items: state.bank.items,
+                itemsData: state.bank.itemsData,
                 eliminated: [],
                 winnerIndex: -1,
                 revealed: false,
@@ -1695,87 +1878,82 @@
             });
         }
 
+        // ===== startBankDraw =====
         function startBankDraw() {
             if (state.bank.isRunning) return;
             if (state.bank.items.length === 0) {
-                resetBank();
+                alert('Сначала загрузите предметы!');
                 return;
             }
-        
+
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 resetBank();
                 setTimeout(() => startBankDraw(), 300);
                 return;
             }
-        
+
             state.bank.isRunning = true;
             state.bank.revealed = false;
             startBankBtn.textContent = '⏳ Идёт розыгрыш...';
             startBankBtn.disabled = true;
-        
+
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
             state.bank.winnerIndex = winnerIdx;
             state.bank.winner = state.bank.items[winnerIdx];
-        
-            // ===== ОТПРАВЛЯЕМ КОМАНДУ В ОВЕРЛЕЙ =====
+
             updateMechanic('bank', {
                 status: 'running',
                 items: state.bank.items,
+                itemsData: state.bank.itemsData,
                 winnerIndex: state.bank.winnerIndex,
                 timestamp: Date.now(),
             });
-        
+
             // ===== СИМУЛИРУЕМ АНИМАЦИЮ НА САЙТЕ =====
             const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIdx);
             shuffleArray(toEliminate);
-        
+
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
-        
+
             const interval = setInterval(() => {
                 if (currentIndex >= totalToEliminate) {
                     clearInterval(interval);
                     state.bank.revealed = true;
                     renderBankGrid();
-        
-                    // ===== НЕ СБРАСЫВАЕМ isRunning ЗДЕСЬ — ЖДЁМ done ОТ ОВЕРЛЕЯ =====
-                    const winner = state.bank.items[winnerIdx];
-                    const winnerName = `${winner.icon} #${winnerIdx + 1}`;
-                    const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
-        
-                    showWinnerOnSite(winnerName, winnerSub);
                     return;
                 }
-        
+
                 const idxToEliminate = toEliminate[currentIndex];
                 if (!state.bank.eliminated.includes(idxToEliminate)) {
                     state.bank.eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
                 renderBankGrid();
-        
+
                 const active = state.bank.items.length - state.bank.eliminated.length;
                 activeCells.textContent = active;
                 eliminatedCells.textContent = state.bank.eliminated.length;
-        
+
             }, 60 + Math.random() * 40);
-        
+
             // ===== СЛУШАЕМ done ОТ ОВЕРЛЕЯ =====
             function waitForBankDone() {
                 fetch(`/api/webhook?mechanic=bank`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.status === 'done') {
-                            // Оверлей закончил анимацию
                             state.bank.isRunning = false;
                             startBankBtn.textContent = '🎲 Запустить розыгрыш!';
                             startBankBtn.disabled = false;
-                            // Сбрасываем состояние банка в idle
-                            resetBank();
+                            const winner = state.bank.items[winnerIdx];
+                            const winnerData = state.bank.itemsData[winnerIdx];
+                            const winnerName = winnerData ? `${winnerData.icon} #${winnerIdx + 1}` : `#${winnerIdx + 1}`;
+                            const winnerSub = winnerData ? `🎉 ${winnerData.icon} ${winnerData.name}!` : `🎉 Ячейка #${winnerIdx + 1}`;
+                            showWinnerOnSite(winnerName, winnerSub);
                             console.log('✅ Банк завершил работу, кнопка разблокирована');
                         } else {
-                            // Если ещё не done — проверяем через 500ms
                             setTimeout(waitForBankDone, 500);
                         }
                     })
@@ -1783,15 +1961,23 @@
                         setTimeout(waitForBankDone, 500);
                     });
             }
-        
-            // Запускаем ожидание done
+
             setTimeout(waitForBankDone, 500);
         }
 
-        startBankBtn.addEventListener('click', startBankDraw);
+        // ===== ИНИЦИАЛИЗАЦИЯ =====
+        generateItemIdFields();
+
+        loadItemsBtn.addEventListener('click', loadItemsFromAPI);
         resetBankBtn.addEventListener('click', resetBank);
+        startBankBtn.addEventListener('click', startBankDraw);
 
         renderBankGrid();
+
+        // ===== АВТОЗАГРУЗКА ПРИ СТАРТЕ =====
+        setTimeout(() => {
+            loadItemsFromAPI();
+        }, 1000);
 
         // ==========================================
         // 6. АДМИНКА
@@ -1818,6 +2004,7 @@
         window.startBankDraw = startBankDraw;
         window.spinWheel = spinWheel;
         window.updateMechanic = updateMechanic;
+        window.loadItemsFromAPI = loadItemsFromAPI;
     </script>
 </body>
 </html>
