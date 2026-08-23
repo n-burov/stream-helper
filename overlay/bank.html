@@ -62,30 +62,34 @@
             min-width: 28px;
         }
 
-        .grid-cell .cell-number {
-            font-size: 6px;
-            color: rgba(255, 255, 255, 0.1);
-            position: absolute;
-            bottom: 1px;
-            right: 3px;
-            font-weight: 400;
-            line-height: 1;
-            user-select: none;
-        }
-
         .grid-cell .item-icon {
-            font-size: 16px;
-            line-height: 1.2;
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 1px;
+            image-rendering: pixelated;
         }
 
         .grid-cell .item-name {
             font-size: 5px;
             text-align: center;
-            max-width: 90%;
+            max-width: 95%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             line-height: 1.2;
+            font-weight: 500;
+        }
+
+        .grid-cell .item-name.line2 {
+            white-space: normal;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 4.5px;
         }
 
         .grid-cell.eliminated {
@@ -97,8 +101,7 @@
         }
 
         .grid-cell.eliminated .item-icon,
-        .grid-cell.eliminated .item-name,
-        .grid-cell.eliminated .cell-number {
+        .grid-cell.eliminated .item-name {
             opacity: 0.1;
         }
 
@@ -129,17 +132,18 @@
             .bank-wrapper { padding: 8px; border-radius: 14px; }
             .grid-container { gap: 2px; min-width: 200px; }
             .grid-cell { min-height: 22px; min-width: 22px; border-radius: 3px; }
-            .grid-cell .item-icon { font-size: 12px; }
-            .grid-cell .item-name { display: none; }
-            .grid-cell .cell-number { font-size: 5px; }
+            .grid-cell .item-icon { width: 16px; height: 16px; }
+            .grid-cell .item-name { font-size: 4px; }
+            .grid-cell .item-name.line2 { font-size: 3.5px; }
         }
 
         @media (max-width: 480px) {
             .bank-wrapper { padding: 6px; border-radius: 10px; }
             .grid-container { gap: 1.5px; min-width: 140px; }
             .grid-cell { min-height: 16px; min-width: 16px; border-radius: 2px; padding: 1px; }
-            .grid-cell .item-icon { font-size: 9px; }
-            .grid-cell .cell-number { font-size: 4px; bottom: 1px; right: 1px; }
+            .grid-cell .item-icon { width: 12px; height: 12px; }
+            .grid-cell .item-name { font-size: 3px; }
+            .grid-cell .item-name.line2 { display: none; }
         }
     </style>
 </head>
@@ -185,6 +189,11 @@
 
                 const data = itemsData && itemsData[index] ? itemsData[index] : { color: 'ffffff', name: item.name || '#' };
                 const color = data.color || 'ffffff';
+                const iconUrl = data.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
+
+                // Если название длинное — делаем вторую строку
+                const nameParts = data.name ? data.name.split(' ') : [];
+                const isLongName = data.name && data.name.length > 14;
 
                 let classes = 'grid-cell';
                 if (isEliminated) classes += ' eliminated';
@@ -192,9 +201,8 @@
 
                 return `
                     <div class="${classes}" data-index="${index}" ${isWinner ? `style="border-color: #${color}; box-shadow: 0 0 20px rgba(${parseInt(color.slice(0,2), 16)}, ${parseInt(color.slice(2,4), 16)}, ${parseInt(color.slice(4,6), 16)}, 0.3);"` : ''}>
-                        <span class="item-icon">${item.icon}</span>
-                        <span class="item-name" style="color: #${color};">${item.name}</span>
-                        <span class="cell-number">#${index + 1}</span>
+                        <img class="item-icon" src="${iconUrl}" alt="${data.name || '#'}" loading="lazy" />
+                        <span class="item-name ${isLongName ? 'line2' : ''}" style="color: #${color};">${data.name || '#'}</span>
                     </div>
                 `;
             }).join('');
@@ -235,7 +243,7 @@
             }
         }
 
-        async function sendWinnerToCommonOverlay(name, emoji, title, subtitle, tag) {
+        async function sendWinnerToCommonOverlay(name, emoji, title, subtitle, tag, iconUrl, color) {
             try {
                 const winnerData = {
                     name: name,
@@ -243,6 +251,8 @@
                     title: title || 'ПОБЕДИТЕЛЬ!',
                     subtitle: subtitle || '🎉 Поздравляем!',
                     tag: tag || '🏆 Банк 98',
+                    icon: iconUrl || null,
+                    color: color || null,
                 };
                 await fetch(WINNER_API_URL, {
                     method: 'POST',
@@ -275,8 +285,12 @@
             }
 
             const winnerData = itemsData && itemsData[winnerIndex] ? itemsData[winnerIndex] : null;
-            const winnerName = winnerData ? `${winnerData.icon} #${winnerIndex + 1}` : `#${winnerIndex + 1}`;
-            const winnerSub = winnerData ? `🎉 ${winnerData.icon} ${winnerData.name}!` : `🎉 Ячейка #${winnerIndex + 1}`;
+            const winnerName = winnerData ? `${winnerData.name} #${winnerIndex + 1}` : `#${winnerIndex + 1}`;
+            const winnerIcon = winnerData ? winnerData.icon : null;
+            const winnerColor = winnerData ? winnerData.color : 'ffffff';
+            const winnerSub = winnerData ?
+                `🎉 ${winnerData.icon ? `<img src="${winnerData.icon}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;image-rendering:pixelated;" />` : ''} ${winnerData.name}!` :
+                `🎉 Ячейка #${winnerIndex + 1}`;
 
             console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
 
@@ -311,7 +325,9 @@
                         '🏆',
                         'ПОБЕДИТЕЛЬ!',
                         winnerSub,
-                        '🏆 Банк 98'
+                        '🏆 Банк 98',
+                        winnerIcon,
+                        winnerColor
                     );
 
                     sendDone();
