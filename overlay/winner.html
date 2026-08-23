@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Оверлей | Анонс победителя</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: transparent !important;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .winner-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(24px);
+            border: 2px solid rgba(249, 202, 36, 0.25);
+            border-radius: 28px;
+            padding: 40px 64px;
+            text-align: center;
+            z-index: 1000;
+            min-width: 280px;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .winner-container.active {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .winner-container .emoji {
+            font-size: 56px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .winner-container .title {
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .winner-container .subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 2px;
+        }
+
+        .winner-container .name {
+            font-size: 40px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 6px;
+            text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
+        }
+
+        .winner-container .mechanic-tag {
+            display: inline-block;
+            font-size: 12px;
+            padding: 3px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            .winner-container {
+                padding: 24px 32px;
+                min-width: 200px;
+                border-radius: 20px;
+            }
+            .winner-container .name {
+                font-size: 28px;
+            }
+            .winner-container .title {
+                font-size: 20px;
+            }
+            .winner-container .emoji {
+                font-size: 40px;
+            }
+            .winner-container .subtitle {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .winner-container {
+                padding: 16px 20px;
+                min-width: 160px;
+                border-radius: 16px;
+            }
+            .winner-container .name {
+                font-size: 20px;
+            }
+            .winner-container .title {
+                font-size: 16px;
+            }
+            .winner-container .emoji {
+                font-size: 32px;
+            }
+            .winner-container .subtitle {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="winner-container" id="winnerContainer">
+        <span class="emoji" id="winnerEmoji">🏆</span>
+        <div class="title" id="winnerTitle">ПОБЕДИТЕЛЬ!</div>
+        <div class="subtitle" id="winnerSubtitle">🎉 Поздравляем!</div>
+        <div class="name" id="winnerName">Игрок</div>
+        <div class="mechanic-tag" id="mechanicTag">🎯 Ключевое слово</div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 0. API
+        // ==========================================
+
+        const WINNER_API_URL = '/api/winner';
+
+        // ==========================================
+        // 1. ЭЛЕМЕНТЫ
+        // ==========================================
+
+        const container = document.getElementById('winnerContainer');
+        const emojiEl = document.getElementById('winnerEmoji');
+        const titleEl = document.getElementById('winnerTitle');
+        const subtitleEl = document.getElementById('winnerSubtitle');
+        const nameEl = document.getElementById('winnerName');
+        const tagEl = document.getElementById('mechanicTag');
+
+        let hideTimeout = null;
+        let currentWinner = null;
+
+        // ==========================================
+        // 2. КОНФЕТТИ
+        // ==========================================
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: ${5 + Math.random() * 8}px;
+                    height: ${5 + Math.random() * 8}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -20px;
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
+                    animation-delay: ${Math.random() * 0.5}s;
+                    z-index: 1001;
+                    pointer-events: none;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // ==========================================
+        // 3. ПОКАЗ ПОБЕДИТЕЛЯ
+        // ==========================================
+
+        function showWinner(data) {
+            // Если тот же победитель уже показывается — не дублируем
+            if (currentWinner === data.name && container.classList.contains('active')) return;
+
+            currentWinner = data.name;
+
+            // Обновляем содержимое
+            emojiEl.textContent = data.emoji || '🏆';
+            titleEl.textContent = data.title || 'ПОБЕДИТЕЛЬ!';
+            subtitleEl.textContent = data.subtitle || '🎉 Поздравляем!';
+            nameEl.textContent = data.name;
+            tagEl.textContent = data.tag || '🎯 Розыгрыш';
+
+            // Показываем с анимацией
+            container.classList.add('active');
+            createConfetti();
+
+            // Скрываем через 5 секунд
+            if (hideTimeout) clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                container.classList.remove('active');
+                // Сбрасываем currentWinner через небольшую задержку, чтобы не повторять
+                setTimeout(() => {
+                    currentWinner = null;
+                }, 300);
+                hideTimeout = null;
+            }, 5000);
+        }
+
+        // ==========================================
+        // 4. ОПРОС API
+        // ==========================================
+
+        async function pollWinner() {
+            try {
+                const response = await fetch(WINNER_API_URL);
+                const data = await response.json();
+
+                if (data && data.name) {
+                    showWinner(data);
+                }
+            } catch (error) {
+                // тихо
+            }
+        }
+
+        setTimeout(pollWinner, 500);
+        setInterval(pollWinner, 1500);
+
+        console.log('🎬 Оверлей "Анонс победителя" загружен');
+        console.log('📡 Опрос каждые 1.5 секунды');
+    </script>
+</body>
+</html>
