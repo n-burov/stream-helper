@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оверлей | Банк 98</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: transparent !important;
+            color: #fff;
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(14, 1fr);
+            gap: 2px;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 1px;
+            overflow: hidden;
+            min-height: 0;
+            min-width: 0;
+        }
+
+        .grid-cell .cell-number {
+            font-size: 5px;
+            color: rgba(255, 255, 255, 0.08);
+            position: absolute;
+            bottom: 1px;
+            right: 2px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .grid-cell .item-icon {
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .grid-cell .item-name {
+            font-size: 4px;
+            color: rgba(255, 255, 255, 0.12);
+            text-align: center;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+
+        .grid-cell.eliminated {
+            background: rgba(255, 0, 0, 0.02);
+            border-color: rgba(255, 0, 0, 0.02);
+            transform: scale(0.5);
+            opacity: 0.04;
+            transition: all 0.25s ease;
+        }
+
+        .grid-cell.eliminated .item-icon,
+        .grid-cell.eliminated .item-name,
+        .grid-cell.eliminated .cell-number {
+            opacity: 0.1;
+        }
+
+        .grid-cell.winner {
+            background: rgba(249, 202, 36, 0.15);
+            border-color: #f9ca24;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(249, 202, 36, 0.15);
+            animation: winnerPulse 0.8s ease-in-out infinite alternate;
+            z-index: 2;
+        }
+
+        .grid-cell.winner .item-icon {
+            animation: bounce 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes winnerPulse {
+            0% { box-shadow: 0 0 8px rgba(249, 202, 36, 0.08); transform: scale(1.04); }
+            100% { box-shadow: 0 0 20px rgba(249, 202, 36, 0.2); transform: scale(1.12); }
+        }
+
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-3px); }
+        }
+
+        /* ===== АНОНС ВЫИГРЫША ===== */
+        .winner-announce {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(249, 202, 36, 0.3);
+            border-radius: 16px;
+            padding: 20px 40px;
+            text-align: center;
+            animation: winnerPop 0.5s ease;
+            z-index: 1000;
+        }
+
+        .winner-announce.active {
+            display: block;
+        }
+
+        @keyframes winnerPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .winner-announce .emoji {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .winner-announce .title {
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .winner-announce .name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 4px;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-cell .item-icon { font-size: 11px; }
+            .grid-cell .item-name { display: none; }
+            .grid-cell .cell-number { font-size: 4px; }
+            .winner-announce { padding: 16px 24px; }
+            .winner-announce .name { font-size: 22px; }
+            .winner-announce .title { font-size: 18px; }
+            .winner-announce .emoji { font-size: 32px; }
+        }
+
+        @media (max-width: 480px) {
+            .grid-container { gap: 1px; padding: 2px; }
+            .grid-cell .item-icon { font-size: 8px; }
+            .grid-cell .cell-number { font-size: 3px; }
+            .winner-announce { padding: 12px 16px; }
+            .winner-announce .name { font-size: 18px; }
+            .winner-announce .title { font-size: 14px; }
+            .winner-announce .emoji { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-container" id="bankGrid">
+        <!-- Генерируется JS -->
+    </div>
+
+    <!-- АНОНС ВЫИГРЫША -->
+    <div class="winner-announce" id="winnerAnnounce">
+        <span class="emoji">🏆</span>
+        <div class="title">ПОБЕДИТЕЛЬ!</div>
+        <div class="name" id="winnerName">Ячейка #1</div>
+    </div>
+
+    <script>
+        const API_URL = '/api/webhook';
+        const bankGrid = document.getElementById('bankGrid');
+        const winnerAnnounce = document.getElementById('winnerAnnounce');
+        const winnerName = document.getElementById('winnerName');
+
+        let items = [];
+        let eliminated = [];
+        let winnerIndex = -1;
+        let revealed = false;
+
+        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
+            '🏆', '💍', '🧪', '📜', '🪄'
+        ];
+
+        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
+            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
+        ];
+
+        function generateBankItems() {
+            const arr = [];
+            for (let i = 0; i < 98; i++) {
+                const idx = Math.floor(Math.random() * itemIcons.length);
+                arr.push({ id: i, icon: itemIcons[idx], name: itemNames[idx] });
+            }
+            return arr;
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function renderBankGrid() {
+            if (items.length === 0) {
+                items = generateBankItems();
+                shuffleArray(items);
+                eliminated = [];
+                winnerIndex = -1;
+                revealed = false;
+            }
+
+            bankGrid.innerHTML = items.map((item, index) => {
+                const isEliminated = eliminated.includes(index);
+                const isWinner = revealed && index === winnerIndex;
+                let classes = 'grid-cell';
+                if (isEliminated) classes += ' eliminated';
+                if (isWinner) classes += ' winner';
+                return `
+                    <div class="${classes}" data-index="${index}">
+                        <span class="item-icon">${item.icon}</span>
+                        <span class="item-name">${item.name}</span>
+                        <span class="cell-number">#${index + 1}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
+            for (let i = 0; i < 40; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    width: ${5 + Math.random() * 8}px;
+                    height: ${5 + Math.random() * 8}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -20px;
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
+                    animation-delay: ${Math.random() * 0.5}s;
+                    z-index: 1001;
+                    pointer-events: none;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function showWinner(name) {
+            winnerName.textContent = name;
+            winnerAnnounce.classList.add('active');
+            createConfetti();
+            setTimeout(() => {
+                winnerAnnounce.classList.remove('active');
+            }, 5000);
+        }
+
+        function executeCommand(command) {
+            const { action, data } = command;
+
+            switch (action) {
+                case 'syncState':
+                    if (data.bank) {
+                        items = data.bank.items || [];
+                        eliminated = data.bank.eliminated || [];
+                        winnerIndex = data.bank.winnerIndex || -1;
+                        revealed = data.bank.revealed || false;
+                        renderBankGrid();
+                    }
+                    break;
+
+                case 'resetBank':
+                    items = generateBankItems();
+                    shuffleArray(items);
+                    eliminated = [];
+                    winnerIndex = -1;
+                    revealed = false;
+                    renderBankGrid();
+                    break;
+
+                case 'startBankDraw':
+                    // Оверлей сам запускает анимацию по команде
+                    break;
+
+                case 'showWinner':
+                    showWinner(data.name);
+                    break;
+            }
+        }
+
+        // Опрос команд
+        async function pollCommands() {
+            try {
+                const response = await fetch(API_URL);
+                const command = await response.json();
+
+                if (command.action) {
+                    console.log('📥 Получена команда:', command.action);
+                    executeCommand(command);
+                }
+            } catch (error) {
+                console.error('❌ Ошибка опроса:', error);
+            }
+        }
+
+        // Запускаем опрос
+        setTimeout(pollCommands, 500);
+        setInterval(pollCommands, 1500);
+
+        // Начальная отрисовка
+        renderBankGrid();
+
+        console.log('🎬 Оверлей "Банк 98" загружен');
+        console.log('📡 Опрос команд каждые 1.5 секунды');
+    </script>
+</body>
+</html>
