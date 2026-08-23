@@ -1600,22 +1600,34 @@
             return arr;
         }
 
+        // ===== РЕНДЕР СЕТКИ БАНКА =====
         function renderBankGrid() {
             const items = state.bank.items;
             if (items.length === 0) {
-                bankGrid.innerHTML =
-                    `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">Загрузите предметы (кнопка "Загрузить предметы")</div>`;
+                bankGrid.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
+                        Загрузите предметы (кнопка "Загрузить предметы")
+                    </div>
+                `;
                 return;
             }
+        
             totalCells.textContent = items.length;
             const active = items.length - state.bank.eliminated.length;
             activeCells.textContent = active;
             eliminatedCells.textContent = state.bank.eliminated.length;
+        
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 const winnerData = state.bank.itemsData[state.bank.winnerIndex];
                 if (winnerData) {
-                    winnerDisplay.textContent = `${winnerData.name || '#'} #${state.bank.winnerIndex + 1}`;
-                    winnerDisplay.style.color = `#${winnerData.color || 'ffffff'}`;
+                    const color = winnerData.color || 'ffffff';
+                    // ===== ИСПРАВЛЕНО: ИКОНКА + НАЗВАНИЕ С ЦВЕТОМ =====
+                    const iconUrl = winnerData.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
+                    winnerDisplay.innerHTML = `
+                        <img src="${iconUrl}" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;border-radius:4px;image-rendering:pixelated;margin-right:6px;" />
+                        ${winnerData.name || '#'} #${state.bank.winnerIndex + 1}
+                    `;
+                    winnerDisplay.style.color = `#${color}`;
                 } else {
                     winnerDisplay.textContent = `#${state.bank.winnerIndex + 1}`;
                     winnerDisplay.style.color = '#f9ca24';
@@ -1624,6 +1636,7 @@
                 winnerDisplay.textContent = '—';
                 winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
             }
+        
             const itemsData = state.bank.itemsData || [];
             bankGrid.innerHTML = items.map((item, index) => {
                 const isEliminated = state.bank.eliminated.includes(index);
@@ -1644,7 +1657,6 @@
                 `;
             }).join('');
         }
-
         function resetBank() {
             if (state.bank.isRunning) return;
             if (state.bank.items.length === 0) {
