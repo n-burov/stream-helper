@@ -1,32 +1,60 @@
+import { kv } from '@vercel/kv';
+
+// Временное хранилище для команд
+const COMMAND_KEY = 'last_command';
+
 export default async function handler(req, res) {
-    // Twitch отправляет GET для проверки подписки
-    if (req.method === 'GET') {
-        const challenge = req.query['hub.challenge'];
-        if (challenge) {
-            return res.status(200).send(challenge);
-        }
-        return res.status(400).send('No challenge');
+  // ===== CORS =====
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // ===== POST - отправить команду (основной сайт) =====
+  if (req.method === 'POST') {
+    const { action, data } = req.body;
+
+    if (!action) {
+      return res.status(400).json({ error: 'action is required' });
     }
 
-    // POST — входящее сообщение из чата
-    if (req.method === 'POST') {
-        // Проверка подписи (webhook secret)
-        const secret = process.env.TWITCH_WEBHOOK_SECRET;
-        // ... проверка HMAC-SHA256
+    const command = {
+      action,
+      data: data || null,
+      timestamp: Date.now(),
+    };
 
-        const event = req.body.event;
-        if (event?.type === 'channel.chat_message') {
-            const username = event.chatter_user_name;
-            const message = event.message.text;
+    await kv.set(COMMAND_KEY, JSON.stringify(command));
+    console.log('📥 Команда сохранена:', action);
 
-            console.log(`📨 EventSub: ${username}: ${message}`);
+    return res.status(200).json({ success: true, action });
+  }
 
-            // Здесь нужно передать данные в index.html
-            // Можно через WebSocket, или сохранять в KV, или использовать Server-Sent Events
-        }
+  // ===== GET - получить команду (оверлей) =====
+  if (req.method === 'GET') {
+    const raw = await kv.get(COMMAND_KEY);
 
-        return res.status(200).send('OK');
+    if (!raw) {
+      return res.status(200).json({ action: null });
     }
 
-    res.status(405).end();
+    const command = JSON.parse(raw);
+
+    // Удаляем команду после прочтения
+    await kv.del(COMMAND_KEY);
+    console.log('📤 Команда отправлена:', command.action);
+
+    return res.status(200).json(command);
+  }
+
+  // ===== DELETE - удалить команду (для сброса) =====
+  if (req.method === 'DELETE') {
+    await kv.del(COMMAND_KEY);
+    return res.status(200).json({ success: true });
+  }
+
+  res.status(405).json({ error: 'Method not allowed' });
 }
