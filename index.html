@@ -996,7 +996,7 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== -->
+    <!-- ===== МОДАЛКА ПОБЕДИТЕЛЯ (для сайта) ===== -->
     <div class="winner-modal" id="winnerModal">
         <div class="winner-modal-content">
             <div class="winner-emoji">🏆</div>
@@ -1195,7 +1195,7 @@
             }
         }
 
-        function showWinner(name, sub) {
+        function showWinnerOnSite(name, sub) {
             document.getElementById('winnerModalName').textContent = name;
             document.getElementById('winnerModalSub').textContent = sub || '🎉 Поздравляем!';
             document.getElementById('winnerModal').classList.add('active');
@@ -1242,7 +1242,21 @@
             if (list.length === 0) { alert('Нет участников!'); return; }
             const winner = list[Math.floor(Math.random() * list.length)];
             state.keyword.winner = winner;
-            showWinner(winner);
+
+            // Показываем на сайте
+            showWinnerOnSite(winner);
+
+            // Отправляем в общий оверлей
+            updateMechanic('keyword', {
+                status: 'completed',
+                keyword: state.keyword.currentKeyword,
+                participants: list,
+                winner: winner,
+                emoji: '🏆',
+                title: 'ПОБЕДИТЕЛЬ!',
+                subtitle: '🎉 Поздравляем!',
+                tag: '🎯 Ключевое слово',
+            });
 
             if (state.history.length > 0 && state.history[0].status === 'active') {
                 state.history[0].winner = winner;
@@ -1250,13 +1264,6 @@
                 state.history[0].participants = list.length;
                 renderHistory();
             }
-
-            updateMechanic('keyword', {
-                status: 'completed',
-                keyword: state.keyword.currentKeyword,
-                participants: list,
-                winner: winner,
-            });
         });
 
         resetKeywordBtn.addEventListener('click', function() {
@@ -1310,7 +1317,7 @@
         renderHistory();
 
         // ==========================================
-        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ (ИСПРАВЛЕННАЯ)
+        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
         // ==========================================
 
         const canvas = document.getElementById('wheelCanvas');
@@ -1418,7 +1425,6 @@
                 const sectors = state.wheel.sectors;
                 const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
 
-                // ===== ВЫБИРАЕМ ПОБЕДИТЕЛЯ =====
                 let rand = Math.random() * totalWeight;
                 let winnerIndex = 0;
                 let accumulated = 0;
@@ -1430,7 +1436,6 @@
                     }
                 }
 
-                // ===== ВЫЧИСЛЯЕМ УГОЛ =====
                 const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
                 let winnerStartAngle = 0;
                 for (let i = 0; i < winnerIndex; i++) {
@@ -1441,7 +1446,7 @@
 
                 const duration = 5000 + Math.random() * 2000;
 
-                // ===== ОТПРАВЛЯЕМ В ОВЕРЛЕЙ =====
+                // Отправляем в оверлей колеса
                 updateMechanic('wheel', {
                     status: 'spinning',
                     sectors: state.wheel.sectors,
@@ -1451,7 +1456,7 @@
                     duration: duration,
                 });
 
-                // ===== АНИМАЦИЯ НА САЙТЕ =====
+                // Анимация на сайте
                 const startTime = Date.now();
                 const startRotation = state.wheel.currentRotation;
 
@@ -1479,12 +1484,18 @@
                         spinBtn.classList.remove('disabled');
                         canvas.classList.remove('spinning');
 
-                        showWinner(winner.label);
+                        // Показываем на сайте
+                        showWinnerOnSite(winner.label);
 
+                        // Отправляем в общий оверлей
                         updateMechanic('wheel', {
                             status: 'completed',
                             sectors: state.wheel.sectors,
                             winner: winner.label,
+                            emoji: '🎉',
+                            title: 'ВЫИГРЫШ!',
+                            subtitle: '🎊 Поздравляем!',
+                            tag: '🎡 Колесо фортуны',
                         });
                     }
                 }
@@ -1713,7 +1724,7 @@
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
 
-            // Отправляем начальное состояние
+            // Отправляем начальное состояние в оверлей банка
             updateMechanic('bank', {
                 status: 'running',
                 items: state.bank.items,
@@ -1735,8 +1746,11 @@
                     const winner = state.bank.items[winnerIdx];
                     const winnerName = `${winner.icon} #${winnerIdx + 1}`;
                     const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
-                    showWinner(winnerName, winnerSub);
 
+                    // Показываем на сайте
+                    showWinnerOnSite(winnerName, winnerSub);
+
+                    // Отправляем в общий оверлей
                     updateMechanic('bank', {
                         status: 'completed',
                         items: state.bank.items,
@@ -1744,6 +1758,10 @@
                         winnerIndex: state.bank.winnerIndex,
                         revealed: true,
                         winner: winnerName,
+                        emoji: '🏆',
+                        title: 'ПОБЕДИТЕЛЬ!',
+                        subtitle: winnerSub,
+                        tag: '🏆 Банк 98',
                     });
                     return;
                 }
