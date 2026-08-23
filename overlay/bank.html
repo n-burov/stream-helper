@@ -155,6 +155,7 @@
     <script>
         const MECHANIC = 'bank';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
+        const WINNER_API_URL = '/api/winner';
 
         const bankWrapper = document.getElementById('bankWrapper');
         const bankGrid = document.getElementById('bankGrid');
@@ -234,15 +235,33 @@
             }
         }
 
+        // ===== ОТПРАВКА ПОБЕДИТЕЛЯ В ОБЩИЙ ОВЕРЛЕЙ =====
+        async function sendWinnerToCommonOverlay(name, emoji, title, subtitle, tag) {
+            try {
+                await fetch(WINNER_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        emoji: emoji || '🏆',
+                        title: title || 'ПОБЕДИТЕЛЬ!',
+                        subtitle: subtitle || '🎉 Поздравляем!',
+                        tag: tag || '🏆 Банк 98',
+                    }),
+                });
+                console.log('🏆 Победитель отправлен в общий оверлей:', name);
+            } catch (error) {
+                console.error('❌ Ошибка отправки победителя:', error);
+            }
+        }
+
         // ===== ОСНОВНАЯ АНИМАЦИЯ =====
         function startBankAnimation(items, winnerIndex, timestamp) {
-            // Если анимация уже запущена и это та же команда — игнорируем
             if (isAnimating && lastProcessedTimestamp === timestamp) {
                 console.log('⏳ Анимация уже запущена, игнорируем дубль');
                 return;
             }
 
-            // Если анимация уже запущена — сбрасываем
             if (isAnimating) {
                 if (currentAnimationId) {
                     clearInterval(currentAnimationId);
@@ -254,6 +273,10 @@
                     hideTimeout = null;
                 }
             }
+
+            const winner = items[winnerIndex];
+            const winnerName = `${winner.icon} #${winnerIndex + 1}`;
+            const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
 
             console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
 
@@ -282,6 +305,16 @@
                     renderGrid(items, eliminated, winnerIndex, true);
                     isAnimating = false;
 
+                    // ===== ОТПРАВЛЯЕМ ПОБЕДИТЕЛЯ В ОБЩИЙ ОВЕРЛЕЙ =====
+                    sendWinnerToCommonOverlay(
+                        winnerName,
+                        '🏆',
+                        'ПОБЕДИТЕЛЬ!',
+                        winnerSub,
+                        '🏆 Банк 98'
+                    );
+
+                    // ===== СКРЫВАЕМСЯ ЧЕРЕЗ 3 СЕКУНДЫ =====
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideBank();
@@ -307,28 +340,25 @@
             if (!data) return;
 
             if (data.status === 'idle') {
-                if (bankWrapper.classList.contains('active')) {
-                    hideBank();
+                if (isAnimating) {
+                    if (currentAnimationId) {
+                        clearInterval(currentAnimationId);
+                        currentAnimationId = null;
+                    }
+                    isAnimating = false;
                 }
+                if (hideTimeout) {
+                    clearTimeout(hideTimeout);
+                    hideTimeout = null;
+                }
+                hideBank();
+                lastProcessedTimestamp = 0;
                 return;
             }
 
             if (data.status === 'running' && data.items && data.winnerIndex !== undefined) {
                 const timestamp = data.timestamp || Date.now();
                 startBankAnimation(data.items, data.winnerIndex, timestamp);
-                return;
-            }
-
-            if (data.status === 'completed') {
-                if (bankWrapper.classList.contains('active')) {
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        hideBank();
-                        isAnimating = false;
-                        lastProcessedTimestamp = 0;
-                        hideTimeout = null;
-                    }, 3000);
-                }
                 return;
             }
         }
