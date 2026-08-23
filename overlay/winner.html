@@ -53,14 +53,14 @@
         }
 
         .winner-container .winner-icon {
-            width: 64px;
-            height: 64px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
             display: block;
             margin: 0 auto 8px;
             border-radius: 12px;
             image-rendering: pixelated;
-            border: 2px solid rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .winner-container .title {
@@ -79,6 +79,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .winner-container .subtitle .sub-icon {
@@ -132,8 +133,8 @@
                 font-size: 13px;
             }
             .winner-container .winner-icon {
-                width: 48px;
-                height: 48px;
+                width: 60px;
+                height: 60px;
             }
         }
 
@@ -156,8 +157,8 @@
                 font-size: 11px;
             }
             .winner-container .winner-icon {
-                width: 36px;
-                height: 36px;
+                width: 44px;
+                height: 44px;
             }
         }
     </style>
@@ -229,7 +230,7 @@
                 iconEl.style.display = 'none';
             }
 
-            // Подзаголовок (может содержать HTML с иконкой)
+            // Подзаголовок
             if (data.subtitle && data.subtitle.includes('<img')) {
                 subtitleEl.innerHTML = data.subtitle;
             } else {
