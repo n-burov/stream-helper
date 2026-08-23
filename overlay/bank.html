@@ -21,7 +21,6 @@
             padding: 12px;
         }
 
-        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
         .bank-wrapper {
             background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(8px);
@@ -33,7 +32,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        /* ===== СЕТКА ===== */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(14, 1fr);
@@ -42,7 +40,6 @@
             min-width: 280px;
         }
 
-        /* ===== ЯЧЕЙКИ ===== */
         .grid-cell {
             aspect-ratio: 1 / 1;
             background: rgba(255, 255, 255, 0.05);
@@ -87,7 +84,6 @@
             line-height: 1.2;
         }
 
-        /* ===== СОСТОЯНИЯ ===== */
         .grid-cell.eliminated {
             background: rgba(255, 0, 0, 0.03);
             border-color: rgba(255, 0, 0, 0.02);
@@ -116,26 +112,15 @@
         }
 
         @keyframes winnerPulse {
-            0% {
-                box-shadow: 0 0 8px rgba(249, 202, 36, 0.08);
-                transform: scale(1.04);
-            }
-            100% {
-                box-shadow: 0 0 22px rgba(249, 202, 36, 0.2);
-                transform: scale(1.12);
-            }
+            0% { box-shadow: 0 0 8px rgba(249, 202, 36, 0.08); transform: scale(1.04); }
+            100% { box-shadow: 0 0 22px rgba(249, 202, 36, 0.2); transform: scale(1.12); }
         }
 
         @keyframes bounce {
-            0% {
-                transform: translateY(0);
-            }
-            100% {
-                transform: translateY(-3px);
-            }
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-3px); }
         }
 
-        /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
         .winner-announce {
             display: none;
             position: fixed;
@@ -157,17 +142,9 @@
         }
 
         @keyframes winnerPop {
-            0% {
-                transform: translate(-50%, -50%) scale(0.5);
-                opacity: 0;
-            }
-            60% {
-                transform: translate(-50%, -50%) scale(1.05);
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
-            }
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
 
         .winner-announce .emoji {
@@ -191,92 +168,34 @@
             margin-top: 4px;
         }
 
-        /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(110vh) rotate(720deg);
-                opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
-            .bank-wrapper {
-                padding: 8px;
-                border-radius: 14px;
-            }
-            .grid-container {
-                gap: 2px;
-                min-width: 200px;
-            }
-            .grid-cell {
-                min-height: 22px;
-                min-width: 22px;
-                border-radius: 3px;
-            }
-            .grid-cell .item-icon {
-                font-size: 12px;
-            }
-            .grid-cell .item-name {
-                display: none;
-            }
-            .grid-cell .cell-number {
-                font-size: 5px;
-            }
-            .winner-announce {
-                padding: 18px 28px;
-            }
-            .winner-announce .name {
-                font-size: 24px;
-            }
-            .winner-announce .title {
-                font-size: 18px;
-            }
-            .winner-announce .emoji {
-                font-size: 36px;
-            }
+            .bank-wrapper { padding: 8px; border-radius: 14px; }
+            .grid-container { gap: 2px; min-width: 200px; }
+            .grid-cell { min-height: 22px; min-width: 22px; border-radius: 3px; }
+            .grid-cell .item-icon { font-size: 12px; }
+            .grid-cell .item-name { display: none; }
+            .grid-cell .cell-number { font-size: 5px; }
+            .winner-announce { padding: 18px 28px; }
+            .winner-announce .name { font-size: 24px; }
+            .winner-announce .title { font-size: 18px; }
+            .winner-announce .emoji { font-size: 36px; }
         }
 
         @media (max-width: 480px) {
-            .bank-wrapper {
-                padding: 6px;
-                border-radius: 10px;
-            }
-            .grid-container {
-                gap: 1.5px;
-                min-width: 140px;
-            }
-            .grid-cell {
-                min-height: 16px;
-                min-width: 16px;
-                border-radius: 2px;
-                padding: 1px;
-            }
-            .grid-cell .item-icon {
-                font-size: 9px;
-            }
-            .grid-cell .cell-number {
-                font-size: 4px;
-                bottom: 1px;
-                right: 1px;
-            }
-            .winner-announce {
-                padding: 14px 20px;
-                border-radius: 14px;
-            }
-            .winner-announce .name {
-                font-size: 18px;
-            }
-            .winner-announce .title {
-                font-size: 14px;
-            }
-            .winner-announce .emoji {
-                font-size: 28px;
-            }
+            .bank-wrapper { padding: 6px; border-radius: 10px; }
+            .grid-container { gap: 1.5px; min-width: 140px; }
+            .grid-cell { min-height: 16px; min-width: 16px; border-radius: 2px; padding: 1px; }
+            .grid-cell .item-icon { font-size: 9px; }
+            .grid-cell .cell-number { font-size: 4px; bottom: 1px; right: 1px; }
+            .winner-announce { padding: 14px 20px; border-radius: 14px; }
+            .winner-announce .name { font-size: 18px; }
+            .winner-announce .title { font-size: 14px; }
+            .winner-announce .emoji { font-size: 28px; }
         }
     </style>
 </head>
@@ -288,18 +207,16 @@
         </div>
     </div>
 
-    <!-- ===== АНОНС ПОБЕДИТЕЛЯ ===== -->
     <div class="winner-announce" id="winnerAnnounce">
         <span class="emoji">🏆</span>
         <div class="title">ПОБЕДИТЕЛЬ!</div>
         <div class="name" id="winnerName">Ячейка #1</div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- ===== JAVASCRIPT ===== -->
-    <!-- ========================================= -->
     <script>
-        const API_URL = '/api/webhook';
+        const MECHANIC = 'bank';
+        const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
+
         const bankGrid = document.getElementById('bankGrid');
         const winnerAnnounce = document.getElementById('winnerAnnounce');
         const winnerName = document.getElementById('winnerName');
@@ -308,6 +225,7 @@
         let eliminated = [];
         let winnerIndex = -1;
         let revealed = false;
+        let lastWinner = null;
 
         const itemIcons = [
             '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
@@ -326,11 +244,7 @@
             const arr = [];
             for (let i = 0; i < 98; i++) {
                 const idx = Math.floor(Math.random() * itemIcons.length);
-                arr.push({
-                    id: i,
-                    icon: itemIcons[idx],
-                    name: itemNames[idx]
-                });
+                arr.push({ id: i, icon: itemIcons[idx], name: itemNames[idx] });
             }
             return arr;
         }
@@ -344,7 +258,7 @@
         }
 
         function renderBankGrid() {
-            if (items.length === 0) {
+            if (!items || items.length === 0) {
                 items = generateBankItems();
                 shuffleArray(items);
                 eliminated = [];
@@ -392,6 +306,8 @@
         }
 
         function showWinner(name) {
+            if (name === lastWinner) return;
+            lastWinner = name;
             winnerName.textContent = name;
             winnerAnnounce.classList.add('active');
             createConfetti();
@@ -400,59 +316,41 @@
             }, 5000);
         }
 
-        function executeCommand(command) {
-            const { action, data } = command;
+        function renderState(data) {
+            if (!data || data.status === 'idle') return;
 
-            switch (action) {
-                case 'syncState':
-                    if (data.bank) {
-                        items = data.bank.items || [];
-                        eliminated = data.bank.eliminated || [];
-                        winnerIndex = data.bank.winnerIndex || -1;
-                        revealed = data.bank.revealed || false;
-                        renderBankGrid();
-                    }
-                    break;
+            // Обновляем состояние банка
+            if (data.items) {
+                items = data.items;
+                eliminated = data.eliminated || [];
+                winnerIndex = data.winnerIndex || -1;
+                revealed = data.revealed || false;
+                renderBankGrid();
+            }
 
-                case 'resetBank':
-                    items = generateBankItems();
-                    shuffleArray(items);
-                    eliminated = [];
-                    winnerIndex = -1;
-                    revealed = false;
-                    renderBankGrid();
-                    break;
-
-                case 'showWinner':
-                    showWinner(data.name);
-                    break;
+            // Показываем победителя
+            if (data.winner) {
+                showWinner(data.winner);
             }
         }
 
-        // ===== ОПРОС КОМАНД =====
-        async function pollCommands() {
+        async function pollState() {
             try {
                 const response = await fetch(API_URL);
-                const command = await response.json();
-
-                if (command.action) {
-                    console.log('📥 Получена команда:', command.action);
-                    executeCommand(command);
-                }
+                const data = await response.json();
+                renderState(data);
             } catch (error) {
-                console.error('❌ Ошибка опроса:', error);
+                // тихо
             }
         }
 
-        // Запускаем опрос
-        setTimeout(pollCommands, 500);
-        setInterval(pollCommands, 1500);
+        setTimeout(pollState, 500);
+        setInterval(pollState, 1500);
 
-        // Начальная отрисовка
         renderBankGrid();
 
         console.log('🎬 Оверлей "Банк 98" загружен');
-        console.log('📡 Опрос команд каждые 1.5 секунды');
+        console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
     </script>
 </body>
 </html>
