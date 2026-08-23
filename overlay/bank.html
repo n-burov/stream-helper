@@ -126,58 +126,6 @@
             100% { transform: translateY(-3px); }
         }
 
-        .winner-announce {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(249, 202, 36, 0.25);
-            border-radius: 20px;
-            padding: 24px 44px;
-            text-align: center;
-            animation: winnerPop 0.5s ease;
-            z-index: 1000;
-        }
-
-        .winner-announce.active {
-            display: block;
-        }
-
-        @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-
-        .winner-announce .emoji {
-            font-size: 44px;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .winner-announce .title {
-            font-size: 22px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #f9ca24, #f0932b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .winner-announce .name {
-            font-size: 30px;
-            font-weight: 700;
-            color: #fff;
-            margin-top: 4px;
-        }
-
-        @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
         @media (max-width: 768px) {
             .bank-wrapper { padding: 8px; border-radius: 14px; }
             .grid-container { gap: 2px; min-width: 200px; }
@@ -185,10 +133,6 @@
             .grid-cell .item-icon { font-size: 12px; }
             .grid-cell .item-name { display: none; }
             .grid-cell .cell-number { font-size: 5px; }
-            .winner-announce { padding: 18px 28px; }
-            .winner-announce .name { font-size: 24px; }
-            .winner-announce .title { font-size: 18px; }
-            .winner-announce .emoji { font-size: 36px; }
         }
 
         @media (max-width: 480px) {
@@ -197,10 +141,6 @@
             .grid-cell { min-height: 16px; min-width: 16px; border-radius: 2px; padding: 1px; }
             .grid-cell .item-icon { font-size: 9px; }
             .grid-cell .cell-number { font-size: 4px; bottom: 1px; right: 1px; }
-            .winner-announce { padding: 14px 20px; border-radius: 14px; }
-            .winner-announce .name { font-size: 18px; }
-            .winner-announce .title { font-size: 14px; }
-            .winner-announce .emoji { font-size: 28px; }
         }
     </style>
 </head>
@@ -212,26 +152,17 @@
         </div>
     </div>
 
-    <div class="winner-announce" id="winnerAnnounce">
-        <span class="emoji">🏆</span>
-        <div class="title">ПОБЕДИТЕЛЬ!</div>
-        <div class="name" id="winnerName">Ячейка #1</div>
-    </div>
-
     <script>
         const MECHANIC = 'bank';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
 
         const bankWrapper = document.getElementById('bankWrapper');
         const bankGrid = document.getElementById('bankGrid');
-        const winnerAnnounce = document.getElementById('winnerAnnounce');
-        const winnerName = document.getElementById('winnerName');
 
         let items = [];
         let eliminated = [];
         let winnerIndex = -1;
         let revealed = false;
-        let lastWinner = null;
         let isRunning = false;
         let hideTimeout = null;
         let intervalId = null;
@@ -314,9 +245,6 @@
                 intervalId = null;
             }
             isRunning = false;
-            // Скрываем плашку победителя
-            winnerAnnounce.classList.remove('active');
-            lastWinner = null;
             hideBank();
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -324,48 +252,8 @@
             }
         }
 
-        function createConfetti() {
-            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
-            for (let i = 0; i < 40; i++) {
-                const confetti = document.createElement('div');
-                confetti.style.cssText = `
-                    position: fixed;
-                    width: ${5 + Math.random() * 8}px;
-                    height: ${5 + Math.random() * 8}px;
-                    background: ${colors[Math.floor(Math.random() * colors.length)]};
-                    left: ${Math.random() * 100}vw;
-                    top: -20px;
-                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
-                    animation-delay: ${Math.random() * 0.5}s;
-                    z-index: 1001;
-                    pointer-events: none;
-                    transform: rotate(${Math.random() * 360}deg);
-                `;
-                document.body.appendChild(confetti);
-                setTimeout(() => confetti.remove(), 5000);
-            }
-        }
-
-        function showWinner(name) {
-            if (name === lastWinner && winnerAnnounce.classList.contains('active')) return;
-            lastWinner = name;
-            winnerName.textContent = name;
-            winnerAnnounce.classList.add('active');
-            createConfetti();
-
-            if (hideTimeout) clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
-                winnerAnnounce.classList.remove('active');
-                lastWinner = null;
-                hideBank();
-                hideTimeout = null;
-            }, 5000);
-        }
-
         function startBankAnimation(data) {
             if (isRunning) {
-                // Если уже запущена анимация — прерываем
                 if (intervalId) {
                     clearInterval(intervalId);
                     intervalId = null;
@@ -375,21 +263,14 @@
 
             if (!data || !data.items) return;
 
-            // Сохраняем данные
             items = data.items;
             winnerIndex = data.winnerIndex !== undefined ? data.winnerIndex : Math.floor(Math.random() * items.length);
             eliminated = [];
             revealed = false;
 
-            // Показываем оверлей
             showBank();
             renderBankGrid();
 
-            // Убираем старую плашку победителя
-            winnerAnnounce.classList.remove('active');
-            lastWinner = null;
-
-            // Перемешиваем порядок устранения
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIndex);
             shuffleArray(toEliminate);
@@ -402,15 +283,16 @@
                 if (currentIndex >= totalToEliminate) {
                     clearInterval(intervalId);
                     intervalId = null;
-                    // Показываем победителя
                     revealed = true;
                     renderBankGrid();
-
-                    const winner = items[winnerIndex];
-                    const winnerNameText = `${winner.icon} #${winnerIndex + 1}`;
-                    showWinner(winnerNameText);
-
                     isRunning = false;
+
+                    // Скрываем через 3 секунды
+                    if (hideTimeout) clearTimeout(hideTimeout);
+                    hideTimeout = setTimeout(() => {
+                        hideBank();
+                        hideTimeout = null;
+                    }, 3000);
                     return;
                 }
 
@@ -425,13 +307,7 @@
         }
 
         function renderState(data) {
-            if (!data) {
-                // Если нет данных — скрываем всё
-                resetBankOverlay();
-                return;
-            }
-
-            if (data.status === 'idle') {
+            if (!data || data.status === 'idle') {
                 resetBankOverlay();
                 return;
             }
@@ -442,20 +318,13 @@
             }
 
             if (data.status === 'completed') {
-                // Если есть победитель — показываем
-                if (data.winner) {
-                    // Обновляем состояние, если оно изменилось
-                    if (data.items && JSON.stringify(data.items) !== JSON.stringify(items)) {
-                        items = data.items;
-                        eliminated = data.eliminated || [];
-                        winnerIndex = data.winnerIndex || -1;
-                        revealed = true;
-                        renderBankGrid();
-                    }
-                    showWinner(data.winner);
-                } else {
-                    // Если победителя нет — скрываем
-                    resetBankOverlay();
+                // Если банк ещё виден — скрываем через небольшую задержку
+                if (bankWrapper.classList.contains('active')) {
+                    if (hideTimeout) clearTimeout(hideTimeout);
+                    hideTimeout = setTimeout(() => {
+                        hideBank();
+                        hideTimeout = null;
+                    }, 3000);
                 }
                 return;
             }
