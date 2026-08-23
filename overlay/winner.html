@@ -142,15 +142,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // 0. API
-        // ==========================================
-
         const WINNER_API_URL = '/api/winner';
-
-        // ==========================================
-        // 1. ЭЛЕМЕНТЫ
-        // ==========================================
 
         const container = document.getElementById('winnerContainer');
         const emojiEl = document.getElementById('winnerEmoji');
@@ -161,10 +153,6 @@
 
         let hideTimeout = null;
         let currentWinner = null;
-
-        // ==========================================
-        // 2. КОНФЕТТИ
-        // ==========================================
 
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
@@ -189,42 +177,36 @@
             }
         }
 
-        // ==========================================
-        // 3. ПОКАЗ ПОБЕДИТЕЛЯ
-        // ==========================================
-
         function showWinner(data) {
-            // Если тот же победитель уже показывается — не дублируем
             if (currentWinner === data.name && container.classList.contains('active')) return;
 
             currentWinner = data.name;
 
-            // Обновляем содержимое
             emojiEl.textContent = data.emoji || '🏆';
             titleEl.textContent = data.title || 'ПОБЕДИТЕЛЬ!';
-            subtitleEl.textContent = data.subtitle || '🎉 Поздравляем!';
+            
+            // Если subtitle содержит HTML с цветом, используем innerHTML
+            if (data.subtitle && data.subtitle.includes('<span')) {
+                subtitleEl.innerHTML = data.subtitle;
+            } else {
+                subtitleEl.textContent = data.subtitle || '🎉 Поздравляем!';
+            }
+            
             nameEl.textContent = data.name;
             tagEl.textContent = data.tag || '🎯 Розыгрыш';
 
-            // Показываем с анимацией
             container.classList.add('active');
             createConfetti();
 
-            // Скрываем через 5 секунд
             if (hideTimeout) clearTimeout(hideTimeout);
             hideTimeout = setTimeout(() => {
                 container.classList.remove('active');
-                // Сбрасываем currentWinner через небольшую задержку, чтобы не повторять
                 setTimeout(() => {
                     currentWinner = null;
                 }, 300);
                 hideTimeout = null;
             }, 5000);
         }
-
-        // ==========================================
-        // 4. ОПРОС API
-        // ==========================================
 
         async function pollWinner() {
             try {
