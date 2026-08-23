@@ -1701,30 +1701,31 @@
                 resetBank();
                 return;
             }
-
+        
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 resetBank();
                 setTimeout(() => startBankDraw(), 300);
                 return;
             }
-
+        
             state.bank.isRunning = true;
             state.bank.revealed = false;
             startBankBtn.textContent = '⏳ Идёт розыгрыш...';
             startBankBtn.disabled = true;
-
+        
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
             state.bank.winnerIndex = winnerIdx;
             state.bank.winner = state.bank.items[winnerIdx];
-
+        
             const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIdx);
             shuffleArray(toEliminate);
-
+        
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
-
-            // Отправляем начальное состояние в оверлей банка
+        
+            // ===== ОТПРАВЛЯЕМ НАЧАЛЬНОЕ СОСТОЯНИЕ С TIMESTAMP =====
+            const timestamp = Date.now();
             updateMechanic('bank', {
                 status: 'running',
                 items: state.bank.items,
@@ -1732,8 +1733,9 @@
                 winnerIndex: state.bank.winnerIndex,
                 revealed: false,
                 winner: null,
+                timestamp: timestamp,  // ← ДОБАВЛЯЕМ TIMESTAMP
             });
-
+        
             const interval = setInterval(() => {
                 if (currentIndex >= totalToEliminate) {
                     clearInterval(interval);
@@ -1742,15 +1744,15 @@
                     state.bank.isRunning = false;
                     startBankBtn.textContent = '🎲 Запустить розыгрыш!';
                     startBankBtn.disabled = false;
-
+        
                     const winner = state.bank.items[winnerIdx];
                     const winnerName = `${winner.icon} #${winnerIdx + 1}`;
                     const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
-
+        
                     // Показываем на сайте
                     showWinnerOnSite(winnerName, winnerSub);
-
-                    // Отправляем в общий оверлей
+        
+                    // ===== ОТПРАВЛЯЕМ ЗАВЕРШЁННОЕ СОСТОЯНИЕ =====
                     updateMechanic('bank', {
                         status: 'completed',
                         items: state.bank.items,
@@ -1762,21 +1764,23 @@
                         title: 'ПОБЕДИТЕЛЬ!',
                         subtitle: winnerSub,
                         tag: '🏆 Банк 98',
+                        timestamp: timestamp,  // ← ДОБАВЛЯЕМ TIMESTAMP
                     });
                     return;
                 }
-
+        
                 const idxToEliminate = toEliminate[currentIndex];
                 if (!state.bank.eliminated.includes(idxToEliminate)) {
                     state.bank.eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
-
+        
                 renderBankGrid();
                 const active = state.bank.items.length - state.bank.eliminated.length;
                 activeCells.textContent = active;
                 eliminatedCells.textContent = state.bank.eliminated.length;
-
+        
+                // ===== ПРОМЕЖУТОЧНОЕ СОСТОЯНИЕ ТОЖЕ С TIMESTAMP =====
                 updateMechanic('bank', {
                     status: 'running',
                     items: state.bank.items,
@@ -1784,8 +1788,9 @@
                     winnerIndex: state.bank.winnerIndex,
                     revealed: false,
                     winner: null,
+                    timestamp: timestamp,  // ← ДОБАВЛЯЕМ TIMESTAMP
                 });
-
+        
             }, 60 + Math.random() * 40);
         }
 
