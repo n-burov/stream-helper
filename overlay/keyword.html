@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Оверлей | Ключевое слово</title>
     <style>
         * {
@@ -12,45 +12,96 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: transparent !important;
             min-height: 100vh;
-            color: #fff;
-            padding: 10px;
-            overflow: hidden;
-        }
-
-        .overlay-container {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 12px 16px;
-            min-width: 200px;
-            max-width: 400px;
-        }
-
-        .keyword-display {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 4px;
-        }
-
-        .keyword-display strong {
-            color: #fff;
-            font-weight: 600;
-        }
-
-        .status-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            padding: 16px;
+            color: #fff;
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+        .keyword-wrapper {
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 20px 28px;
+            min-width: 240px;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s;
+        }
+
+        /* ===== ЗАГОЛОВОК ===== */
+        .keyword-title {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+            text-shadow: 0 0 40px rgba(249, 202, 36, 0.1);
+        }
+
+        /* ===== ПРИЗЫВ ===== */
+        .keyword-call {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        .keyword-call strong {
+            color: #fff;
+            font-weight: 700;
+            background: rgba(145, 70, 255, 0.2);
+            padding: 2px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(145, 70, 255, 0.15);
+            font-size: 18px;
+        }
+
+        /* ===== СТАТУС И УЧАСТНИКИ ===== */
+        .keyword-status-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .status-badge {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-badge.active .dot {
+            background: #00ff64;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        .status-badge.inactive .dot {
+            background: #ff4757;
         }
 
         .status-badge.active {
@@ -61,14 +112,23 @@
             color: #ff4757;
         }
 
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
         .count-badge {
-            font-size: 13px;
+            font-size: 14px;
             color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .count-badge strong {
             color: #fff;
-            font-size: 18px;
+            font-size: 20px;
+            font-weight: 700;
         }
 
         /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
@@ -78,14 +138,15 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(24px);
             border: 2px solid rgba(249, 202, 36, 0.3);
-            border-radius: 20px;
-            padding: 30px 50px;
+            border-radius: 24px;
+            padding: 32px 56px;
             text-align: center;
             animation: winnerPop 0.5s ease;
             z-index: 1000;
+            min-width: 280px;
         }
 
         .winner-announce.active {
@@ -93,19 +154,27 @@
         }
 
         @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            0% {
+                transform: translate(-50%, -50%) scale(0.4);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
         }
 
         .winner-announce .emoji {
-            font-size: 48px;
+            font-size: 52px;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .winner-announce .title {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 900;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
@@ -113,52 +182,152 @@
         }
 
         .winner-announce .name {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 700;
             color: #fff;
             margin-top: 4px;
+            text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
 
+        /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
         }
 
-        @media (max-width: 480px) {
-            .overlay-container {
-                padding: 8px 12px;
-                min-width: 150px;
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 600px) {
+            .keyword-wrapper {
+                padding: 14px 18px;
+                min-width: 180px;
+                border-radius: 16px;
             }
-            .keyword-display { font-size: 12px; }
-            .status-badge { font-size: 11px; }
-            .count-badge { font-size: 11px; }
-            .count-badge strong { font-size: 16px; }
-            .winner-announce { padding: 20px 30px; }
-            .winner-announce .name { font-size: 24px; }
-            .winner-announce .title { font-size: 20px; }
-            .winner-announce .emoji { font-size: 36px; }
+            .keyword-title {
+                font-size: 24px;
+                letter-spacing: 2px;
+            }
+            .keyword-call {
+                font-size: 13px;
+            }
+            .keyword-call strong {
+                font-size: 14px;
+                padding: 1px 10px;
+            }
+            .keyword-status-row {
+                gap: 12px;
+                font-size: 12px;
+            }
+            .status-badge {
+                font-size: 12px;
+            }
+            .count-badge {
+                font-size: 12px;
+            }
+            .count-badge strong {
+                font-size: 16px;
+            }
+            .winner-announce {
+                padding: 20px 28px;
+                min-width: 200px;
+                border-radius: 18px;
+            }
+            .winner-announce .name {
+                font-size: 26px;
+            }
+            .winner-announce .title {
+                font-size: 20px;
+            }
+            .winner-announce .emoji {
+                font-size: 38px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .keyword-wrapper {
+                padding: 10px 12px;
+                min-width: 140px;
+                border-radius: 12px;
+            }
+            .keyword-title {
+                font-size: 18px;
+                letter-spacing: 1px;
+            }
+            .keyword-call {
+                font-size: 11px;
+            }
+            .keyword-call strong {
+                font-size: 12px;
+                padding: 1px 8px;
+            }
+            .keyword-status-row {
+                gap: 8px;
+                font-size: 10px;
+                padding-top: 6px;
+            }
+            .status-badge {
+                font-size: 10px;
+            }
+            .count-badge {
+                font-size: 10px;
+            }
+            .count-badge strong {
+                font-size: 14px;
+            }
+            .winner-announce {
+                padding: 14px 18px;
+                min-width: 160px;
+                border-radius: 14px;
+            }
+            .winner-announce .name {
+                font-size: 20px;
+            }
+            .winner-announce .title {
+                font-size: 16px;
+            }
+            .winner-announce .emoji {
+                font-size: 30px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="overlay-container">
-        <div class="keyword-display">
-            Кодовое слово: <strong id="displayKeyword">!лут</strong>
+    <div class="keyword-wrapper">
+        <!-- ЗАГОЛОВОК -->
+        <div class="keyword-title">РОЗЫГРЫШ</div>
+
+        <!-- ПРИЗЫВ -->
+        <div class="keyword-call">
+            Отправь в чат <strong id="displayKeyword">!лут</strong>
         </div>
-        <div class="status-row">
-            <span class="status-badge inactive" id="statusBadge">⏹ Остановлен</span>
-            <span class="count-badge">👥 <strong id="participantCount">0</strong></span>
+
+        <!-- СТАТУС И УЧАСТНИКИ -->
+        <div class="keyword-status-row">
+            <span class="status-badge inactive" id="statusBadge">
+                <span class="dot"></span> Остановлен
+            </span>
+            <span class="count-badge">
+                👥 <strong id="participantCount">0</strong>
+            </span>
         </div>
     </div>
 
-    <!-- АНОНС ПОБЕДИТЕЛЯ -->
+    <!-- ===== АНОНС ПОБЕДИТЕЛЯ ===== -->
     <div class="winner-announce" id="winnerAnnounce">
         <span class="emoji">🏆</span>
         <div class="title">ПОБЕДИТЕЛЬ!</div>
         <div class="name" id="winnerName">Игрок</div>
     </div>
 
+    <!-- ========================================= -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ========================================= -->
     <script>
         const API_URL = '/api/webhook';
         const displayKeyword = document.getElementById('displayKeyword');
@@ -167,8 +336,7 @@
         const winnerAnnounce = document.getElementById('winnerAnnounce');
         const winnerName = document.getElementById('winnerName');
 
-        let isWinnerShowing = false;
-
+        // ===== КОНФЕТТИ =====
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
             for (let i = 0; i < 40; i++) {
@@ -192,6 +360,7 @@
             }
         }
 
+        // ===== ВЫПОЛНЕНИЕ КОМАНД =====
         function executeCommand(command) {
             const { action, data } = command;
 
@@ -200,64 +369,62 @@
                     if (data.keyword) {
                         displayKeyword.textContent = data.keyword.currentKeyword || '!лут';
                         participantCount.textContent = data.keyword.participants?.length || 0;
-                        if (data.keyword.active) {
-                            statusBadge.textContent = '🟢 Активен';
-                            statusBadge.className = 'status-badge active';
-                        } else {
-                            statusBadge.textContent = '⏹ Остановлен';
-                            statusBadge.className = 'status-badge inactive';
-                        }
+                        updateStatus(data.keyword.active);
                     }
                     break;
 
                 case 'startKeyword':
                     displayKeyword.textContent = data.keyword || '!лут';
-                    statusBadge.textContent = '🟢 Активен';
-                    statusBadge.className = 'status-badge active';
                     participantCount.textContent = '0';
+                    updateStatus(true);
                     break;
 
                 case 'stopKeyword':
-                    statusBadge.textContent = '⏹ Остановлен';
-                    statusBadge.className = 'status-badge inactive';
+                    updateStatus(false);
                     break;
 
                 case 'addParticipant':
-                    const currentCount = parseInt(participantCount.textContent) || 0;
-                    participantCount.textContent = currentCount + 1;
+                    const current = parseInt(participantCount.textContent) || 0;
+                    participantCount.textContent = current + 1;
                     break;
 
                 case 'drawKeyword':
                     winnerName.textContent = data.winner;
                     winnerAnnounce.classList.add('active');
                     createConfetti();
-                    isWinnerShowing = true;
                     setTimeout(() => {
                         winnerAnnounce.classList.remove('active');
-                        isWinnerShowing = false;
                     }, 5000);
                     break;
 
                 case 'resetKeyword':
                     participantCount.textContent = '0';
-                    statusBadge.textContent = '⏹ Остановлен';
-                    statusBadge.className = 'status-badge inactive';
+                    updateStatus(false);
                     break;
 
                 case 'showWinner':
                     winnerName.textContent = data.name;
                     winnerAnnounce.classList.add('active');
                     createConfetti();
-                    isWinnerShowing = true;
                     setTimeout(() => {
                         winnerAnnounce.classList.remove('active');
-                        isWinnerShowing = false;
                     }, 5000);
                     break;
             }
         }
 
-        // Опрос команд
+        // ===== ОБНОВЛЕНИЕ СТАТУСА =====
+        function updateStatus(active) {
+            if (active) {
+                statusBadge.className = 'status-badge active';
+                statusBadge.innerHTML = `<span class="dot"></span> Активен`;
+            } else {
+                statusBadge.className = 'status-badge inactive';
+                statusBadge.innerHTML = `<span class="dot"></span> Остановлен`;
+            }
+        }
+
+        // ===== ОПРОС КОМАНД =====
         async function pollCommands() {
             try {
                 const response = await fetch(API_URL);
@@ -268,11 +435,11 @@
                     executeCommand(command);
                 }
             } catch (error) {
-                console.error('❌ Ошибка опроса:', error);
+                // тихо игнорируем ошибки опроса
             }
         }
 
-        // Запускаем опрос
+        // ===== ЗАПУСК =====
         setTimeout(pollCommands, 500);
         setInterval(pollCommands, 1500);
 
