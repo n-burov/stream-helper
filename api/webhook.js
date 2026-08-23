@@ -1,6 +1,8 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
-// Временное хранилище для команд
+// Подключаемся к Upstash Redis через переменные окружения
+const redis = Redis.fromEnv();
+
 const COMMAND_KEY = 'last_command';
 
 export default async function handler(req, res) {
@@ -13,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST - отправить команду (основной сайт) =====
+  // ===== POST - отправить команду =====
   if (req.method === 'POST') {
     const { action, data } = req.body;
 
@@ -27,15 +29,15 @@ export default async function handler(req, res) {
       timestamp: Date.now(),
     };
 
-    await kv.set(COMMAND_KEY, JSON.stringify(command));
+    await redis.set(COMMAND_KEY, JSON.stringify(command));
     console.log('📥 Команда сохранена:', action);
 
     return res.status(200).json({ success: true, action });
   }
 
-  // ===== GET - получить команду (оверлей) =====
+  // ===== GET - получить команду =====
   if (req.method === 'GET') {
-    const raw = await kv.get(COMMAND_KEY);
+    const raw = await redis.get(COMMAND_KEY);
 
     if (!raw) {
       return res.status(200).json({ action: null });
@@ -44,15 +46,15 @@ export default async function handler(req, res) {
     const command = JSON.parse(raw);
 
     // Удаляем команду после прочтения
-    await kv.del(COMMAND_KEY);
+    await redis.del(COMMAND_KEY);
     console.log('📤 Команда отправлена:', command.action);
 
     return res.status(200).json(command);
   }
 
-  // ===== DELETE - удалить команду (для сброса) =====
+  // ===== DELETE - удалить команду =====
   if (req.method === 'DELETE') {
-    await kv.del(COMMAND_KEY);
+    await redis.del(COMMAND_KEY);
     return res.status(200).json({ success: true });
   }
 
