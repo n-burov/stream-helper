@@ -1800,7 +1800,7 @@
             return arr;
         }
 
-        // ===== РЕНДЕР СЕТКИ БАНКА =====
+        // ===== РЕНДЕР СЕТКИ БАНКА (С ИКОНКАМИ И ЦВЕТОМ) =====
         function renderBankGrid() {
             const items = state.bank.items;
             if (items.length === 0) {
@@ -1811,12 +1811,12 @@
                 `;
                 return;
             }
-
+        
             totalCells.textContent = items.length;
             const active = items.length - state.bank.eliminated.length;
             activeCells.textContent = active;
             eliminatedCells.textContent = state.bank.eliminated.length;
-
+        
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 const winner = state.bank.itemsData[state.bank.winnerIndex];
                 if (winner) {
@@ -1831,24 +1831,27 @@
                 winnerDisplay.textContent = '—';
                 winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
             }
-
+        
             const itemsData = state.bank.itemsData || [];
             bankGrid.innerHTML = items.map((item, index) => {
                 const isEliminated = state.bank.eliminated.includes(index);
                 const isWinner = state.bank.revealed && index === state.bank.winnerIndex;
-
-                const itemData = itemsData[index] || { color: 'ffffff', name: item.name || '#' };
+        
+                const itemData = itemsData[index] || { color: 'ffffff', name: item.name || '#', icon: '' };
                 const color = itemData.color || 'ffffff';
-
+                const iconUrl = itemData.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
+                
+                // Если название длинное — делаем вторую строку
+                const isLongName = itemData.name && itemData.name.length > 14;
+        
                 let classes = 'grid-cell';
                 if (isEliminated) classes += ' eliminated';
                 if (isWinner) classes += ' winner';
-
+        
                 return `
                     <div class="${classes}" data-index="${index}" ${isWinner ? `style="border-color: #${color}; box-shadow: 0 0 20px rgba(${parseInt(color.slice(0,2), 16)}, ${parseInt(color.slice(2,4), 16)}, ${parseInt(color.slice(4,6), 16)}, 0.3);"` : ''}>
-                        <span class="item-icon">${item.icon}</span>
-                        <span class="item-name" style="color: #${color};">${item.name}</span>
-                        <span class="cell-number">#${index + 1}</span>
+                        <img class="item-icon" src="${iconUrl}" alt="${itemData.name || '#'}" loading="lazy" />
+                        <span class="item-name ${isLongName ? 'line2' : ''}" style="color: #${color};">${itemData.name || '#'}</span>
                     </div>
                 `;
             }).join('');
