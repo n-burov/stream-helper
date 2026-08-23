@@ -391,4 +391,93 @@
 
             // Перемешиваем порядок устранения
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
-            const toEliminate = allIndices.filter(i => i !== winner
+            const toEliminate = allIndices.filter(i => i !== winnerIndex);
+            shuffleArray(toEliminate);
+
+            let currentIndex = 0;
+            const totalToEliminate = toEliminate.length;
+            isRunning = true;
+
+            intervalId = setInterval(() => {
+                if (currentIndex >= totalToEliminate) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                    // Показываем победителя
+                    revealed = true;
+                    renderBankGrid();
+
+                    const winner = items[winnerIndex];
+                    const winnerNameText = `${winner.icon} #${winnerIndex + 1}`;
+                    showWinner(winnerNameText);
+
+                    isRunning = false;
+                    return;
+                }
+
+                const idxToEliminate = toEliminate[currentIndex];
+                if (!eliminated.includes(idxToEliminate)) {
+                    eliminated.push(idxToEliminate);
+                }
+                currentIndex++;
+                renderBankGrid();
+
+            }, 50 + Math.random() * 30);
+        }
+
+        function renderState(data) {
+            if (!data) {
+                // Если нет данных — скрываем всё
+                resetBankOverlay();
+                return;
+            }
+
+            if (data.status === 'idle') {
+                resetBankOverlay();
+                return;
+            }
+
+            if (data.status === 'running' && !isRunning) {
+                startBankAnimation(data);
+                return;
+            }
+
+            if (data.status === 'completed') {
+                // Если есть победитель — показываем
+                if (data.winner) {
+                    // Обновляем состояние, если оно изменилось
+                    if (data.items && JSON.stringify(data.items) !== JSON.stringify(items)) {
+                        items = data.items;
+                        eliminated = data.eliminated || [];
+                        winnerIndex = data.winnerIndex || -1;
+                        revealed = true;
+                        renderBankGrid();
+                    }
+                    showWinner(data.winner);
+                } else {
+                    // Если победителя нет — скрываем
+                    resetBankOverlay();
+                }
+                return;
+            }
+        }
+
+        async function pollState() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                renderState(data);
+            } catch (error) {
+                // тихо
+            }
+        }
+
+        setTimeout(pollState, 500);
+        setInterval(pollState, 1500);
+
+        renderBankGrid();
+
+        console.log('🎬 Оверлей "Банк 98" загружен');
+        console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
+    </script>
+</body>
+</html>
