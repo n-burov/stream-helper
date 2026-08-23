@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Стример-хаб | Управление</title>
     <style>
         * {
@@ -61,8 +61,15 @@
         }
 
         @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
         }
 
         .admin-login {
@@ -124,8 +131,14 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .card {
@@ -258,8 +271,14 @@
         }
 
         @keyframes chipIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .wheel-container {
@@ -392,9 +411,17 @@
         }
 
         @keyframes resultPop {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .draw-status {
@@ -531,13 +558,23 @@
         }
 
         @keyframes winnerPulse {
-            0% { box-shadow: 0 0 15px rgba(249, 202, 36, 0.15); transform: scale(1.08); }
-            100% { box-shadow: 0 0 40px rgba(249, 202, 36, 0.4); transform: scale(1.2); }
+            0% {
+                box-shadow: 0 0 15px rgba(249, 202, 36, 0.15);
+                transform: scale(1.08);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(249, 202, 36, 0.4);
+                transform: scale(1.2);
+            }
         }
 
         @keyframes bounce {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-4px); }
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-4px);
+            }
         }
 
         .winner-modal {
@@ -572,19 +609,22 @@
         }
 
         @keyframes winnerPop {
-            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-            60% { transform: scale(1.1) rotate(2deg); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            0% {
+                transform: scale(0.5) rotate(-10deg);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.1) rotate(2deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
         }
 
         .winner-emoji {
             font-size: 80px;
             animation: bounce 1s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
         }
 
         .winner-title {
@@ -630,8 +670,97 @@
         }
 
         @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* ===== ИСТОРИЯ РОЗЫГРЫШЕЙ ===== */
+        .history-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            padding: 5px;
+        }
+
+        .history-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-container::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .history-item .history-keyword {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+        }
+
+        .history-item .history-keyword strong {
+            color: #f9ca24;
+        }
+
+        .history-item .history-participants {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+
+        .history-item .history-winner {
+            color: #00ff64;
+            font-weight: 600;
+        }
+
+        .history-item .history-time {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .history-item .history-status {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .history-item .history-status.completed {
+            background: rgba(0, 255, 100, 0.1);
+            color: #00ff64;
+        }
+
+        .history-item .history-status.active {
+            background: rgba(249, 202, 36, 0.1);
+            color: #f9ca24;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            font-size: 14px;
         }
 
         @media (max-width: 768px) {
@@ -704,6 +833,11 @@
 
             .winner-emoji {
                 font-size: 60px;
+            }
+
+            .history-item {
+                flex-wrap: wrap;
+                gap: 4px;
             }
         }
 
@@ -784,7 +918,7 @@
             </div>
 
             <div class="keyword-setup">
-                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут">
+                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут" />
                 <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт набора</button>
                 <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
                 <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
@@ -806,6 +940,17 @@
             <div class="participants-grid" id="participantsGrid">
                 <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
                     Пока никого нет 😴
+                </div>
+            </div>
+
+            <!-- ===== ИСТОРИЯ РОЗЫГРЫШЕЙ ===== -->
+            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5);">📜 История розыгрышей</span>
+                    <button class="btn btn-danger btn-sm" id="clearHistoryBtn" style="padding: 4px 12px; font-size: 11px; background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.1);">Очистить</button>
+                </div>
+                <div class="history-container" id="historyContainer">
+                    <div class="history-empty">История пуста</div>
                 </div>
             </div>
         </div>
@@ -830,8 +975,8 @@
         <div class="card">
             <div class="card-title"><span class="icon">⚙️</span> Настройка секторов</div>
             <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
-                <input type="text" id="sectorNameInput" placeholder="Название..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
-                <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <input type="text" id="sectorNameInput" placeholder="Название..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;" />
+                <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;" />
                 <button class="btn btn-success" id="addSectorBtn">➕ Добавить</button>
                 <button class="btn btn-danger" id="resetWheelBtn">🗑️ Сброс</button>
             </div>
@@ -896,35 +1041,20 @@
 
         const API_URL = '/api/webhook';
 
-        async function sendCommand(action, data) {
+        // ===== ОТПРАВКА СОСТОЯНИЯ МЕХАНИКИ =====
+        async function updateMechanic(mechanic, data) {
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, data }),
+                    body: JSON.stringify({ mechanic, data }),
                 });
                 const result = await response.json();
-                console.log('📤 Команда отправлена:', action, data || '');
+                console.log(`📤 Состояние ${mechanic} отправлено:`, data);
                 return result;
             } catch (error) {
-                console.error('❌ Ошибка отправки команды:', error);
+                console.error(`❌ Ошибка отправки ${mechanic}:`, error);
             }
-        }
-
-        function syncState() {
-            sendCommand('syncState', {
-                keyword: state.keyword,
-                wheel: {
-                    sectors: state.wheel.sectors,
-                    currentRotation: state.wheel.currentRotation,
-                },
-                bank: {
-                    items: state.bank.items,
-                    winnerIndex: state.bank.winnerIndex,
-                    eliminated: state.bank.eliminated,
-                    revealed: state.bank.revealed,
-                }
-            });
         }
 
         // ==========================================
@@ -936,6 +1066,7 @@
                 active: false,
                 currentKeyword: '!лут',
                 participants: [],
+                winner: null,
             },
             wheel: {
                 sectors: [
@@ -947,6 +1078,7 @@
                 ],
                 currentRotation: 0,
                 isSpinning: false,
+                winner: null,
             },
             bank: {
                 items: [],
@@ -954,7 +1086,9 @@
                 eliminated: [],
                 isRunning: false,
                 revealed: false,
-            }
+                winner: null,
+            },
+            history: [],
         };
 
         // ==========================================
@@ -978,7 +1112,7 @@
         });
 
         // ==========================================
-        // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
+        // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО + ИСТОРИЯ
         // ==========================================
 
         const keywordInput = document.getElementById('keywordInput');
@@ -990,13 +1124,21 @@
         const participantCount = document.getElementById('participantCount');
         const keywordStatus = document.getElementById('keywordStatus');
         const displayKeyword = document.getElementById('displayKeyword');
+        const historyContainer = document.getElementById('historyContainer');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
         function addParticipant(name) {
             if (!state.keyword.active) return;
             if (state.keyword.participants.includes(name)) return;
             state.keyword.participants.push(name);
             renderParticipants();
-            sendCommand('addParticipant', { username: name });
+            // Отправляем состояние в оверлей
+            updateMechanic('keyword', {
+                status: 'active',
+                keyword: state.keyword.currentKeyword,
+                participants: state.keyword.participants,
+                winner: state.keyword.winner,
+            });
         }
 
         function renderParticipants() {
@@ -1018,6 +1160,42 @@
             participantsGrid.innerHTML = list.map(name =>
                 `<div class="participant-chip">${name}</div>`
             ).join('');
+        }
+
+        function renderHistory() {
+            if (state.history.length === 0) {
+                historyContainer.innerHTML = `<div class="history-empty">История пуста</div>`;
+                return;
+            }
+
+            historyContainer.innerHTML = state.history.map(item => `
+                <div class="history-item">
+                    <span class="history-keyword">🎯 <strong>${item.keyword}</strong></span>
+                    <span class="history-participants">👥 ${item.participants} участников</span>
+                    <span class="history-winner">🏆 ${item.winner || '—'}</span>
+                    <span class="history-status ${item.status}">${item.status === 'completed' ? '✅ Завершён' : '🔄 Активен'}</span>
+                    <span class="history-time">${item.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function addToHistory(keyword, participants, winner) {
+            const now = new Date();
+            const timeStr = now.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+            state.history.unshift({
+                keyword,
+                participants: participants.length,
+                winner: winner || '—',
+                status: winner ? 'completed' : 'active',
+                time: timeStr,
+            });
+            renderHistory();
         }
 
         function createConfetti() {
@@ -1048,7 +1226,6 @@
             document.getElementById('winnerModalSub').textContent = sub || '🎉 Поздравляем!';
             document.getElementById('winnerModal').classList.add('active');
             createConfetti();
-            sendCommand('showWinner', { name, sub: sub || '🎉 Поздравляем!' });
         }
 
         startBtn.addEventListener('click', function() {
@@ -1057,10 +1234,20 @@
             state.keyword.active = true;
             state.keyword.currentKeyword = kw;
             state.keyword.participants = [];
+            state.keyword.winner = null;
             renderParticipants();
             this.textContent = '▶️ Идёт набор...';
             this.disabled = true;
-            sendCommand('startKeyword', { keyword: kw });
+
+            // Сохраняем в историю как активный розыгрыш
+            addToHistory(kw, [], null);
+
+            updateMechanic('keyword', {
+                status: 'active',
+                keyword: kw,
+                participants: [],
+                winner: null,
+            });
         });
 
         stopBtn.addEventListener('click', function() {
@@ -1068,23 +1255,59 @@
             renderParticipants();
             startBtn.textContent = '▶️ Старт набора';
             startBtn.disabled = false;
-            sendCommand('stopKeyword');
+
+            updateMechanic('keyword', {
+                status: 'inactive',
+                keyword: state.keyword.currentKeyword,
+                participants: state.keyword.participants,
+                winner: state.keyword.winner,
+            });
         });
 
         drawBtn.addEventListener('click', function() {
             const list = state.keyword.participants;
             if (list.length === 0) { alert('Нет участников!'); return; }
             const winner = list[Math.floor(Math.random() * list.length)];
+            state.keyword.winner = winner;
             showWinner(winner);
+
+            // Обновляем последний активный розыгрыш в истории
+            if (state.history.length > 0 && state.history[0].status === 'active') {
+                state.history[0].winner = winner;
+                state.history[0].status = 'completed';
+                state.history[0].participants = list.length;
+                renderHistory();
+            }
+
+            updateMechanic('keyword', {
+                status: 'completed',
+                keyword: state.keyword.currentKeyword,
+                participants: list,
+                winner: winner,
+            });
         });
 
         resetKeywordBtn.addEventListener('click', function() {
             state.keyword.participants = [];
             state.keyword.active = false;
+            state.keyword.winner = null;
             renderParticipants();
             startBtn.textContent = '▶️ Старт набора';
             startBtn.disabled = false;
-            sendCommand('resetKeyword');
+
+            updateMechanic('keyword', {
+                status: 'idle',
+                keyword: state.keyword.currentKeyword,
+                participants: [],
+                winner: null,
+            });
+        });
+
+        clearHistoryBtn.addEventListener('click', function() {
+            if (confirm('Очистить всю историю розыгрышей?')) {
+                state.history = [];
+                renderHistory();
+            }
         });
 
         document.getElementById('closeWinnerBtn').addEventListener('click', function() {
@@ -1112,6 +1335,7 @@
         }, 2000);
 
         renderParticipants();
+        renderHistory();
 
         // ==========================================
         // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
@@ -1261,6 +1485,7 @@
                         drawWheel();
 
                         const winner = sectors[winnerIndex];
+                        state.wheel.winner = winner.label;
                         wheelResult.className = 'winner';
                         wheelResult.innerHTML = `🎉 ${winner.label}!`;
 
@@ -1269,6 +1494,12 @@
                         canvas.classList.remove('spinning');
 
                         showWinner(winner.label);
+
+                        updateMechanic('wheel', {
+                            status: 'completed',
+                            sectors: state.wheel.sectors,
+                            winner: winner.label,
+                        });
                     }
                 }
                 animate();
@@ -1282,7 +1513,11 @@
 
         spinBtn.addEventListener('click', function() {
             spinWheel();
-            sendCommand('spinWheel');
+            updateMechanic('wheel', {
+                status: 'spinning',
+                sectors: state.wheel.sectors,
+                winner: null,
+            });
         });
 
         function addSector(label, weight) {
@@ -1295,14 +1530,22 @@
             });
             renderSectors();
             drawWheel();
-            syncState();
+            updateMechanic('wheel', {
+                status: 'idle',
+                sectors: state.wheel.sectors,
+                winner: null,
+            });
         }
 
         function removeSector(index) {
             state.wheel.sectors.splice(index, 1);
             renderSectors();
             drawWheel();
-            syncState();
+            updateMechanic('wheel', {
+                status: 'idle',
+                sectors: state.wheel.sectors,
+                winner: null,
+            });
         }
 
         function renderSectors() {
@@ -1349,7 +1592,11 @@
                 drawWheel();
                 wheelResult.className = '';
                 wheelResult.textContent = '🎡 Нажмите SPIN';
-                syncState();
+                updateMechanic('wheel', {
+                    status: 'idle',
+                    sectors: [],
+                    winner: null,
+                });
             }
         });
 
@@ -1443,10 +1690,19 @@
             state.bank.eliminated = [];
             state.bank.winnerIndex = -1;
             state.bank.revealed = false;
+            state.bank.winner = null;
             renderBankGrid();
             startBankBtn.textContent = '🎲 Запустить розыгрыш!';
             startBankBtn.disabled = false;
-            sendCommand('resetBank');
+
+            updateMechanic('bank', {
+                status: 'idle',
+                items: state.bank.items,
+                eliminated: [],
+                winnerIndex: -1,
+                revealed: false,
+                winner: null,
+            });
         }
 
         function startBankDraw() {
@@ -1469,6 +1725,7 @@
 
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
             state.bank.winnerIndex = winnerIdx;
+            state.bank.winner = state.bank.items[winnerIdx];
 
             const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIdx);
@@ -1476,6 +1733,16 @@
 
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
+
+            // Отправляем начальное состояние
+            updateMechanic('bank', {
+                status: 'running',
+                items: state.bank.items,
+                eliminated: state.bank.eliminated,
+                winnerIndex: state.bank.winnerIndex,
+                revealed: false,
+                winner: null,
+            });
 
             const interval = setInterval(() => {
                 if (currentIndex >= totalToEliminate) {
@@ -1490,6 +1757,15 @@
                     const winnerName = `${winner.icon} #${winnerIdx + 1}`;
                     const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
                     showWinner(winnerName, winnerSub);
+
+                    updateMechanic('bank', {
+                        status: 'completed',
+                        items: state.bank.items,
+                        eliminated: state.bank.eliminated,
+                        winnerIndex: state.bank.winnerIndex,
+                        revealed: true,
+                        winner: winnerName,
+                    });
                     return;
                 }
 
@@ -1504,18 +1780,21 @@
                 activeCells.textContent = active;
                 eliminatedCells.textContent = state.bank.eliminated.length;
 
+                // Обновляем состояние в Redis
+                updateMechanic('bank', {
+                    status: 'running',
+                    items: state.bank.items,
+                    eliminated: state.bank.eliminated,
+                    winnerIndex: state.bank.winnerIndex,
+                    revealed: false,
+                    winner: null,
+                });
+
             }, 60 + Math.random() * 40);
         }
 
-        startBankBtn.addEventListener('click', function() {
-            startBankDraw();
-            sendCommand('startBankDraw');
-        });
-
-        resetBankBtn.addEventListener('click', function() {
-            resetBank();
-            sendCommand('resetBank');
-        });
+        startBankBtn.addEventListener('click', startBankDraw);
+        resetBankBtn.addEventListener('click', resetBank);
 
         renderBankGrid();
 
@@ -1543,7 +1822,7 @@
         window.resetBank = resetBank;
         window.startBankDraw = startBankDraw;
         window.spinWheel = spinWheel;
-        window.sendCommand = sendCommand;
+        window.updateMechanic = updateMechanic;
     </script>
 </body>
 </html>
