@@ -1,7 +1,9 @@
 import { Redis } from '@upstash/redis';
 
-// Подключаемся к Upstash Redis через переменные окружения
-const redis = Redis.fromEnv();
+const redis = new Redis({
+  url: process.env.KV_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
 
 const COMMAND_KEY = 'last_command';
 
@@ -15,47 +17,70 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST - отправить команду =====
+  // ===== POST =====
   if (req.method === 'POST') {
-    const { action, data } = req.body;
+    try {
+      const { action, data } = req.body;
 
-    if (!action) {
-      return res.status(400).json({ error: 'action is required' });
+      if (!action) {
+        return res.status(400).json({ error: 'action is required' });
+      }
+
+      const command = {
+        action,
+        data: data || null,
+        timestamp: Date.now(),
+      };
+
+      // Сохраняем как строку
+      await redis.set(COMMAND_KEY, JSON.stringify(command));
+      console.log('📥 Команда сохранена:', action);
+
+      return res.status(200).json({ success: true, action });
+    } catch (error) {
+      console.error('❌ POST ошибка:', error);
+      return res.status(500).json({ error: 'Redis error', message: error.message });
     }
-
-    const command = {
-      action,
-      data: data || null,
-      timestamp: Date.now(),
-    };
-
-    await redis.set(COMMAND_KEY, JSON.stringify(command));
-    console.log('📥 Команда сохранена:', action);
-
-    return res.status(200).json({ success: true, action });
   }
 
-  // ===== GET - получить команду =====
+  // ===== GET =====
   if (req.method === 'GET') {
-    const raw = await redis.get(COMMAND_KEY);
+    try {
+      const raw = await redis.get(COMMAND_KEY);
 
-    if (!raw) {
-      return res.status(200).json({ action: null });
+      // Если ничего нет — возвращаем null
+      if (raw === null || raw === undefined) {
+        return res.status(200).json({ action: null });
+      }
+
+      // Если raw уже объект — используем его, иначе парсим
+      let command;
+      if (typeof raw === 'string') {
+        command = JSON.parse(raw);
+      } else {
+        // Если raw — объект (например, уже распарсенный Redis)
+        command = raw;
+      }
+
+      // Удаляем команду после прочтения
+      await redis.del(COMMAND_KEY);
+      console.log('📤 Команда отправлена:', command.action);
+
+      return res.status(200).json(command);
+    } catch (error) {
+      console.error('❌ GET ошибка:', error);
+      return res.status(500).json({ error: 'Redis error', message: error.message });
     }
-
-    const command = JSON.parse(raw);
-
-    // Удаляем команду после прочтения
-    await redis.del(COMMAND_KEY);
-    console.log('📤 Команда отправлена:', command.action);
-
-    return res.status(200).json(command);
   }
 
-  // ===== DELETE - удалить команду =====
+  // ===== DELETE =====
   if (req.method === 'DELETE') {
-    await redis.del(COMMAND_KEY);
-    return res.status(200).json({ success: true });
+    try {
+      await redis.del(COMMAND_KEY);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ error: 'Redis error', message: error.message });
+    }
   }
 
   res.status(405).json({ error: 'Method not allowed' });
