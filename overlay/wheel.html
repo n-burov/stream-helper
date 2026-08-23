@@ -66,67 +66,10 @@
             box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
         }
 
-        .winner-announce {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(24px);
-            border: 2px solid rgba(249, 202, 36, 0.25);
-            border-radius: 24px;
-            padding: 32px 56px;
-            text-align: center;
-            animation: winnerPop 0.5s ease;
-            z-index: 1000;
-            min-width: 240px;
-        }
-
-        .winner-announce.active {
-            display: block;
-        }
-
-        @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-
-        .winner-announce .emoji {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .winner-announce .title {
-            font-size: 24px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #f9ca24, #f0932b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .winner-announce .name {
-            font-size: 32px;
-            font-weight: 700;
-            color: #fff;
-            margin-top: 4px;
-        }
-
-        @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
         @media (max-width: 480px) {
             .wheel-overlay { width: 280px; height: 280px; }
             .wheel-bg { width: 280px; height: 280px; }
             .wheel-wrapper { width: 220px; height: 220px; }
-            .winner-announce { padding: 20px 30px; min-width: 180px; }
-            .winner-announce .name { font-size: 24px; }
-            .winner-announce .title { font-size: 20px; }
-            .winner-announce .emoji { font-size: 36px; }
         }
     </style>
 </head>
@@ -139,12 +82,6 @@
         </div>
     </div>
 
-    <div class="winner-announce" id="winnerAnnounce">
-        <span class="emoji">🎉</span>
-        <div class="title">ВЫИГРЫШ!</div>
-        <div class="name" id="winnerName">Сектор</div>
-    </div>
-
     <script>
         const MECHANIC = 'wheel';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
@@ -152,13 +89,10 @@
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
         const wheelOverlay = document.getElementById('wheelOverlay');
-        const winnerAnnounce = document.getElementById('winnerAnnounce');
-        const winnerName = document.getElementById('winnerName');
 
         let sectors = [];
         let currentRotation = 0;
         let isSpinning = false;
-        let lastWinner = null;
         let hideTimeout = null;
         let animationId = null;
 
@@ -263,46 +197,21 @@
             ctx.fill();
         }
 
-        function createConfetti() {
-            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
-            for (let i = 0; i < 40; i++) {
-                const confetti = document.createElement('div');
-                confetti.style.cssText = `
-                    position: fixed;
-                    width: ${5 + Math.random() * 8}px;
-                    height: ${5 + Math.random() * 8}px;
-                    background: ${colors[Math.floor(Math.random() * colors.length)]};
-                    left: ${Math.random() * 100}vw;
-                    top: -20px;
-                    border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                    animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
-                    animation-delay: ${Math.random() * 0.5}s;
-                    z-index: 1001;
-                    pointer-events: none;
-                    transform: rotate(${Math.random() * 360}deg);
-                `;
-                document.body.appendChild(confetti);
-                setTimeout(() => confetti.remove(), 5000);
+        function resetOverlay() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isSpinning = false;
+            canvas.classList.remove('spinning');
+            hideOverlay();
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
             }
         }
 
-        function showWinner(label) {
-            if (label === lastWinner && winnerAnnounce.classList.contains('active')) return;
-            lastWinner = label;
-            winnerName.textContent = label;
-            winnerAnnounce.classList.add('active');
-            createConfetti();
-
-            if (hideTimeout) clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
-                winnerAnnounce.classList.remove('active');
-                lastWinner = null;
-                hideOverlay();
-                hideTimeout = null;
-            }, 5000);
-        }
-
-        function spinWheelToTarget(winnerIndex, targetAngle, duration, winnerLabel) {
+        function spinWheelToTarget(targetAngle, duration) {
             if (isSpinning) return;
             if (!sectors || sectors.length === 0) return;
 
@@ -327,38 +236,28 @@
                     drawWheel();
                     isSpinning = false;
                     canvas.classList.remove('spinning');
-                    showWinner(winnerLabel);
+
+                    // Скрываем через 3 секунды после остановки
+                    if (hideTimeout) clearTimeout(hideTimeout);
+                    hideTimeout = setTimeout(() => {
+                        hideOverlay();
+                        hideTimeout = null;
+                    }, 3000);
                 }
             }
             animate();
         }
 
-        function resetOverlay() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            isSpinning = false;
-            canvas.classList.remove('spinning');
-            hideOverlay();
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
-        }
-
         function renderState(data) {
-            if (!data) return;
+            if (!data) {
+                resetOverlay();
+                return;
+            }
 
-            // Если статус idle или нет данных — скрываем всё
             if (data.status === 'idle' || data.status === 'completed') {
                 // Если оверлей виден — скрываем
                 if (wheelOverlay.classList.contains('active')) {
                     resetOverlay();
-                }
-                // Если есть победитель — показываем его, потом скрываем
-                if (data.winner && data.winner !== lastWinner) {
-                    showWinner(data.winner);
                 }
                 return;
             }
@@ -375,29 +274,13 @@
 
             // Запускаем вращение к целевому углу
             if (data.status === 'spinning' && !isSpinning) {
-                if (data.winnerIndex !== undefined && data.targetAngle !== undefined) {
-                    // Очищаем предыдущий таймер скрытия
+                if (data.targetAngle !== undefined) {
+                    // Убираем предыдущий таймер скрытия
                     if (hideTimeout) {
                         clearTimeout(hideTimeout);
                         hideTimeout = null;
                     }
-                    // Убираем старую плашку победителя
-                    winnerAnnounce.classList.remove('active');
-                    lastWinner = null;
-                    // Запускаем вращение
-                    spinWheelToTarget(
-                        data.winnerIndex,
-                        data.targetAngle,
-                        data.duration || 5000,
-                        data.winnerLabel || 'Сектор'
-                    );
-                }
-            }
-
-            // Если статус completed — показываем победителя
-            if (data.status === 'completed' && data.winner) {
-                if (data.winner !== lastWinner) {
-                    showWinner(data.winner);
+                    spinWheelToTarget(data.targetAngle, data.duration || 5000);
                 }
             }
         }
