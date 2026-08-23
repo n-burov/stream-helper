@@ -1,307 +1,96 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Оверлей | Колесо фортуны</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+function spinWheel() {
+    if (state.wheel.isSpinning) return;
+    if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
 
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: transparent !important;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow: hidden;
-        }
+    state.wheel.isSpinning = true;
+    spinBtn.classList.add('disabled');
+    canvas.classList.add('spinning');
+    wheelResult.className = '';
 
-        .wheel-overlay {
-            display: none;
-            position: relative;
-            align-items: center;
-            justify-content: center;
-            width: 420px;
-            height: 420px;
-        }
+    try {
+        const sectors = state.wheel.sectors;
+        const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
 
-        .wheel-overlay.active {
-            display: flex;
-        }
-
-        .wheel-bg {
-            position: absolute;
-            width: 420px;
-            height: 420px;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
-            z-index: 0;
-        }
-
-        .wheel-wrapper {
-            position: relative;
-            z-index: 1;
-            width: 350px;
-            height: 350px;
-        }
-
-        #wheelCanvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            box-shadow: 0 0 40px rgba(145, 70, 255, 0.1);
-            transition: box-shadow 0.3s;
-        }
-
-        #wheelCanvas.spinning {
-            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
-        }
-
-        @media (max-width: 480px) {
-            .wheel-overlay { width: 280px; height: 280px; }
-            .wheel-bg { width: 280px; height: 280px; }
-            .wheel-wrapper { width: 220px; height: 220px; }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="wheel-overlay" id="wheelOverlay">
-        <div class="wheel-bg"></div>
-        <div class="wheel-wrapper">
-            <canvas id="wheelCanvas" width="600" height="600"></canvas>
-        </div>
-    </div>
-
-    <script>
-        const MECHANIC = 'wheel';
-        const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
-
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
-        const wheelOverlay = document.getElementById('wheelOverlay');
-
-        let sectors = [];
-        let currentRotation = 0;
-        let isSpinning = false;
-        let hideTimeout = null;
-        let animationId = null;
-
-        const defaultColors = [
-            '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
-            '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
-            '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
-        ];
-
-        function showOverlay() {
-            wheelOverlay.classList.add('active');
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
+        let rand = Math.random() * totalWeight;
+        let winnerIndex = 0;
+        let accumulated = 0;
+        for (let i = 0; i < sectors.length; i++) {
+            accumulated += sectors[i].weight;
+            if (rand <= accumulated) {
+                winnerIndex = i;
+                break;
             }
         }
 
-        function hideOverlay() {
-            wheelOverlay.classList.remove('active');
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
+        const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
+        let winnerStartAngle = 0;
+        for (let i = 0; i < winnerIndex; i++) {
+            winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
         }
+        const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
 
-        function drawWheel() {
-            if (!sectors || sectors.length === 0) {
-                ctx.clearRect(0, 0, 600, 600);
-                ctx.fillStyle = 'rgba(255,255,255,0.03)';
-                ctx.beginPath();
-                ctx.arc(300, 300, 240, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                ctx.font = '20px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('Ожидание...', 300, 300);
-                return;
-            }
+        // ===== ТОЛЬКО ЦЕЛЕВОЙ УГОЛ, БЕЗ ЛИШНИХ ОБОРОТОВ =====
+        // Оверлей сам добавит 15 оборотов
+        const targetAngle = -Math.PI / 2 - winnerMidAngle;
 
-            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-            let startAngle = currentRotation;
+        // Длительность для сайта (короткая анимация)
+        const duration = 15000; // 15 секунд, синхронно с оверлеем
 
-            ctx.clearRect(0, 0, 600, 600);
+        // Отправляем в оверлей
+        updateMechanic('wheel', {
+            status: 'spinning',
+            sectors: state.wheel.sectors,
+            winnerIndex: winnerIndex,
+            targetAngle: targetAngle,
+            winnerLabel: sectors[winnerIndex].label,
+            duration: duration,
+        });
 
-            sectors.forEach((sector, i) => {
-                const sliceAngle = (sector.weight / totalWeight) * Math.PI * 2;
-                const endAngle = startAngle + sliceAngle;
+        // Анимация на сайте (короткая, чтобы не отставать)
+        const startTime = Date.now();
+        const startRotation = state.wheel.currentRotation;
 
-                ctx.beginPath();
-                ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 280, startAngle, endAngle);
-                ctx.closePath();
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 5);
+            const currentAngle = startRotation + (targetAngle + Math.PI * 2 * 15 - startRotation) * eased;
 
-                ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
-                ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
+            state.wheel.currentRotation = currentAngle;
+            drawWheel();
 
-                const midAngle = startAngle + sliceAngle / 2;
-                const textRadius = 195;
-                const x = 300 + Math.cos(midAngle) * textRadius;
-                const y = 300 + Math.sin(midAngle) * textRadius;
-
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 14px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 3;
-                const label = sector.label.length > 10 ? sector.label.slice(0, 8) + '…' : sector.label;
-                ctx.fillText(label, 0, 0);
-                ctx.restore();
-
-                startAngle = endAngle;
-            });
-
-            ctx.beginPath();
-            ctx.arc(300, 300, 280, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.fillStyle = '#ff4757';
-            ctx.shadowColor = 'rgba(255,71,87,0.3)';
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.moveTo(300, 6);
-            ctx.lineTo(285, 28);
-            ctx.lineTo(315, 28);
-            ctx.closePath();
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            ctx.fillStyle = 'rgba(255,255,255,0.08)';
-            ctx.beginPath();
-            ctx.arc(300, 33, 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function resetOverlay() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            isSpinning = false;
-            canvas.classList.remove('spinning');
-            hideOverlay();
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
-        }
-
-        function spinWheelToTarget(targetAngle, duration) {
-            if (isSpinning) return;
-            if (!sectors || sectors.length === 0) return;
-
-            showOverlay();
-            isSpinning = true;
-            canvas.classList.add('spinning');
-
-            const startTime = Date.now();
-            const startRotation = currentRotation;
-
-            function animate() {
-                const elapsed = Date.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const eased = 1 - Math.pow(1 - progress, 5);
-                currentRotation = startRotation + (targetAngle - startRotation) * eased;
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                state.wheel.currentRotation = (targetAngle + Math.PI * 2 * 15) % (Math.PI * 2);
                 drawWheel();
 
-                if (progress < 1) {
-                    animationId = requestAnimationFrame(animate);
-                } else {
-                    currentRotation = targetAngle % (Math.PI * 2);
-                    drawWheel();
-                    isSpinning = false;
-                    canvas.classList.remove('spinning');
+                const winner = sectors[winnerIndex];
+                state.wheel.winner = winner.label;
+                wheelResult.className = 'winner';
+                wheelResult.innerHTML = `🎉 ${winner.label}!`;
 
-                    // Скрываем через 3 секунды после остановки
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        hideOverlay();
-                        hideTimeout = null;
-                    }, 3000);
-                }
-            }
-            animate();
-        }
+                state.wheel.isSpinning = false;
+                spinBtn.classList.remove('disabled');
+                canvas.classList.remove('spinning');
 
-        function renderState(data) {
-            if (!data) {
-                resetOverlay();
-                return;
-            }
+                showWinnerOnSite(winner.label);
 
-            if (data.status === 'idle' || data.status === 'completed') {
-                // Если оверлей виден — скрываем
-                if (wheelOverlay.classList.contains('active')) {
-                    resetOverlay();
-                }
-                return;
-            }
-
-            // Обновляем сектора
-            if (data.sectors) {
-                const newSectors = JSON.stringify(data.sectors);
-                const oldSectors = JSON.stringify(sectors);
-                if (newSectors !== oldSectors) {
-                    sectors = data.sectors;
-                    drawWheel();
-                }
-            }
-
-            // Запускаем вращение к целевому углу
-            if (data.status === 'spinning' && !isSpinning) {
-                if (data.targetAngle !== undefined) {
-                    // Убираем предыдущий таймер скрытия
-                    if (hideTimeout) {
-                        clearTimeout(hideTimeout);
-                        hideTimeout = null;
-                    }
-                    spinWheelToTarget(data.targetAngle, data.duration || 5000);
-                }
+                updateMechanic('wheel', {
+                    status: 'completed',
+                    sectors: state.wheel.sectors,
+                    winner: winner.label,
+                    emoji: '🎉',
+                    title: 'ВЫИГРЫШ',
+                    tag: '🎡 Колесо фортуны',
+                });
             }
         }
-
-        async function pollState() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                renderState(data);
-            } catch (error) {
-                // тихо
-            }
-        }
-
-        setTimeout(pollState, 500);
-        setInterval(pollState, 1500);
-
-        drawWheel();
-
-        console.log('🎬 Оверлей "Колесо фортуны" загружен');
-        console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
-    </script>
-</body>
-</html>
+        animate();
+    } catch (error) {
+        state.wheel.isSpinning = false;
+        spinBtn.classList.remove('disabled');
+        canvas.classList.remove('spinning');
+        console.error(error);
+    }
+}
