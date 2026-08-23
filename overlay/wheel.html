@@ -22,8 +22,36 @@
             overflow: hidden;
         }
 
+        /* ===== КОНТЕЙНЕР (по умолчанию скрыт) ===== */
+        .wheel-overlay {
+            display: none;
+            position: relative;
+            align-items: center;
+            justify-content: center;
+            width: 420px;
+            height: 420px;
+        }
+
+        .wheel-overlay.active {
+            display: flex;
+        }
+
+        /* ===== ФОН КОЛЕСА ===== */
+        .wheel-bg {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
+            z-index: 0;
+        }
+
         .wheel-wrapper {
             position: relative;
+            z-index: 1;
             width: 350px;
             height: 350px;
         }
@@ -40,6 +68,7 @@
             box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
         }
 
+        /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
         .winner-announce {
             display: none;
             position: fixed;
@@ -47,13 +76,14 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            border: 2px solid rgba(249, 202, 36, 0.3);
-            border-radius: 20px;
-            padding: 30px 50px;
+            backdrop-filter: blur(24px);
+            border: 2px solid rgba(249, 202, 36, 0.25);
+            border-radius: 24px;
+            padding: 32px 56px;
             text-align: center;
             animation: winnerPop 0.5s ease;
             z-index: 1000;
+            min-width: 240px;
         }
 
         .winner-announce.active {
@@ -61,7 +91,7 @@
         }
 
         @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
             60% { transform: translate(-50%, -50%) scale(1.05); }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
@@ -69,7 +99,7 @@
         .winner-announce .emoji {
             font-size: 48px;
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .winner-announce .title {
@@ -93,8 +123,10 @@
         }
 
         @media (max-width: 480px) {
+            .wheel-overlay { width: 280px; height: 280px; }
+            .wheel-bg { width: 280px; height: 280px; }
             .wheel-wrapper { width: 220px; height: 220px; }
-            .winner-announce { padding: 20px 30px; }
+            .winner-announce { padding: 20px 30px; min-width: 180px; }
             .winner-announce .name { font-size: 24px; }
             .winner-announce .title { font-size: 20px; }
             .winner-announce .emoji { font-size: 36px; }
@@ -103,8 +135,11 @@
 </head>
 <body>
 
-    <div class="wheel-wrapper">
-        <canvas id="wheelCanvas" width="600" height="600"></canvas>
+    <div class="wheel-overlay" id="wheelOverlay">
+        <div class="wheel-bg"></div>
+        <div class="wheel-wrapper">
+            <canvas id="wheelCanvas" width="600" height="600"></canvas>
+        </div>
     </div>
 
     <div class="winner-announce" id="winnerAnnounce">
@@ -119,6 +154,7 @@
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
+        const wheelOverlay = document.getElementById('wheelOverlay');
         const winnerAnnounce = document.getElementById('winnerAnnounce');
         const winnerName = document.getElementById('winnerName');
 
@@ -126,12 +162,28 @@
         let currentRotation = 0;
         let isSpinning = false;
         let lastWinner = null;
+        let isVisible = false;
+        let hideTimeout = null;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
             '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
             '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
         ];
+
+        function showOverlay() {
+            wheelOverlay.classList.add('active');
+            isVisible = true;
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        function hideOverlay() {
+            wheelOverlay.classList.remove('active');
+            isVisible = false;
+        }
 
         function drawWheel() {
             if (!sectors || sectors.length === 0) {
@@ -241,14 +293,22 @@
             winnerName.textContent = label;
             winnerAnnounce.classList.add('active');
             createConfetti();
-            setTimeout(() => {
+
+            // Через 5 секунд скрываем оверлей
+            if (hideTimeout) clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
                 winnerAnnounce.classList.remove('active');
+                hideOverlay();
+                hideTimeout = null;
             }, 5000);
         }
 
         function spinWheel() {
             if (isSpinning) return;
             if (!sectors || sectors.length === 0) return;
+
+            // Показываем оверлей
+            showOverlay();
 
             isSpinning = true;
             canvas.classList.add('spinning');
@@ -270,7 +330,8 @@
             const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
             const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
 
-            const duration = 3000 + Math.random() * 1000;
+            // Увеличено время вращения в 4 раза
+            const duration = 5000 + Math.random() * 2000; // 5-7 секунд
             const startTime = Date.now();
             const startRotation = currentRotation;
 
@@ -315,7 +376,10 @@
 
             // Показываем победителя, если есть
             if (data.winner) {
-                showWinner(data.winner);
+                // Если победитель уже показан, не дублируем
+                if (data.winner !== lastWinner) {
+                    showWinner(data.winner);
+                }
             }
         }
 
