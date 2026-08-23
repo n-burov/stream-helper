@@ -52,6 +52,17 @@
             margin-bottom: 4px;
         }
 
+        .winner-container .winner-icon {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 8px;
+            border-radius: 12px;
+            image-rendering: pixelated;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+        }
+
         .winner-container .title {
             font-size: 28px;
             font-weight: 900;
@@ -64,12 +75,24 @@
             font-size: 16px;
             color: rgba(255, 255, 255, 0.4);
             margin-top: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .winner-container .subtitle .sub-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            vertical-align: middle;
         }
 
         .winner-container .name {
             font-size: 40px;
             font-weight: 700;
-            color: #fff;
             margin-top: 6px;
             text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
@@ -108,6 +131,10 @@
             .winner-container .subtitle {
                 font-size: 13px;
             }
+            .winner-container .winner-icon {
+                width: 48px;
+                height: 48px;
+            }
         }
 
         @media (max-width: 400px) {
@@ -128,6 +155,10 @@
             .winner-container .subtitle {
                 font-size: 11px;
             }
+            .winner-container .winner-icon {
+                width: 36px;
+                height: 36px;
+            }
         }
     </style>
 </head>
@@ -135,6 +166,7 @@
 
     <div class="winner-container" id="winnerContainer">
         <span class="emoji" id="winnerEmoji">🏆</span>
+        <img class="winner-icon" id="winnerIcon" style="display:none;" />
         <div class="title" id="winnerTitle">ПОБЕДИТЕЛЬ!</div>
         <div class="subtitle" id="winnerSubtitle">🎉 Поздравляем!</div>
         <div class="name" id="winnerName">Игрок</div>
@@ -146,6 +178,7 @@
 
         const container = document.getElementById('winnerContainer');
         const emojiEl = document.getElementById('winnerEmoji');
+        const iconEl = document.getElementById('winnerIcon');
         const titleEl = document.getElementById('winnerTitle');
         const subtitleEl = document.getElementById('winnerSubtitle');
         const nameEl = document.getElementById('winnerName');
@@ -184,15 +217,33 @@
 
             emojiEl.textContent = data.emoji || '🏆';
             titleEl.textContent = data.title || 'ПОБЕДИТЕЛЬ!';
-            
-            // Если subtitle содержит HTML с цветом, используем innerHTML
-            if (data.subtitle && data.subtitle.includes('<span')) {
+
+            // Иконка
+            if (data.icon && data.icon.startsWith('http')) {
+                iconEl.style.display = 'block';
+                iconEl.src = data.icon;
+                if (data.color) {
+                    iconEl.style.borderColor = `#${data.color}`;
+                }
+            } else {
+                iconEl.style.display = 'none';
+            }
+
+            // Подзаголовок (может содержать HTML с иконкой)
+            if (data.subtitle && data.subtitle.includes('<img')) {
                 subtitleEl.innerHTML = data.subtitle;
             } else {
                 subtitleEl.textContent = data.subtitle || '🎉 Поздравляем!';
             }
-            
+
+            // Имя с цветом
+            if (data.color) {
+                nameEl.style.color = `#${data.color}`;
+            } else {
+                nameEl.style.color = '#fff';
+            }
             nameEl.textContent = data.name;
+
             tagEl.textContent = data.tag || '🎯 Розыгрыш';
 
             container.classList.add('active');
