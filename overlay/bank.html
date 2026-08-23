@@ -166,6 +166,7 @@
         let isRunning = false;
         let hideTimeout = null;
         let intervalId = null;
+        let lastWinner = null;
 
         const itemIcons = [
             '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
@@ -237,6 +238,11 @@
                 intervalId = null;
             }
             isRunning = false;
+            // Сбрасываем состояние
+            eliminated = [];
+            revealed = false;
+            winnerIndex = -1;
+            lastWinner = null;
         }
 
         function resetBankOverlay() {
@@ -253,6 +259,7 @@
         }
 
         function startBankAnimation(data) {
+            // Если уже запущена — сбрасываем
             if (isRunning) {
                 if (intervalId) {
                     clearInterval(intervalId);
@@ -263,14 +270,17 @@
 
             if (!data || !data.items) return;
 
+            // Сохраняем данные
             items = data.items;
             winnerIndex = data.winnerIndex !== undefined ? data.winnerIndex : Math.floor(Math.random() * items.length);
             eliminated = [];
             revealed = false;
+            lastWinner = null;
 
             showBank();
             renderBankGrid();
 
+            // Перемешиваем порядок устранения
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIndex);
             shuffleArray(toEliminate);
@@ -287,10 +297,18 @@
                     renderBankGrid();
                     isRunning = false;
 
-                    // Скрываем через 3 секунды
+                    // Скрываем через 3 секунды и сбрасываем состояние в idle
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
+                        // Скрываем оверлей
                         hideBank();
+                        // Сбрасываем состояние в idle, чтобы не перезапускать анимацию
+                        items = [];
+                        eliminated = [];
+                        winnerIndex = -1;
+                        revealed = false;
+                        lastWinner = null;
+                        renderBankGrid();
                         hideTimeout = null;
                     }, 3000);
                     return;
@@ -307,24 +325,61 @@
         }
 
         function renderState(data) {
-            if (!data || data.status === 'idle') {
+            if (!data) {
                 resetBankOverlay();
                 return;
             }
 
+            // Если статус idle — сбрасываем всё
+            if (data.status === 'idle') {
+                resetBankOverlay();
+                items = [];
+                eliminated = [];
+                winnerIndex = -1;
+                revealed = false;
+                lastWinner = null;
+                renderBankGrid();
+                return;
+            }
+
+            // Если статус running и ещё не запущена анимация — запускаем
             if (data.status === 'running' && !isRunning) {
                 startBankAnimation(data);
                 return;
             }
 
+            // Если статус completed — скрываем и сбрасываем
             if (data.status === 'completed') {
-                // Если банк ещё виден — скрываем через небольшую задержку
+                // Если банк ещё виден — скрываем
                 if (bankWrapper.classList.contains('active')) {
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideBank();
+                        // Сбрасываем состояние в idle
+                        items = [];
+                        eliminated = [];
+                        winnerIndex = -1;
+                        revealed = false;
+                        lastWinner = null;
+                        renderBankGrid();
                         hideTimeout = null;
                     }, 3000);
+                } else {
+                    // Если банк уже скрыт — просто сбрасываем состояние
+                    items = [];
+                    eliminated = [];
+                    winnerIndex = -1;
+                    revealed = false;
+                    lastWinner = null;
+                    renderBankGrid();
+                }
+                // Сбрасываем флаг isRunning, если он ещё активен
+                if (isRunning) {
+                    isRunning = false;
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        intervalId = null;
+                    }
                 }
                 return;
             }
