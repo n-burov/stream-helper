@@ -332,6 +332,7 @@
             gap: 12px;
             flex-wrap: wrap;
             margin-bottom: 20px;
+            align-items: center;
         }
 
         .keyword-setup input {
@@ -350,6 +351,10 @@
             outline: none;
             border-color: #9146ff;
             box-shadow: 0 0 20px rgba(145, 70, 255, 0.15);
+        }
+
+        .keyword-setup .btn {
+            flex-shrink: 0;
         }
 
         .participants-grid {
@@ -744,7 +749,6 @@
             margin-top: 10px;
         }
 
-        /* ===== ИСПРАВЛЕНО: стиль для иконки в модалке ===== */
         .winner-sub img {
             width: 24px;
             height: 24px;
@@ -921,6 +925,13 @@
             box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
         }
 
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1081,21 +1092,31 @@
         <div class="tab-content active" id="tab1">
             <div class="card">
                 <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
+
+                <!-- ===== КНОПКИ ===== -->
                 <div class="keyword-setup">
                     <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут" />
-                    <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт набора</button>
-                    <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
-                    <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
+
+                    <!-- Кнопка Старт → меняется на Стоп -->
+                    <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт</button>
+
+                    <!-- Кнопка Крутить (появляется только после остановки, если есть участники) -->
+                    <button class="btn btn-gold" id="drawKeywordBtn" style="display:none;">🎲 Крутить!</button>
+
+                    <!-- Кнопка Сброс (всегда видна) -->
                     <button class="btn btn-danger" id="resetKeywordBtn" style="background:rgba(255,71,87,0.2); border:1px solid rgba(255,71,87,0.1);">🔄 Сброс</button>
                 </div>
+
                 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
                     <span style="font-size:14px; color:rgba(255,255,255,0.5);">Участников: <strong id="participantCount">0</strong></span>
                     <span style="font-size:14px; color:rgba(255,255,255,0.5);">Статус: <span id="keywordStatus" style="color:#ff4757;">Остановлен</span></span>
                     <span style="font-size:14px; color:rgba(255,255,255,0.3);">Слово: <strong id="displayKeyword">!лут</strong></span>
                 </div>
+
                 <div class="participants-grid" id="participantsGrid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>
                 </div>
+
                 <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:16px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <span style="font-size:14px; font-weight:600; color:rgba(255,255,255,0.5);">📜 История розыгрышей</span>
@@ -1137,12 +1158,18 @@
                     <span class="icon">🏆</span> Банк 98
                     <span style="font-size:14px; color:rgba(255,255,255,0.4); font-weight:400; margin-left:10px;">🎲 98 ячеек, одна победит!</span>
                 </div>
+
+                <!-- ===== КНОПКИ ===== -->
                 <div class="control-buttons">
                     <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
                     <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
                     <button class="btn btn-primary" id="loadItemsBtn">📥 Загрузить предметы</button>
+                    <button class="btn btn-success" id="uploadFileBtn">📂 Загрузить из файла</button>
+                    <input type="file" id="fileInput" accept=".txt,.lua" style="display:none;" />
                 </div>
+
                 <div class="item-ids-grid" id="itemIdsGrid"></div>
+
                 <div class="draw-status">
                     <div class="info">
                         <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
@@ -1151,6 +1178,7 @@
                         <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.3);">—</strong></span>
                     </div>
                 </div>
+
                 <div class="grid-container" id="bankGrid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">Загрузите предметы (кнопка "Загрузить предметы")</div>
                 </div>
@@ -1184,22 +1212,17 @@
         const authBtn = document.getElementById('authBtn');
         const authError = document.getElementById('authError');
 
-        // Проверяем токен при загрузке
         async function checkAuth() {
             const token = localStorage.getItem(AUTH_TOKEN_KEY);
             if (!token) {
                 showAuthScreen();
                 return;
             }
-
             try {
                 const response = await fetch('/api/verify', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
+                    headers: { 'Authorization': `Bearer ${token}` },
                 });
                 const data = await response.json();
-
                 if (data.valid) {
                     hideAuthScreen();
                 } else {
@@ -1219,11 +1242,9 @@
         function hideAuthScreen() {
             authOverlay.classList.add('hidden');
             mainContent.style.display = 'block';
-            // Инициализируем сайт после авторизации
             initApp();
         }
 
-        // Авторизация
         authBtn.addEventListener('click', async function() {
             const password = authPassword.value.trim();
             if (!password) {
@@ -1231,11 +1252,9 @@
                 authError.classList.add('show');
                 return;
             }
-
             this.disabled = true;
             this.textContent = '⏳ Проверка...';
             authError.classList.remove('show');
-
             try {
                 const response = await fetch('/api/auth', {
                     method: 'POST',
@@ -1243,7 +1262,6 @@
                     body: JSON.stringify({ password }),
                 });
                 const data = await response.json();
-
                 if (data.success) {
                     localStorage.setItem(AUTH_TOKEN_KEY, data.token);
                     hideAuthScreen();
@@ -1256,18 +1274,15 @@
                 authError.textContent = 'Ошибка соединения с сервером';
                 authError.classList.add('show');
             }
-
             this.disabled = false;
             this.textContent = 'Войти';
         });
 
-        // Выход
         document.getElementById('logoutBtn').addEventListener('click', function() {
             localStorage.removeItem(AUTH_TOKEN_KEY);
             showAuthScreen();
         });
 
-        // Enter в поле пароля
         authPassword.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 authBtn.click();
@@ -1275,7 +1290,7 @@
         });
 
         // ==========================================
-        // 1. ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+        // 1. ИНИЦИАЛИЗАЦИЯ
         // ==========================================
 
         let appInitialized = false;
@@ -1284,9 +1299,6 @@
             if (appInitialized) return;
             appInitialized = true;
 
-            // ==========================================
-            // 2. API ДЛЯ СИНХРОНИЗАЦИИ
-            // ==========================================
             const API_URL = '/api/webhook';
 
             async function updateMechanic(mechanic, data) {
@@ -1305,7 +1317,7 @@
             }
 
             // ==========================================
-            // 3. СОСТОЯНИЕ
+            // 2. СОСТОЯНИЕ
             // ==========================================
             const state = {
                 keyword: { active: false, currentKeyword: '!лут', participants: [], winner: null },
@@ -1336,7 +1348,7 @@
             };
 
             // ==========================================
-            // 4. ТАБЫ
+            // 3. ТАБЫ
             // ==========================================
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1350,11 +1362,10 @@
             });
 
             // ==========================================
-            // 5. КЛЮЧЕВОЕ СЛОВО
+            // 4. КЛЮЧЕВОЕ СЛОВО
             // ==========================================
             const keywordInput = document.getElementById('keywordInput');
             const startBtn = document.getElementById('startKeywordBtn');
-            const stopBtn = document.getElementById('stopKeywordBtn');
             const drawBtn = document.getElementById('drawKeywordBtn');
             const resetKeywordBtn = document.getElementById('resetKeywordBtn');
             const participantsGrid = document.getElementById('participantsGrid');
@@ -1381,8 +1392,15 @@
                 const list = state.keyword.participants;
                 participantCount.textContent = list.length;
                 displayKeyword.textContent = state.keyword.currentKeyword;
-                keywordStatus.textContent = state.keyword.active ? 'Активен' : 'Остановлен';
-                keywordStatus.style.color = state.keyword.active ? '#00ff64' : '#ff4757';
+
+                if (state.keyword.active) {
+                    keywordStatus.textContent = 'Активен';
+                    keywordStatus.style.color = '#00ff64';
+                } else {
+                    keywordStatus.textContent = 'Остановлен';
+                    keywordStatus.style.color = '#ff4757';
+                }
+
                 if (list.length === 0) {
                     participantsGrid.innerHTML =
                         `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>`;
@@ -1439,9 +1457,6 @@
                 }
             }
 
-            // ==========================================
-            // ИСПРАВЛЕНО: showWinnerOnSite использует innerHTML
-            // ==========================================
             function showWinnerOnSite(name, sub) {
                 document.getElementById('winnerModalName').textContent = name;
                 document.getElementById('winnerModalSub').innerHTML = sub || '🎉 Поздравляем!';
@@ -1449,30 +1464,59 @@
                 createConfetti();
             }
 
+            // ===== ЛОГИКА КНОПОК КЛЮЧЕВОГО СЛОВА =====
+            function resetKeywordUI() {
+                startBtn.textContent = '▶️ Старт';
+                startBtn.className = 'btn btn-primary';
+                drawBtn.style.display = 'none';
+                drawBtn.disabled = false;
+                startBtn.disabled = false;
+            }
+
             startBtn.addEventListener('click', function() {
                 const kw = keywordInput.value.trim();
                 if (!kw) { alert('Введите кодовое слово!'); return; }
+
+                if (state.keyword.active) {
+                    // ===== ОСТАНОВКА =====
+                    state.keyword.active = false;
+                    renderParticipants();
+                    this.textContent = '▶️ Старт';
+                    this.className = 'btn btn-primary';
+
+                    // Если есть участники — показываем кнопку "Крутить!"
+                    if (state.keyword.participants.length > 0) {
+                        drawBtn.style.display = 'inline-block';
+                    } else {
+                        drawBtn.style.display = 'none';
+                    }
+
+                    updateMechanic('keyword', {
+                        status: 'inactive',
+                        keyword: state.keyword.currentKeyword,
+                        participants: state.keyword.participants,
+                        winner: state.keyword.winner,
+                    });
+                    return;
+                }
+
+                // ===== СТАРТ =====
                 state.keyword.active = true;
                 state.keyword.currentKeyword = kw;
                 state.keyword.participants = [];
                 state.keyword.winner = null;
                 renderParticipants();
-                this.textContent = '▶️ Идёт набор...';
-                this.disabled = true;
-                addToHistory(kw, [], null);
-                updateMechanic('keyword', { status: 'active', keyword: kw, participants: [], winner: null });
-            });
+                this.textContent = '⏹️ Стоп';
+                this.className = 'btn btn-danger';
+                drawBtn.style.display = 'none';
+                drawBtn.disabled = false;
 
-            stopBtn.addEventListener('click', function() {
-                state.keyword.active = false;
-                renderParticipants();
-                startBtn.textContent = '▶️ Старт набора';
-                startBtn.disabled = false;
+                addToHistory(kw, [], null);
                 updateMechanic('keyword', {
-                    status: 'inactive',
-                    keyword: state.keyword.currentKeyword,
-                    participants: state.keyword.participants,
-                    winner: state.keyword.winner,
+                    status: 'active',
+                    keyword: kw,
+                    participants: [],
+                    winner: null,
                 });
             });
 
@@ -1482,6 +1526,15 @@
                 const winner = list[Math.floor(Math.random() * list.length)];
                 state.keyword.winner = winner;
                 showWinnerOnSite(winner);
+
+                // Обновляем историю
+                if (state.history.length > 0 && state.history[0].status === 'active') {
+                    state.history[0].winner = winner;
+                    state.history[0].status = 'completed';
+                    state.history[0].participants = list.length;
+                    renderHistory();
+                }
+
                 updateMechanic('keyword', {
                     status: 'completed',
                     keyword: state.keyword.currentKeyword,
@@ -1492,12 +1545,10 @@
                     subtitle: '🎉 Поздравляем!',
                     tag: '🎯 Ключевое слово',
                 });
-                if (state.history.length > 0 && state.history[0].status === 'active') {
-                    state.history[0].winner = winner;
-                    state.history[0].status = 'completed';
-                    state.history[0].participants = list.length;
-                    renderHistory();
-                }
+
+                // После розыгрыша скрываем кнопку "Крутить"
+                drawBtn.style.display = 'none';
+                resetKeywordUI();
             });
 
             resetKeywordBtn.addEventListener('click', function() {
@@ -1505,10 +1556,14 @@
                 state.keyword.active = false;
                 state.keyword.winner = null;
                 renderParticipants();
-                startBtn.textContent = '▶️ Старт набора';
-                startBtn.disabled = false;
-                updateMechanic('keyword', { status: 'idle', keyword: state.keyword.currentKeyword,
-                    participants: [], winner: null });
+                resetKeywordUI();
+
+                updateMechanic('keyword', {
+                    status: 'idle',
+                    keyword: state.keyword.currentKeyword,
+                    participants: [],
+                    winner: null,
+                });
             });
 
             clearHistoryBtn.addEventListener('click', function() {
@@ -1525,6 +1580,7 @@
                 if (e.target === this) this.classList.remove('active');
             });
 
+            // Демо-участники
             const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage',
                 'DarkRanger', 'LightBringer'
             ];
@@ -1541,7 +1597,7 @@
             renderHistory();
 
             // ==========================================
-            // 6. КОЛЕСО ФОРТУНЫ
+            // 5. КОЛЕСО ФОРТУНЫ
             // ==========================================
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
@@ -1764,7 +1820,7 @@
             drawWheel();
 
             // ==========================================
-            // 7. БАНК 98
+            // 6. БАНК 98
             // ==========================================
             const bankGrid = document.getElementById('bankGrid');
             const totalCells = document.getElementById('totalCells');
@@ -1774,6 +1830,8 @@
             const startBankBtn = document.getElementById('startBankBtn');
             const resetBankBtn = document.getElementById('resetBankBtn');
             const loadItemsBtn = document.getElementById('loadItemsBtn');
+            const uploadFileBtn = document.getElementById('uploadFileBtn');
+            const fileInput = document.getElementById('fileInput');
             const itemIdsGrid = document.getElementById('itemIdsGrid');
 
             function generateItemIdFields() {
@@ -2026,6 +2084,59 @@
                 setTimeout(waitForBankDone, 500);
             }
 
+            // ===== ЗАГРУЗКА ИЗ ФАЙЛА =====
+            uploadFileBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        let ids = parseLuaTable(content);
+                        if (ids && ids.length === 98) {
+                            const inputs = document.querySelectorAll('.item-id-input');
+                            inputs.forEach((input, index) => {
+                                input.value = ids[index] || 0;
+                            });
+                            loadItemsFromAPI();
+                            console.log('✅ Загружено', ids.length, 'ID из файла');
+                            alert(`✅ Загружено ${ids.length} ID предметов из файла!`);
+                        } else {
+                            alert('❌ Неверный формат файла. Ожидается 98 ID предметов.');
+                        }
+                    } catch (error) {
+                        console.error('❌ Ошибка парсинга файла:', error);
+                        alert('❌ Ошибка парсинга файла. Проверьте формат.');
+                    }
+                };
+                reader.readAsText(file);
+                fileInput.value = '';
+            });
+
+            function parseLuaTable(content) {
+                let match = content.match(/items\s*=\s*\{([^}]*)\}/);
+                if (!match) {
+                    match = content.match(/([\d,\s]+)/);
+                    if (match) {
+                        const numbers = match[1].match(/\d+/g);
+                        if (numbers && numbers.length >= 98) {
+                            return numbers.slice(0, 98).map(Number);
+                        }
+                    }
+                    return null;
+                }
+                const itemsStr = match[1];
+                const numbers = itemsStr.match(/\d+/g);
+                if (!numbers || numbers.length < 98) {
+                    return null;
+                }
+                return numbers.slice(0, 98).map(Number);
+            }
+
             generateItemIdFields();
             loadItemsBtn.addEventListener('click', loadItemsFromAPI);
             resetBankBtn.addEventListener('click', resetBank);
@@ -2034,7 +2145,7 @@
             setTimeout(() => loadItemsFromAPI(), 1000);
 
             // ==========================================
-            // 8. КОНСОЛЬ
+            // 7. КОНСОЛЬ
             // ==========================================
             console.log('🎮 Стример-хаб загружен!');
             console.log('📦 Состояние:', state);
@@ -2050,10 +2161,7 @@
         // СТАРТ
         // ==========================================
 
-        // Запускаем проверку авторизации
         checkAuth();
-
-        // Показываем экран авторизации по умолчанию (если проверка ещё не завершена)
         showAuthScreen();
 
         console.log('🔐 Авторизация настроена!');
