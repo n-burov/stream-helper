@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST — обновить состояние механики =====
+  // ===== POST =====
   if (req.method === 'POST') {
     try {
       const { mechanic, data } = req.body;
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
       const key = `${mechanic}_state`;
       await redis.set(key, JSON.stringify(data));
-      console.log(`📥 Состояние ${mechanic} обновлено:`, data);
+      console.log(`📥 Состояние ${mechanic} обновлено`);
 
       return res.status(200).json({ success: true, mechanic });
     } catch (error) {
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ===== GET — получить состояние механики =====
+  // ===== GET =====
   if (req.method === 'GET') {
     try {
       const { mechanic } = req.query;
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       const raw = await redis.get(key);
 
       if (!raw) {
-        return res.status(200).json({ action: null });
+        return res.status(200).json({ status: 'idle' });
       }
 
       let data;
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ===== DELETE — сбросить состояние =====
+  // ===== DELETE =====
   if (req.method === 'DELETE') {
     try {
       const { mechanic } = req.query;
