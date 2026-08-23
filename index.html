@@ -744,6 +744,16 @@
             margin-top: 10px;
         }
 
+        /* ===== ИСПРАВЛЕНО: стиль для иконки в модалке ===== */
+        .winner-sub img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            vertical-align: middle;
+            border-radius: 4px;
+            image-rendering: pixelated;
+        }
+
         .winner-close-btn {
             position: absolute;
             top: 20px;
@@ -1429,9 +1439,12 @@
                 }
             }
 
+            // ==========================================
+            // ИСПРАВЛЕНО: showWinnerOnSite использует innerHTML
+            // ==========================================
             function showWinnerOnSite(name, sub) {
                 document.getElementById('winnerModalName').textContent = name;
-                document.getElementById('winnerModalSub').textContent = sub || '🎉 Поздравляем!';
+                document.getElementById('winnerModalSub').innerHTML = sub || '🎉 Поздравляем!';
                 document.getElementById('winnerModal').classList.add('active');
                 createConfetti();
             }
