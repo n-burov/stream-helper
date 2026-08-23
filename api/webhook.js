@@ -27,6 +27,19 @@ export default async function handler(req, res) {
       await redis.set(key, JSON.stringify(data));
       console.log(`📥 Состояние ${mechanic} обновлено`);
 
+      // Если есть победитель — отправляем его в отдельный канал для оверлея
+      if (data.winner) {
+        const winnerData = {
+          name: data.winner,
+          emoji: data.emoji || '🏆',
+          title: data.title || 'ПОБЕДИТЕЛЬ!',
+          subtitle: data.subtitle || '🎉 Поздравляем!',
+          tag: data.tag || '🎯 Розыгрыш',
+        };
+        await redis.set('winner', JSON.stringify(winnerData));
+        console.log('🏆 Победитель отправлен в winner-канал');
+      }
+
       return res.status(200).json({ success: true, mechanic });
     } catch (error) {
       console.error('❌ POST ошибка:', error);
