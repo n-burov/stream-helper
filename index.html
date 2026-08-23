@@ -1713,12 +1713,11 @@
             startBankBtn.textContent = '⏳ Идёт розыгрыш...';
             startBankBtn.disabled = true;
         
-            // ===== ВЫБИРАЕМ ПОБЕДИТЕЛЯ =====
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
             state.bank.winnerIndex = winnerIdx;
             state.bank.winner = state.bank.items[winnerIdx];
         
-            // ===== ОТПРАВЛЯЕМ ТОЛЬКО СТАРТОВУЮ КОМАНДУ =====
+            // ===== ОТПРАВЛЯЕМ КОМАНДУ В ОВЕРЛЕЙ =====
             updateMechanic('bank', {
                 status: 'running',
                 items: state.bank.items,
@@ -1726,7 +1725,7 @@
                 timestamp: Date.now(),
             });
         
-            // ===== СИМУЛИРУЕМ АНИМАЦИЮ НА САЙТЕ (только для визуала) =====
+            // ===== СИМУЛИРУЕМ АНИМАЦИЮ НА САЙТЕ =====
             const allIndices = Array.from({ length: state.bank.items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIdx);
             shuffleArray(toEliminate);
@@ -1739,10 +1738,8 @@
                     clearInterval(interval);
                     state.bank.revealed = true;
                     renderBankGrid();
-                    state.bank.isRunning = false;
-                    startBankBtn.textContent = '🎲 Запустить розыгрыш!';
-                    startBankBtn.disabled = false;
         
+                    // ===== НЕ СБРАСЫВАЕМ isRunning ЗДЕСЬ — ЖДЁМ done ОТ ОВЕРЛЕЯ =====
                     const winner = state.bank.items[winnerIdx];
                     const winnerName = `${winner.icon} #${winnerIdx + 1}`;
                     const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
@@ -1763,6 +1760,32 @@
                 eliminatedCells.textContent = state.bank.eliminated.length;
         
             }, 60 + Math.random() * 40);
+        
+            // ===== СЛУШАЕМ done ОТ ОВЕРЛЕЯ =====
+            function waitForBankDone() {
+                fetch(`/api/webhook?mechanic=bank`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'done') {
+                            // Оверлей закончил анимацию
+                            state.bank.isRunning = false;
+                            startBankBtn.textContent = '🎲 Запустить розыгрыш!';
+                            startBankBtn.disabled = false;
+                            // Сбрасываем состояние банка в idle
+                            resetBank();
+                            console.log('✅ Банк завершил работу, кнопка разблокирована');
+                        } else {
+                            // Если ещё не done — проверяем через 500ms
+                            setTimeout(waitForBankDone, 500);
+                        }
+                    })
+                    .catch(() => {
+                        setTimeout(waitForBankDone, 500);
+                    });
+            }
+        
+            // Запускаем ожидание done
+            setTimeout(waitForBankDone, 500);
         }
 
         startBankBtn.addEventListener('click', startBankDraw);
