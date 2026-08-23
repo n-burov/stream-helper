@@ -159,14 +159,11 @@
         const bankWrapper = document.getElementById('bankWrapper');
         const bankGrid = document.getElementById('bankGrid');
 
-        let items = [];
-        let eliminated = [];
-        let winnerIndex = -1;
-        let revealed = false;
-        let isRunning = false;
+        // ===== СОСТОЯНИЕ =====
+        let currentAnimationId = null;
+        let isAnimating = false;
         let hideTimeout = null;
-        let intervalId = null;
-        let lastWinner = null;
+        let lastProcessedTimestamp = 0;
 
         const itemIcons = [
             '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
@@ -198,13 +195,10 @@
             return arr;
         }
 
-        function renderBankGrid() {
+        function renderGrid(items, eliminated, winnerIndex, revealed) {
             if (!items || items.length === 0) {
-                items = generateBankItems();
-                shuffleArray(items);
-                eliminated = [];
-                winnerIndex = -1;
-                revealed = false;
+                bankGrid.innerHTML = '';
+                return;
             }
 
             bankGrid.innerHTML = items.map((item, index) => {
@@ -233,52 +227,46 @@
 
         function hideBank() {
             bankWrapper.classList.remove('active');
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            isRunning = false;
-            // Сбрасываем состояние
-            eliminated = [];
-            revealed = false;
-            winnerIndex = -1;
-            lastWinner = null;
-        }
-
-        function resetBankOverlay() {
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
-            }
-            isRunning = false;
-            hideBank();
+            // Очищаем грид
+            bankGrid.innerHTML = '';
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
         }
 
-        function startBankAnimation(data) {
-            // Если уже запущена — сбрасываем
-            if (isRunning) {
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
-                isRunning = false;
+        // ===== ОСНОВНАЯ АНИМАЦИЯ =====
+        function startBankAnimation(items, winnerIndex, timestamp) {
+            // Если анимация уже запущена и это та же команда — игнорируем
+            if (isAnimating && lastProcessedTimestamp === timestamp) {
+                console.log('⏳ Анимация уже запущена, игнорируем дубль');
+                return;
             }
 
-            if (!data || !data.items) return;
+            // Если анимация уже запущена — сбрасываем
+            if (isAnimating) {
+                if (currentAnimationId) {
+                    clearInterval(currentAnimationId);
+                    currentAnimationId = null;
+                }
+                isAnimating = false;
+                if (hideTimeout) {
+                    clearTimeout(hideTimeout);
+                    hideTimeout = null;
+                }
+            }
 
-            // Сохраняем данные
-            items = data.items;
-            winnerIndex = data.winnerIndex !== undefined ? data.winnerIndex : Math.floor(Math.random() * items.length);
-            eliminated = [];
-            revealed = false;
-            lastWinner = null;
+            console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
 
+            lastProcessedTimestamp = timestamp;
+            isAnimating = true;
             showBank();
-            renderBankGrid();
+
+            const eliminated = [];
+            let revealed = false;
+
+            // Сразу рендерим все ячейки
+            renderGrid(items, eliminated, winnerIndex, false);
 
             // Перемешиваем порядок устранения
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
@@ -287,28 +275,24 @@
 
             let currentIndex = 0;
             const totalToEliminate = toEliminate.length;
-            isRunning = true;
 
-            intervalId = setInterval(() => {
+            currentAnimationId = setInterval(() => {
                 if (currentIndex >= totalToEliminate) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                    revealed = true;
-                    renderBankGrid();
-                    isRunning = false;
+                    clearInterval(currentAnimationId);
+                    currentAnimationId = null;
 
-                    // Скрываем через 3 секунды и сбрасываем состояние в idle
+                    // Показываем победителя
+                    revealed = true;
+                    renderGrid(items, eliminated, winnerIndex, true);
+                    isAnimating = false;
+
+                    // Скрываем через 3 секунды
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
-                        // Скрываем оверлей
                         hideBank();
-                        // Сбрасываем состояние в idle, чтобы не перезапускать анимацию
-                        items = [];
-                        eliminated = [];
-                        winnerIndex = -1;
-                        revealed = false;
-                        lastWinner = null;
-                        renderBankGrid();
+                        // Сбрасываем состояние
+                        isAnimating = false;
+                        lastProcessedTimestamp = 0;
                         hideTimeout = null;
                     }, 3000);
                     return;
@@ -319,72 +303,51 @@
                     eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
-                renderBankGrid();
+                renderGrid(items, eliminated, winnerIndex, false);
 
-            }, 50 + Math.random() * 30);
+            }, 60 + Math.random() * 40);
         }
 
+        // ===== ОБРАБОТКА СОСТОЯНИЯ =====
         function renderState(data) {
-            if (!data) {
-                resetBankOverlay();
-                return;
-            }
+            if (!data) return;
 
-            // Если статус idle — сбрасываем всё
+            // Если idle — скрываем оверлей
             if (data.status === 'idle') {
-                resetBankOverlay();
-                items = [];
-                eliminated = [];
-                winnerIndex = -1;
-                revealed = false;
-                lastWinner = null;
-                renderBankGrid();
+                if (isAnimating) {
+                    // Если анимация запущена, не прерываем, но помечаем для сброса
+                }
+                // Если оверлей виден — скрываем
+                if (bankWrapper.classList.contains('active')) {
+                    hideBank();
+                }
                 return;
             }
 
-            // Если статус running и ещё не запущена анимация — запускаем
-            if (data.status === 'running' && !isRunning) {
-                startBankAnimation(data);
+            // Если running и есть данные — запускаем анимацию
+            if (data.status === 'running' && data.items && data.winnerIndex !== undefined) {
+                // Проверяем timestamp, чтобы не запускать одну и ту же анимацию дважды
+                const timestamp = data.timestamp || Date.now();
+                startBankAnimation(data.items, data.winnerIndex, timestamp);
                 return;
             }
 
-            // Если статус completed — скрываем и сбрасываем
+            // Если completed — скрываем оверлей
             if (data.status === 'completed') {
-                // Если банк ещё виден — скрываем
                 if (bankWrapper.classList.contains('active')) {
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideBank();
-                        // Сбрасываем состояние в idle
-                        items = [];
-                        eliminated = [];
-                        winnerIndex = -1;
-                        revealed = false;
-                        lastWinner = null;
-                        renderBankGrid();
+                        isAnimating = false;
+                        lastProcessedTimestamp = 0;
                         hideTimeout = null;
                     }, 3000);
-                } else {
-                    // Если банк уже скрыт — просто сбрасываем состояние
-                    items = [];
-                    eliminated = [];
-                    winnerIndex = -1;
-                    revealed = false;
-                    lastWinner = null;
-                    renderBankGrid();
-                }
-                // Сбрасываем флаг isRunning, если он ещё активен
-                if (isRunning) {
-                    isRunning = false;
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                        intervalId = null;
-                    }
                 }
                 return;
             }
         }
 
+        // ===== ОПРОС =====
         async function pollState() {
             try {
                 const response = await fetch(API_URL);
@@ -397,8 +360,6 @@
 
         setTimeout(pollState, 500);
         setInterval(pollState, 1500);
-
-        renderBankGrid();
 
         console.log('🎬 Оверлей "Банк 98" загружен');
         console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
