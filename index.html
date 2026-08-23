@@ -680,7 +680,6 @@
             }
         }
 
-        /* ===== ИСТОРИЯ РОЗЫГРЫШЕЙ ===== */
         .history-container {
             max-height: 300px;
             overflow-y: auto;
@@ -770,11 +769,9 @@
                 padding: 16px 20px;
                 text-align: center;
             }
-
             .tabs {
                 justify-content: center;
             }
-
             .tab-btn {
                 padding: 10px 18px;
                 font-size: 14px;
@@ -782,59 +779,47 @@
                 min-width: 80px;
                 text-align: center;
             }
-
             .card {
                 padding: 20px;
             }
-
             .wheel-wrapper {
                 width: 300px;
                 height: 300px;
             }
-
             .wheel-center {
                 width: 50px;
                 height: 50px;
                 font-size: 16px;
             }
-
             .grid-container {
                 max-width: 600px;
                 gap: 3px;
                 padding: 5px;
                 max-height: 60vh;
             }
-
             .grid-cell .item-icon {
                 font-size: 18px;
             }
-
             .grid-cell .item-name {
                 display: none;
             }
-
             .grid-cell .cell-number {
                 font-size: 7px;
                 bottom: 1px;
                 right: 2px;
             }
-
             .winner-modal-content {
                 padding: 40px 30px;
             }
-
             .winner-title {
                 font-size: 32px;
             }
-
             .winner-name {
                 font-size: 36px;
             }
-
             .winner-emoji {
                 font-size: 60px;
             }
-
             .history-item {
                 flex-wrap: wrap;
                 gap: 4px;
@@ -846,42 +831,34 @@
                 width: 240px;
                 height: 240px;
             }
-
             .wheel-center {
                 width: 40px;
                 height: 40px;
                 font-size: 12px;
             }
-
             .participants-grid {
                 grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
-
             .participant-chip {
                 font-size: 11px;
                 padding: 6px 10px;
             }
-
             .grid-container {
                 max-width: 450px;
                 gap: 2px;
                 padding: 3px;
             }
-
             .grid-cell .item-icon {
                 font-size: 14px;
             }
-
             .grid-cell .cell-number {
                 font-size: 5px;
                 bottom: 1px;
                 right: 1px;
             }
-
             .grid-cell.eliminated {
                 transform: scale(0.6);
             }
-
             .grid-cell.winner {
                 transform: scale(1.05);
             }
@@ -943,7 +920,6 @@
                 </div>
             </div>
 
-            <!-- ===== ИСТОРИЯ РОЗЫГРЫШЕЙ ===== -->
             <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                     <span style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5);">📜 История розыгрышей</span>
@@ -1041,7 +1017,6 @@
 
         const API_URL = '/api/webhook';
 
-        // ===== ОТПРАВКА СОСТОЯНИЯ МЕХАНИКИ =====
         async function updateMechanic(mechanic, data) {
             try {
                 const response = await fetch(API_URL, {
@@ -1132,7 +1107,6 @@
             if (state.keyword.participants.includes(name)) return;
             state.keyword.participants.push(name);
             renderParticipants();
-            // Отправляем состояние в оверлей
             updateMechanic('keyword', {
                 status: 'active',
                 keyword: state.keyword.currentKeyword,
@@ -1239,7 +1213,6 @@
             this.textContent = '▶️ Идёт набор...';
             this.disabled = true;
 
-            // Сохраняем в историю как активный розыгрыш
             addToHistory(kw, [], null);
 
             updateMechanic('keyword', {
@@ -1271,7 +1244,6 @@
             state.keyword.winner = winner;
             showWinner(winner);
 
-            // Обновляем последний активный розыгрыш в истории
             if (state.history.length > 0 && state.history[0].status === 'active') {
                 state.history[0].winner = winner;
                 state.history[0].status = 'completed';
@@ -1338,7 +1310,7 @@
         renderHistory();
 
         // ==========================================
-        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ (ИСПРАВЛЕННАЯ)
         // ==========================================
 
         const canvas = document.getElementById('wheelCanvas');
@@ -1446,6 +1418,7 @@
                 const sectors = state.wheel.sectors;
                 const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
 
+                // ===== ВЫБИРАЕМ ПОБЕДИТЕЛЯ =====
                 let rand = Math.random() * totalWeight;
                 let winnerIndex = 0;
                 let accumulated = 0;
@@ -1457,6 +1430,7 @@
                     }
                 }
 
+                // ===== ВЫЧИСЛЯЕМ УГОЛ =====
                 const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
                 let winnerStartAngle = 0;
                 for (let i = 0; i < winnerIndex; i++) {
@@ -1465,7 +1439,19 @@
                 const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
                 const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
 
-                const duration = 3000 + Math.random() * 1000;
+                const duration = 5000 + Math.random() * 2000;
+
+                // ===== ОТПРАВЛЯЕМ В ОВЕРЛЕЙ =====
+                updateMechanic('wheel', {
+                    status: 'spinning',
+                    sectors: state.wheel.sectors,
+                    winnerIndex: winnerIndex,
+                    targetAngle: targetAngle,
+                    winnerLabel: sectors[winnerIndex].label,
+                    duration: duration,
+                });
+
+                // ===== АНИМАЦИЯ НА САЙТЕ =====
                 const startTime = Date.now();
                 const startRotation = state.wheel.currentRotation;
 
@@ -1511,14 +1497,7 @@
             }
         }
 
-        spinBtn.addEventListener('click', function() {
-            spinWheel();
-            updateMechanic('wheel', {
-                status: 'spinning',
-                sectors: state.wheel.sectors,
-                winner: null,
-            });
-        });
+        spinBtn.addEventListener('click', spinWheel);
 
         function addSector(label, weight) {
             if (!label.trim()) { alert('Введите название!'); return; }
@@ -1780,7 +1759,6 @@
                 activeCells.textContent = active;
                 eliminatedCells.textContent = state.bank.eliminated.length;
 
-                // Обновляем состояние в Redis
                 updateMechanic('bank', {
                     status: 'running',
                     items: state.bank.items,
