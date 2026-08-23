@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Оверлей | Банк 98</title>
     <style>
         * {
@@ -14,58 +14,71 @@
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: transparent !important;
-            color: #fff;
-            padding: 8px;
-            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
         }
 
+        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
+        .bank-wrapper {
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            max-width: 100%;
+            width: fit-content;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ===== СЕТКА ===== */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(14, 1fr);
-            gap: 2px;
+            gap: 3px;
             max-width: 100%;
-            margin: 0 auto;
-            padding: 4px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            min-width: 280px;
         }
 
+        /* ===== ЯЧЕЙКИ ===== */
         .grid-cell {
             aspect-ratio: 1 / 1;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 3px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            padding: 1px;
+            padding: 2px;
             overflow: hidden;
-            min-height: 0;
-            min-width: 0;
+            min-height: 28px;
+            min-width: 28px;
         }
 
         .grid-cell .cell-number {
-            font-size: 5px;
-            color: rgba(255, 255, 255, 0.08);
+            font-size: 6px;
+            color: rgba(255, 255, 255, 0.1);
             position: absolute;
             bottom: 1px;
-            right: 2px;
+            right: 3px;
             font-weight: 400;
             line-height: 1;
+            user-select: none;
         }
 
         .grid-cell .item-icon {
-            font-size: 14px;
+            font-size: 16px;
             line-height: 1.2;
         }
 
         .grid-cell .item-name {
-            font-size: 4px;
-            color: rgba(255, 255, 255, 0.12);
+            font-size: 5px;
+            color: rgba(255, 255, 255, 0.15);
             text-align: center;
             max-width: 90%;
             overflow: hidden;
@@ -74,11 +87,12 @@
             line-height: 1.2;
         }
 
+        /* ===== СОСТОЯНИЯ ===== */
         .grid-cell.eliminated {
-            background: rgba(255, 0, 0, 0.02);
+            background: rgba(255, 0, 0, 0.03);
             border-color: rgba(255, 0, 0, 0.02);
             transform: scale(0.5);
-            opacity: 0.04;
+            opacity: 0.05;
             transition: all 0.25s ease;
         }
 
@@ -89,10 +103,10 @@
         }
 
         .grid-cell.winner {
-            background: rgba(249, 202, 36, 0.15);
+            background: rgba(249, 202, 36, 0.18);
             border-color: #f9ca24;
             transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(249, 202, 36, 0.15);
+            box-shadow: 0 0 24px rgba(249, 202, 36, 0.15);
             animation: winnerPulse 0.8s ease-in-out infinite alternate;
             z-index: 2;
         }
@@ -102,16 +116,26 @@
         }
 
         @keyframes winnerPulse {
-            0% { box-shadow: 0 0 8px rgba(249, 202, 36, 0.08); transform: scale(1.04); }
-            100% { box-shadow: 0 0 20px rgba(249, 202, 36, 0.2); transform: scale(1.12); }
+            0% {
+                box-shadow: 0 0 8px rgba(249, 202, 36, 0.08);
+                transform: scale(1.04);
+            }
+            100% {
+                box-shadow: 0 0 22px rgba(249, 202, 36, 0.2);
+                transform: scale(1.12);
+            }
         }
 
         @keyframes bounce {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-3px); }
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-3px);
+            }
         }
 
-        /* ===== АНОНС ВЫИГРЫША ===== */
+        /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
         .winner-announce {
             display: none;
             position: fixed;
@@ -120,9 +144,9 @@
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(20px);
-            border: 2px solid rgba(249, 202, 36, 0.3);
-            border-radius: 16px;
-            padding: 20px 40px;
+            border: 2px solid rgba(249, 202, 36, 0.25);
+            border-radius: 20px;
+            padding: 24px 44px;
             text-align: center;
             animation: winnerPop 0.5s ease;
             z-index: 1000;
@@ -133,19 +157,27 @@
         }
 
         @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.05); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
         }
 
         .winner-announce .emoji {
-            font-size: 40px;
+            font-size: 44px;
             display: block;
             margin-bottom: 4px;
         }
 
         .winner-announce .title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 900;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
@@ -153,51 +185,119 @@
         }
 
         .winner-announce .name {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 700;
             color: #fff;
             margin-top: 4px;
         }
 
+        /* ===== КОНФЕТТИ ===== */
         @keyframes confettiFall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0;
+            }
         }
 
+        /* ===== АДАПТИВ ===== */
         @media (max-width: 768px) {
-            .grid-cell .item-icon { font-size: 11px; }
-            .grid-cell .item-name { display: none; }
-            .grid-cell .cell-number { font-size: 4px; }
-            .winner-announce { padding: 16px 24px; }
-            .winner-announce .name { font-size: 22px; }
-            .winner-announce .title { font-size: 18px; }
-            .winner-announce .emoji { font-size: 32px; }
+            .bank-wrapper {
+                padding: 8px;
+                border-radius: 14px;
+            }
+            .grid-container {
+                gap: 2px;
+                min-width: 200px;
+            }
+            .grid-cell {
+                min-height: 22px;
+                min-width: 22px;
+                border-radius: 3px;
+            }
+            .grid-cell .item-icon {
+                font-size: 12px;
+            }
+            .grid-cell .item-name {
+                display: none;
+            }
+            .grid-cell .cell-number {
+                font-size: 5px;
+            }
+            .winner-announce {
+                padding: 18px 28px;
+            }
+            .winner-announce .name {
+                font-size: 24px;
+            }
+            .winner-announce .title {
+                font-size: 18px;
+            }
+            .winner-announce .emoji {
+                font-size: 36px;
+            }
         }
 
         @media (max-width: 480px) {
-            .grid-container { gap: 1px; padding: 2px; }
-            .grid-cell .item-icon { font-size: 8px; }
-            .grid-cell .cell-number { font-size: 3px; }
-            .winner-announce { padding: 12px 16px; }
-            .winner-announce .name { font-size: 18px; }
-            .winner-announce .title { font-size: 14px; }
-            .winner-announce .emoji { font-size: 24px; }
+            .bank-wrapper {
+                padding: 6px;
+                border-radius: 10px;
+            }
+            .grid-container {
+                gap: 1.5px;
+                min-width: 140px;
+            }
+            .grid-cell {
+                min-height: 16px;
+                min-width: 16px;
+                border-radius: 2px;
+                padding: 1px;
+            }
+            .grid-cell .item-icon {
+                font-size: 9px;
+            }
+            .grid-cell .cell-number {
+                font-size: 4px;
+                bottom: 1px;
+                right: 1px;
+            }
+            .winner-announce {
+                padding: 14px 20px;
+                border-radius: 14px;
+            }
+            .winner-announce .name {
+                font-size: 18px;
+            }
+            .winner-announce .title {
+                font-size: 14px;
+            }
+            .winner-announce .emoji {
+                font-size: 28px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="grid-container" id="bankGrid">
-        <!-- Генерируется JS -->
+    <div class="bank-wrapper">
+        <div class="grid-container" id="bankGrid">
+            <!-- Генерируется JS -->
+        </div>
     </div>
 
-    <!-- АНОНС ВЫИГРЫША -->
+    <!-- ===== АНОНС ПОБЕДИТЕЛЯ ===== -->
     <div class="winner-announce" id="winnerAnnounce">
         <span class="emoji">🏆</span>
         <div class="title">ПОБЕДИТЕЛЬ!</div>
         <div class="name" id="winnerName">Ячейка #1</div>
     </div>
 
+    <!-- ========================================= -->
+    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ========================================= -->
     <script>
         const API_URL = '/api/webhook';
         const bankGrid = document.getElementById('bankGrid');
@@ -209,19 +309,28 @@
         let winnerIndex = -1;
         let revealed = false;
 
-        const itemIcons = ['⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙', '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀', '🌟', '🌈', '🎯',
-            '🏆', '💍', '🧪', '📜', '🪄'
+        const itemIcons = [
+            '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
+            '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀',
+            '🌟', '🌈', '🎯', '🏆', '💍', '🧪', '📜', '🪄'
         ];
 
-        const itemNames = ['Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал', 'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
-            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга', 'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
+        const itemNames = [
+            'Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал',
+            'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
+            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга',
+            'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
         ];
 
         function generateBankItems() {
             const arr = [];
             for (let i = 0; i < 98; i++) {
                 const idx = Math.floor(Math.random() * itemIcons.length);
-                arr.push({ id: i, icon: itemIcons[idx], name: itemNames[idx] });
+                arr.push({
+                    id: i,
+                    icon: itemIcons[idx],
+                    name: itemNames[idx]
+                });
             }
             return arr;
         }
@@ -314,17 +423,13 @@
                     renderBankGrid();
                     break;
 
-                case 'startBankDraw':
-                    // Оверлей сам запускает анимацию по команде
-                    break;
-
                 case 'showWinner':
                     showWinner(data.name);
                     break;
             }
         }
 
-        // Опрос команд
+        // ===== ОПРОС КОМАНД =====
         async function pollCommands() {
             try {
                 const response = await fetch(API_URL);
