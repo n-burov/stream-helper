@@ -80,7 +80,6 @@
 
         .grid-cell .item-name {
             font-size: 5px;
-            color: rgba(255, 255, 255, 0.15);
             text-align: center;
             max-width: 90%;
             overflow: hidden;
@@ -166,28 +165,6 @@
         let lastProcessedTimestamp = 0;
         let isDoneSent = false;
 
-        const itemIcons = [
-            '⚔️', '🛡️', '💎', '👑', '🏹', '🗡️', '🔮', '🧙',
-            '🐉', '🔥', '❄️', '⚡', '🌿', '💀', '🦴', '🍀',
-            '🌟', '🌈', '🎯', '🏆', '💍', '🧪', '📜', '🪄'
-        ];
-
-        const itemNames = [
-            'Меч', 'Щит', 'Алмаз', 'Корона', 'Лук', 'Кинжал',
-            'Кристалл', 'Посох', 'Дракон', 'Огонь', 'Лед', 'Молния',
-            'Зелье', 'Череп', 'Кость', 'Клевер', 'Звезда', 'Радуга',
-            'Мишень', 'Трофей', 'Кольцо', 'Эликсир', 'Свиток', 'Жезл'
-        ];
-
-        function generateBankItems() {
-            const arr = [];
-            for (let i = 0; i < 98; i++) {
-                const idx = Math.floor(Math.random() * itemIcons.length);
-                arr.push({ id: i, icon: itemIcons[idx], name: itemNames[idx] });
-            }
-            return arr;
-        }
-
         function shuffleArray(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -196,7 +173,7 @@
             return arr;
         }
 
-        function renderGrid(items, eliminated, winnerIndex, revealed) {
+        function renderGrid(items, itemsData, eliminated, winnerIndex, revealed) {
             if (!items || items.length === 0) {
                 bankGrid.innerHTML = '';
                 return;
@@ -205,13 +182,18 @@
             bankGrid.innerHTML = items.map((item, index) => {
                 const isEliminated = eliminated.includes(index);
                 const isWinner = revealed && index === winnerIndex;
+
+                const data = itemsData && itemsData[index] ? itemsData[index] : { color: 'ffffff', name: item.name || '#' };
+                const color = data.color || 'ffffff';
+
                 let classes = 'grid-cell';
                 if (isEliminated) classes += ' eliminated';
                 if (isWinner) classes += ' winner';
+
                 return `
-                    <div class="${classes}" data-index="${index}">
+                    <div class="${classes}" data-index="${index}" ${isWinner ? `style="border-color: #${color}; box-shadow: 0 0 20px rgba(${parseInt(color.slice(0,2), 16)}, ${parseInt(color.slice(2,4), 16)}, ${parseInt(color.slice(4,6), 16)}, 0.3);"` : ''}>
                         <span class="item-icon">${item.icon}</span>
-                        <span class="item-name">${item.name}</span>
+                        <span class="item-name" style="color: #${color};">${item.name}</span>
                         <span class="cell-number">#${index + 1}</span>
                     </div>
                 `;
@@ -235,7 +217,6 @@
             }
         }
 
-        // ===== ОТПРАВКА done НА САЙТ =====
         async function sendDone() {
             if (isDoneSent) return;
             isDoneSent = true;
@@ -254,19 +235,19 @@
             }
         }
 
-        // ===== ОТПРАВКА ПОБЕДИТЕЛЯ В ОБЩИЙ ОВЕРЛЕЙ =====
         async function sendWinnerToCommonOverlay(name, emoji, title, subtitle, tag) {
             try {
+                const winnerData = {
+                    name: name,
+                    emoji: emoji || '🏆',
+                    title: title || 'ПОБЕДИТЕЛЬ!',
+                    subtitle: subtitle || '🎉 Поздравляем!',
+                    tag: tag || '🏆 Банк 98',
+                };
                 await fetch(WINNER_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: name,
-                        emoji: emoji || '🏆',
-                        title: title || 'ПОБЕДИТЕЛЬ!',
-                        subtitle: subtitle || '🎉 Поздравляем!',
-                        tag: tag || '🏆 Банк 98',
-                    }),
+                    body: JSON.stringify(winnerData),
                 });
                 console.log('🏆 Победитель отправлен в общий оверлей:', name);
             } catch (error) {
@@ -274,8 +255,7 @@
             }
         }
 
-        // ===== ОСНОВНАЯ АНИМАЦИЯ =====
-        function startBankAnimation(items, winnerIndex, timestamp) {
+        function startBankAnimation(items, itemsData, winnerIndex, timestamp) {
             if (isAnimating && lastProcessedTimestamp === timestamp) {
                 console.log('⏳ Анимация уже запущена, игнорируем дубль');
                 return;
@@ -294,9 +274,9 @@
                 isDoneSent = false;
             }
 
-            const winner = items[winnerIndex];
-            const winnerName = `${winner.icon} #${winnerIndex + 1}`;
-            const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
+            const winnerData = itemsData && itemsData[winnerIndex] ? itemsData[winnerIndex] : null;
+            const winnerName = winnerData ? `${winnerData.icon} #${winnerIndex + 1}` : `#${winnerIndex + 1}`;
+            const winnerSub = winnerData ? `🎉 ${winnerData.icon} ${winnerData.name}!` : `🎉 Ячейка #${winnerIndex + 1}`;
 
             console.log('🎬 Запуск анимации банка, победитель:', winnerIndex);
 
@@ -308,7 +288,7 @@
             const eliminated = [];
             let revealed = false;
 
-            renderGrid(items, eliminated, winnerIndex, false);
+            renderGrid(items, itemsData, eliminated, winnerIndex, false);
 
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIndex);
@@ -323,10 +303,9 @@
                     currentAnimationId = null;
 
                     revealed = true;
-                    renderGrid(items, eliminated, winnerIndex, true);
+                    renderGrid(items, itemsData, eliminated, winnerIndex, true);
                     isAnimating = false;
 
-                    // ===== ОТПРАВЛЯЕМ ПОБЕДИТЕЛЯ =====
                     sendWinnerToCommonOverlay(
                         winnerName,
                         '🏆',
@@ -335,10 +314,8 @@
                         '🏆 Банк 98'
                     );
 
-                    // ===== ОТПРАВЛЯЕМ done НА САЙТ =====
                     sendDone();
 
-                    // ===== СКРЫВАЕМСЯ ЧЕРЕЗ 3 СЕКУНДЫ =====
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideBank();
@@ -354,12 +331,11 @@
                     eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
-                renderGrid(items, eliminated, winnerIndex, false);
+                renderGrid(items, itemsData, eliminated, winnerIndex, false);
 
             }, 60 + Math.random() * 40);
         }
 
-        // ===== ОБРАБОТКА СОСТОЯНИЯ =====
         function renderState(data) {
             if (!data) return;
 
@@ -383,12 +359,11 @@
 
             if (data.status === 'running' && data.items && data.winnerIndex !== undefined) {
                 const timestamp = data.timestamp || Date.now();
-                startBankAnimation(data.items, data.winnerIndex, timestamp);
+                startBankAnimation(data.items, data.itemsData || [], data.winnerIndex, timestamp);
                 return;
             }
         }
 
-        // ===== ОПРОС =====
         async function pollState() {
             try {
                 const response = await fetch(API_URL);
