@@ -22,7 +22,6 @@
             overflow: hidden;
         }
 
-        /* ===== КОНТЕЙНЕР (по умолчанию скрыт) ===== */
         .wheel-overlay {
             display: none;
             position: relative;
@@ -36,7 +35,6 @@
             display: flex;
         }
 
-        /* ===== ФОН КОЛЕСА ===== */
         .wheel-bg {
             position: absolute;
             width: 420px;
@@ -68,7 +66,6 @@
             box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
         }
 
-        /* ===== АНОНС ПОБЕДИТЕЛЯ ===== */
         .winner-announce {
             display: none;
             position: fixed;
@@ -162,8 +159,8 @@
         let currentRotation = 0;
         let isSpinning = false;
         let lastWinner = null;
-        let isVisible = false;
         let hideTimeout = null;
+        let animationId = null;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -173,7 +170,6 @@
 
         function showOverlay() {
             wheelOverlay.classList.add('active');
-            isVisible = true;
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
@@ -182,7 +178,10 @@
 
         function hideOverlay() {
             wheelOverlay.classList.remove('active');
-            isVisible = false;
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
         }
 
         function drawWheel() {
@@ -288,50 +287,29 @@
         }
 
         function showWinner(label) {
-            if (label === lastWinner) return;
+            if (label === lastWinner && winnerAnnounce.classList.contains('active')) return;
             lastWinner = label;
             winnerName.textContent = label;
             winnerAnnounce.classList.add('active');
             createConfetti();
 
-            // Через 5 секунд скрываем оверлей
             if (hideTimeout) clearTimeout(hideTimeout);
             hideTimeout = setTimeout(() => {
                 winnerAnnounce.classList.remove('active');
+                lastWinner = null;
                 hideOverlay();
                 hideTimeout = null;
             }, 5000);
         }
 
-        function spinWheel() {
+        function spinWheelToTarget(winnerIndex, targetAngle, duration, winnerLabel) {
             if (isSpinning) return;
             if (!sectors || sectors.length === 0) return;
 
-            // Показываем оверлей
             showOverlay();
-
             isSpinning = true;
             canvas.classList.add('spinning');
 
-            const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
-            let rand = Math.random() * totalWeight;
-            let winnerIndex = 0;
-            let accumulated = 0;
-            for (let i = 0; i < sectors.length; i++) {
-                accumulated += sectors[i].weight;
-                if (rand <= accumulated) { winnerIndex = i; break; }
-            }
-
-            const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
-            let winnerStartAngle = 0;
-            for (let i = 0; i < winnerIndex; i++) {
-                winnerStartAngle += (sectors[i].weight / totalWeight) * Math.PI * 2;
-            }
-            const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
-            const targetAngle = -Math.PI / 2 - winnerMidAngle + Math.PI * 2 * 5;
-
-            // Увеличено время вращения в 4 раза
-            const duration = 5000 + Math.random() * 2000; // 5-7 секунд
             const startTime = Date.now();
             const startRotation = currentRotation;
 
@@ -343,23 +321,49 @@
                 drawWheel();
 
                 if (progress < 1) {
-                    requestAnimationFrame(animate);
+                    animationId = requestAnimationFrame(animate);
                 } else {
                     currentRotation = targetAngle % (Math.PI * 2);
                     drawWheel();
                     isSpinning = false;
                     canvas.classList.remove('spinning');
-                    const winnerLabel = sectors[winnerIndex]?.label || 'Сектор';
                     showWinner(winnerLabel);
                 }
             }
             animate();
         }
 
-        function renderState(data) {
-            if (!data || data.status === 'idle') return;
+        function resetOverlay() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isSpinning = false;
+            canvas.classList.remove('spinning');
+            hideOverlay();
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
 
-            // Обновляем сектора, если изменились
+        function renderState(data) {
+            if (!data) return;
+
+            // Если статус idle или нет данных — скрываем всё
+            if (data.status === 'idle' || data.status === 'completed') {
+                // Если оверлей виден — скрываем
+                if (wheelOverlay.classList.contains('active')) {
+                    resetOverlay();
+                }
+                // Если есть победитель — показываем его, потом скрываем
+                if (data.winner && data.winner !== lastWinner) {
+                    showWinner(data.winner);
+                }
+                return;
+            }
+
+            // Обновляем сектора
             if (data.sectors) {
                 const newSectors = JSON.stringify(data.sectors);
                 const oldSectors = JSON.stringify(sectors);
@@ -369,14 +373,29 @@
                 }
             }
 
-            // Запускаем вращение, если статус spinning
+            // Запускаем вращение к целевому углу
             if (data.status === 'spinning' && !isSpinning) {
-                spinWheel();
+                if (data.winnerIndex !== undefined && data.targetAngle !== undefined) {
+                    // Очищаем предыдущий таймер скрытия
+                    if (hideTimeout) {
+                        clearTimeout(hideTimeout);
+                        hideTimeout = null;
+                    }
+                    // Убираем старую плашку победителя
+                    winnerAnnounce.classList.remove('active');
+                    lastWinner = null;
+                    // Запускаем вращение
+                    spinWheelToTarget(
+                        data.winnerIndex,
+                        data.targetAngle,
+                        data.duration || 5000,
+                        data.winnerLabel || 'Сектор'
+                    );
+                }
             }
 
-            // Показываем победителя, если есть
-            if (data.winner) {
-                // Если победитель уже показан, не дублируем
+            // Если статус completed — показываем победителя
+            if (data.status === 'completed' && data.winner) {
                 if (data.winner !== lastWinner) {
                     showWinner(data.winner);
                 }
