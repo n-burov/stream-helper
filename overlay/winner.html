@@ -46,18 +46,12 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        .winner-container .emoji {
-            font-size: 56px;
-            display: block;
-            margin-bottom: 4px;
-        }
-
         .winner-container .winner-icon {
             width: 80px;
             height: 80px;
             object-fit: contain;
             display: block;
-            margin: 0 auto 8px;
+            margin: 0 auto 4px;
             border-radius: 12px;
             image-rendering: pixelated;
             border: 2px solid rgba(255, 255, 255, 0.1);
@@ -69,32 +63,13 @@
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }
-
-        .winner-container .subtitle {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 2px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .winner-container .subtitle .sub-icon {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            border-radius: 4px;
-            image-rendering: pixelated;
-            vertical-align: middle;
+            margin-bottom: 2px;
         }
 
         .winner-container .name {
             font-size: 40px;
             font-weight: 700;
-            margin-top: 6px;
+            margin-top: 4px;
             text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
         }
 
@@ -126,12 +101,6 @@
             .winner-container .title {
                 font-size: 20px;
             }
-            .winner-container .emoji {
-                font-size: 40px;
-            }
-            .winner-container .subtitle {
-                font-size: 13px;
-            }
             .winner-container .winner-icon {
                 width: 60px;
                 height: 60px;
@@ -150,12 +119,6 @@
             .winner-container .title {
                 font-size: 16px;
             }
-            .winner-container .emoji {
-                font-size: 32px;
-            }
-            .winner-container .subtitle {
-                font-size: 11px;
-            }
             .winner-container .winner-icon {
                 width: 44px;
                 height: 44px;
@@ -166,10 +129,8 @@
 <body>
 
     <div class="winner-container" id="winnerContainer">
-        <span class="emoji" id="winnerEmoji">🏆</span>
         <img class="winner-icon" id="winnerIcon" style="display:none;" />
-        <div class="title" id="winnerTitle">ПОБЕДИТЕЛЬ!</div>
-        <div class="subtitle" id="winnerSubtitle">🎉 Поздравляем!</div>
+        <div class="title" id="winnerTitle">ВЫИГРЫШ</div>
         <div class="name" id="winnerName">Игрок</div>
         <div class="mechanic-tag" id="mechanicTag">🎯 Ключевое слово</div>
     </div>
@@ -178,10 +139,8 @@
         const WINNER_API_URL = '/api/winner';
 
         const container = document.getElementById('winnerContainer');
-        const emojiEl = document.getElementById('winnerEmoji');
         const iconEl = document.getElementById('winnerIcon');
         const titleEl = document.getElementById('winnerTitle');
-        const subtitleEl = document.getElementById('winnerSubtitle');
         const nameEl = document.getElementById('winnerName');
         const tagEl = document.getElementById('mechanicTag');
 
@@ -216,8 +175,7 @@
 
             currentWinner = data.name;
 
-            emojiEl.textContent = data.emoji || '🏆';
-            titleEl.textContent = data.title || 'ПОБЕДИТЕЛЬ!';
+            titleEl.textContent = data.title || 'ВЫИГРЫШ';
 
             // Иконка
             if (data.icon && data.icon.startsWith('http')) {
@@ -228,13 +186,6 @@
                 }
             } else {
                 iconEl.style.display = 'none';
-            }
-
-            // Подзаголовок
-            if (data.subtitle && data.subtitle.includes('<img')) {
-                subtitleEl.innerHTML = data.subtitle;
-            } else {
-                subtitleEl.textContent = data.subtitle || '🎉 Поздравляем!';
             }
 
             // Имя с цветом
