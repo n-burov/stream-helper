@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Стример-хаб | WoW Розыгрыши</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стример-хаб | Управление</title>
     <style>
         * {
             margin: 0;
@@ -16,137 +16,158 @@
             background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
             min-height: 100vh;
             color: #fff;
-            padding: 10px;
-            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #9146ff, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 100, 0.15);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 100, 0.3);
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff64;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .admin-login {
+            padding: 8px 20px;
+            background: rgba(145, 70, 255, 0.2);
+            border: 1px solid rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+            color: #9146ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .admin-login:hover {
+            background: rgba(145, 70, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.3), rgba(0, 212, 255, 0.3));
+            border-color: rgba(145, 70, 255, 0.5);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(145, 70, 255, 0.2);
         }
 
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.4s ease;
         }
+
         .tab-content.active {
             display: block;
         }
+
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card {
             background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(10px);
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 20px;
-            margin-bottom: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
         }
 
-        .tab-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 16px;
-            cursor: pointer;
-            user-select: none;
-            transition: 0.3s;
-        }
-        .tab-header:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-        .tab-header .tab-title {
-            font-size: 18px;
+        .card-title {
+            font-size: 20px;
             font-weight: 600;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        .tab-header .tab-arrow {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.3);
-            transition: transform 0.3s;
-        }
-        .tab-header.open .tab-arrow {
-            transform: rotate(180deg);
+            gap: 12px;
         }
 
-        .tab-dropdown {
-            display: none;
-            padding: 8px 0 0 0;
-            animation: fadeIn 0.2s ease;
-        }
-        .tab-dropdown.open {
-            display: block;
-        }
-
-        .tab-dropdown .dropdown-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.02);
-            transition: 0.2s;
-            cursor: pointer;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-            border: 1px solid transparent;
-        }
-        .tab-dropdown .dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-        }
-        .tab-dropdown .dropdown-item.active {
-            background: rgba(145, 70, 255, 0.12);
-            border-color: rgba(145, 70, 255, 0.15);
-            color: #fff;
-        }
-        .tab-dropdown .dropdown-item .icon {
-            font-size: 16px;
-            width: 24px;
-            text-align: center;
-        }
-        .tab-dropdown .dropdown-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.04);
-            margin: 6px 0;
-        }
-        .tab-dropdown .dropdown-item.settings-toggle {
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 13px;
-        }
-        .tab-dropdown .dropdown-item.settings-toggle:hover {
-            color: #fff;
-        }
-        .tab-dropdown .dropdown-item.settings-toggle.active-settings {
-            color: #9146ff;
+        .card-title .icon {
+            font-size: 28px;
         }
 
         .btn {
-            padding: 10px 22px;
+            padding: 12px 28px;
             border: none;
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s;
             color: #fff;
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
         }
+
         .btn:disabled {
-            opacity: 0.4;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
         }
@@ -154,214 +175,116 @@
         .btn-primary {
             background: linear-gradient(135deg, #9146ff, #7a3bcb);
         }
+
         .btn-primary:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(145, 70, 255, 0.3);
+            box-shadow: 0 6px 25px rgba(145, 70, 255, 0.4);
         }
 
         .btn-gold {
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             color: #1a1f35;
         }
+
         .btn-gold:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(249, 202, 36, 0.3);
+            box-shadow: 0 6px 25px rgba(249, 202, 36, 0.4);
         }
 
         .btn-danger {
             background: linear-gradient(135deg, #ff4757, #c0392b);
         }
-        .btn-danger:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(255, 71, 87, 0.3);
-        }
 
         .btn-success {
             background: linear-gradient(135deg, #00d4ff, #0099cc);
         }
-        .btn-success:hover:not(:disabled) {
-            box-shadow: 0 6px 25px rgba(0, 212, 255, 0.3);
-        }
 
-        .btn-sm {
-            padding: 6px 14px;
-            font-size: 12px;
-            border-radius: 8px;
-        }
-
-        .admin-panel {
-            display: block;
-            margin-bottom: 14px;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 12px;
-            border: 1px dashed rgba(255, 255, 255, 0.04);
-        }
-        .admin-panel.hidden {
-            display: none !important;
-        }
-        .admin-panel .admin-row {
+        .keyword-setup {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
-            align-items: center;
+            margin-bottom: 20px;
         }
-        .admin-panel input {
+
+        .keyword-setup input {
             flex: 1;
-            min-width: 150px;
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.04);
+            min-width: 200px;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
             color: #fff;
-            font-size: 14px;
-            transition: 0.3s;
+            font-size: 16px;
+            transition: all 0.3s;
         }
-        .admin-panel input:focus {
+
+        .keyword-setup input:focus {
             outline: none;
             border-color: #9146ff;
-            box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
-        }
-        .admin-panel input::placeholder {
-            color: rgba(255, 255, 255, 0.2);
-        }
-
-        .admin-panel .sector-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .admin-panel .sector-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 6px 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }
-        .admin-panel .sector-item .color-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-        .admin-panel .sector-item .sector-label {
-            flex: 1;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        .admin-panel .sector-item .sector-weight {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.3);
-        }
-        .admin-panel .sector-item .remove-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 71, 87, 0.4);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0 4px;
-            transition: 0.3s;
-        }
-        .admin-panel .sector-item .remove-btn:hover {
-            color: #ff4757;
-            transform: scale(1.2);
-        }
-        .admin-panel .empty-sectors {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.2);
-            padding: 16px;
-            font-size: 13px;
-        }
-
-        .control-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.15);
         }
 
         .participants-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 6px;
-            margin: 12px 0;
-            max-height: 260px;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            max-height: 300px;
             overflow-y: auto;
-            padding: 4px;
+            padding: 5px;
         }
+
         .participants-grid::-webkit-scrollbar {
-            width: 4px;
+            width: 6px;
         }
+
         .participants-grid::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.3);
+            background: rgba(145, 70, 255, 0.4);
             border-radius: 10px;
         }
 
         .participant-chip {
-            padding: 6px 12px;
-            background: rgba(145, 70, 255, 0.12);
-            border: 1px solid rgba(145, 70, 255, 0.12);
-            border-radius: 16px;
-            font-size: 12px;
+            padding: 8px 14px;
+            background: rgba(145, 70, 255, 0.15);
+            border: 1px solid rgba(145, 70, 255, 0.2);
+            border-radius: 20px;
+            font-size: 13px;
             text-align: center;
-            transition: 0.3s;
+            transition: all 0.3s;
             animation: chipIn 0.3s ease;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .participant-chip:hover {
-            background: rgba(145, 70, 255, 0.2);
-        }
-        @keyframes chipIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
         }
 
-        .status-bar {
+        .participant-chip:hover {
+            background: rgba(145, 70, 255, 0.25);
+            transform: scale(1.05);
+        }
+
+        @keyframes chipIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .wheel-container {
             display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 10px;
-        }
-        .status-bar strong {
-            color: #fff;
-            font-weight: 600;
-        }
-        .status-bar .status-active {
-            color: #00ff64;
-        }
-        .status-bar .status-inactive {
-            color: #ff4757;
-        }
-        .status-bar .keyword-display {
-            color: rgba(255, 255, 255, 0.3);
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
         }
 
         .wheel-wrapper {
             position: relative;
-            width: 100%;
-            max-width: 420px;
-            aspect-ratio: 1/1;
-            margin: 0 auto;
+            width: 400px;
+            height: 400px;
         }
+
         #wheelCanvas {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            box-shadow: 0 0 50px rgba(145, 70, 255, 0.12);
+            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
             transition: box-shadow 0.3s;
         }
+
         #wheelCanvas.spinning {
-            box-shadow: 0 0 70px rgba(145, 70, 255, 0.25);
+            box-shadow: 0 0 80px rgba(145, 70, 255, 0.5);
         }
 
         .wheel-center {
@@ -369,92 +292,140 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 52px;
-            height: 52px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: linear-gradient(135deg, #9146ff, #00d4ff);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 0 30px rgba(145, 70, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 30px rgba(145, 70, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 700;
             color: #fff;
             cursor: pointer;
+            transition: all 0.3s;
             user-select: none;
-            transition: 0.3s;
         }
-        .wheel-center:hover {
+
+        .wheel-center:hover:not(.disabled) {
             transform: translate(-50%, -50%) scale(1.05);
-            box-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
+            box-shadow: 0 0 50px rgba(145, 70, 255, 0.5);
         }
-        .wheel-center.disabled {
-            opacity: 0.4;
-            pointer-events: none;
+
+        .wheel-center:active:not(.disabled) {
             transform: translate(-50%, -50%) scale(0.95);
         }
 
+        .wheel-center.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .wheel-settings {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+
+        .sector-input {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 10px;
+        }
+
+        .sector-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .sector-input input:focus {
+            outline: none;
+            border-color: #9146ff;
+        }
+
+        .sector-input .remove-btn {
+            background: none;
+            border: none;
+            color: #ff4757;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: all 0.3s;
+        }
+
+        .sector-input .remove-btn:hover {
+            transform: scale(1.2);
+        }
+
         .wheel-result {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: 700;
-            padding: 14px 24px;
-            background: rgba(0, 212, 255, 0.06);
-            border: 1px solid rgba(0, 212, 255, 0.1);
-            border-radius: 12px;
+            padding: 20px 40px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 16px;
             text-align: center;
-            min-height: 56px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            transition: 0.3s;
-            margin-top: 14px;
+            gap: 12px;
+            transition: all 0.3s;
         }
+
         .wheel-result.winner {
-            background: rgba(249, 202, 36, 0.1);
+            background: rgba(249, 202, 36, 0.15);
             border-color: #f9ca24;
-            box-shadow: 0 0 30px rgba(249, 202, 36, 0.08);
-            animation: resultPop 0.5s ease;
+            box-shadow: 0 0 40px rgba(249, 202, 36, 0.2);
+            animation: resultPop 0.6s ease;
         }
+
         @keyframes resultPop {
-            0% {
-                transform: scale(0.95);
-                opacity: 0.5;
-            }
-            50% {
-                transform: scale(1.03);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .draw-status {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 8px;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            margin-bottom: 12px;
-            font-size: 13px;
+            gap: 15px;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
         }
+
         .draw-status .info {
             display: flex;
-            gap: 16px;
+            gap: 25px;
             flex-wrap: wrap;
         }
+
         .draw-status .info span {
-            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
         }
+
         .draw-status .info strong {
             color: #fff;
             font-weight: 600;
         }
+
         .draw-status .info .highlight {
             color: #f9ca24;
         }
@@ -462,101 +433,111 @@
         .grid-container {
             display: grid;
             grid-template-columns: repeat(14, 1fr);
-            gap: 3px;
-            padding: 4px;
-            background: rgba(255, 255, 255, 0.015);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            max-height: 50vh;
+            gap: 5px;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-height: 70vh;
             overflow-y: auto;
         }
+
         .grid-container::-webkit-scrollbar {
-            width: 3px;
+            width: 4px;
         }
+
         .grid-container::-webkit-scrollbar-thumb {
-            background: rgba(145, 70, 255, 0.2);
+            background: rgba(145, 70, 255, 0.3);
             border-radius: 10px;
         }
 
         .grid-cell {
-            aspect-ratio: 1/1;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 3px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: default;
             position: relative;
-            padding: 1px;
+            padding: 2px;
             overflow: hidden;
             min-height: 0;
             min-width: 0;
         }
+
         .grid-cell .cell-number {
-            font-size: 6px;
-            color: rgba(255, 255, 255, 0.1);
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.15);
             position: absolute;
-            bottom: 1px;
-            right: 2px;
+            bottom: 2px;
+            right: 4px;
             font-weight: 400;
             line-height: 1;
         }
+
         .grid-cell .item-icon {
-            font-size: 16px;
+            font-size: 24px;
             line-height: 1.2;
         }
+
         .grid-cell .item-name {
-            font-size: 5px;
-            color: rgba(255, 255, 255, 0.15);
+            font-size: 8px;
+            color: rgba(255, 255, 255, 0.2);
             text-align: center;
             max-width: 90%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            margin-top: 2px;
             line-height: 1.2;
         }
+
+        .grid-cell.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
         .grid-cell.eliminated {
-            background: rgba(255, 0, 0, 0.02);
+            background: rgba(255, 0, 0, 0.03);
             border-color: rgba(255, 0, 0, 0.02);
-            transform: scale(0.6);
-            opacity: 0.05;
+            transform: scale(0.7);
+            opacity: 0.08;
             transition: all 0.3s ease;
         }
+
         .grid-cell.eliminated .item-icon,
         .grid-cell.eliminated .item-name,
         .grid-cell.eliminated .cell-number {
             opacity: 0.1;
         }
+
         .grid-cell.winner {
-            background: rgba(249, 202, 36, 0.15);
+            background: rgba(249, 202, 36, 0.2);
             border-color: #f9ca24;
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(249, 202, 36, 0.15);
+            transform: scale(1.15);
+            box-shadow: 0 0 30px rgba(249, 202, 36, 0.25);
             animation: winnerPulse 0.8s ease-in-out infinite alternate;
             z-index: 2;
         }
+
         .grid-cell.winner .item-icon {
             animation: bounce 0.8s ease-in-out infinite alternate;
         }
+
         @keyframes winnerPulse {
-            0% {
-                box-shadow: 0 0 10px rgba(249, 202, 36, 0.08);
-                transform: scale(1.04);
-            }
-            100% {
-                box-shadow: 0 0 25px rgba(249, 202, 36, 0.2);
-                transform: scale(1.12);
-            }
+            0% { box-shadow: 0 0 15px rgba(249, 202, 36, 0.15); transform: scale(1.08); }
+            100% { box-shadow: 0 0 40px rgba(249, 202, 36, 0.4); transform: scale(1.2); }
         }
+
         @keyframes bounce {
-            0% {
-                transform: translateY(0);
-            }
-            100% {
-                transform: translateY(-3px);
-            }
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-4px); }
         }
 
         .winner-modal {
@@ -568,340 +549,328 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(20px);
-            z-index: 10000;
+            z-index: 2000;
             justify-content: center;
             align-items: center;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.5s ease;
         }
+
         .winner-modal.active {
             display: flex;
         }
+
         .winner-modal-content {
             text-align: center;
-            padding: 40px 50px;
-            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.12) 0%, transparent 70%);
-            border-radius: 28px;
-            border: 2px solid rgba(249, 202, 36, 0.15);
-            box-shadow: 0 0 50px rgba(249, 202, 36, 0.06);
-            animation: winnerPop 0.5s ease;
+            padding: 60px 80px;
+            background: radial-gradient(circle at center, rgba(145, 70, 255, 0.2) 0%, transparent 70%);
+            border-radius: 40px;
+            border: 2px solid rgba(249, 202, 36, 0.3);
+            box-shadow: 0 0 80px rgba(249, 202, 36, 0.15);
+            animation: winnerPop 0.6s ease;
             position: relative;
             max-width: 90vw;
         }
+
         @keyframes winnerPop {
-            0% {
-                transform: scale(0.5) rotate(-5deg);
-                opacity: 0;
-            }
-            60% {
-                transform: scale(1.04) rotate(1deg);
-            }
-            100% {
-                transform: scale(1) rotate(0deg);
-                opacity: 1;
-            }
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(2deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
+
         .winner-emoji {
-            font-size: 56px;
+            font-size: 80px;
             animation: bounce 1s infinite;
         }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
         .winner-title {
-            font-size: 32px;
+            font-size: 48px;
             font-weight: 900;
             background: linear-gradient(135deg, #f9ca24, #f0932b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 12px 0 6px;
-            letter-spacing: 2px;
+            margin: 20px 0 10px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
         }
+
         .winner-name {
-            font-size: 36px;
+            font-size: 56px;
             font-weight: 700;
             color: #fff;
-            margin: 8px 0;
-            text-shadow: 0 0 30px rgba(145, 70, 255, 0.15);
+            margin: 20px 0;
+            text-shadow: 0 0 40px rgba(145, 70, 255, 0.3);
         }
+
         .winner-sub {
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.45);
-            margin-top: 4px;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 10px;
         }
+
         .winner-close-btn {
             position: absolute;
-            top: 12px;
-            right: 20px;
+            top: 20px;
+            right: 30px;
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.15);
-            font-size: 22px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 28px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s;
         }
+
         .winner-close-btn:hover {
             color: #fff;
             transform: rotate(90deg);
         }
 
         @keyframes confettiFall {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(110vh) rotate(720deg);
-                opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 6px;
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px 20px;
+                text-align: center;
             }
+
+            .tabs {
+                justify-content: center;
+            }
+
+            .tab-btn {
+                padding: 10px 18px;
+                font-size: 14px;
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+            }
+
             .card {
-                padding: 14px;
+                padding: 20px;
             }
-            .btn {
-                padding: 8px 16px;
-                font-size: 13px;
+
+            .wheel-wrapper {
+                width: 300px;
+                height: 300px;
             }
-            .btn-sm {
-                padding: 4px 10px;
-                font-size: 11px;
+
+            .wheel-center {
+                width: 50px;
+                height: 50px;
+                font-size: 16px;
             }
-            .tab-header {
-                padding: 8px 12px;
-            }
-            .tab-header .tab-title {
-                font-size: 15px;
-            }
-            .wheel-result {
-                font-size: 18px;
-                padding: 10px 16px;
-                min-height: 44px;
-            }
+
             .grid-container {
-                max-height: 40vh;
+                max-width: 600px;
+                gap: 3px;
+                padding: 5px;
+                max-height: 60vh;
             }
+
             .grid-cell .item-icon {
-                font-size: 12px;
+                font-size: 18px;
             }
+
             .grid-cell .item-name {
                 display: none;
             }
+
             .grid-cell .cell-number {
-                font-size: 5px;
+                font-size: 7px;
+                bottom: 1px;
+                right: 2px;
             }
-            .participants-grid {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            }
-            .participant-chip {
-                font-size: 10px;
-                padding: 4px 8px;
-            }
+
             .winner-modal-content {
-                padding: 28px 20px;
+                padding: 40px 30px;
             }
+
             .winner-title {
-                font-size: 24px;
+                font-size: 32px;
             }
+
             .winner-name {
-                font-size: 28px;
+                font-size: 36px;
             }
+
             .winner-emoji {
-                font-size: 44px;
-            }
-            .admin-panel {
-                padding: 10px;
-            }
-            .admin-panel input {
-                font-size: 12px;
-                padding: 6px 10px;
-            }
-            .admin-panel .sector-list {
-                grid-template-columns: 1fr;
+                font-size: 60px;
             }
         }
 
         @media (max-width: 480px) {
-            .grid-container {
-                gap: 2px;
-                padding: 2px;
-                max-height: 35vh;
-            }
-            .grid-cell .item-icon {
-                font-size: 9px;
-            }
-            .grid-cell .cell-number {
-                font-size: 4px;
-            }
             .wheel-wrapper {
-                max-width: 260px;
+                width: 240px;
+                height: 240px;
             }
+
             .wheel-center {
                 width: 40px;
                 height: 40px;
                 font-size: 12px;
             }
-            .wheel-result {
-                font-size: 14px;
-                padding: 8px 12px;
-                min-height: 36px;
-            }
+
             .participants-grid {
-                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-                gap: 4px;
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
+
             .participant-chip {
-                font-size: 8px;
-                padding: 3px 6px;
-                border-radius: 10px;
-            }
-            .tab-header {
+                font-size: 11px;
                 padding: 6px 10px;
             }
-            .tab-header .tab-title {
-                font-size: 13px;
+
+            .grid-container {
+                max-width: 450px;
+                gap: 2px;
+                padding: 3px;
             }
-            .tab-dropdown .dropdown-item {
-                font-size: 12px;
-                padding: 5px 10px;
+
+            .grid-cell .item-icon {
+                font-size: 14px;
             }
-            .winner-title {
-                font-size: 18px;
+
+            .grid-cell .cell-number {
+                font-size: 5px;
+                bottom: 1px;
+                right: 1px;
             }
-            .winner-name {
-                font-size: 20px;
+
+            .grid-cell.eliminated {
+                transform: scale(0.6);
             }
-            .winner-emoji {
-                font-size: 32px;
-            }
-            .winner-modal-content {
-                padding: 20px 14px;
+
+            .grid-cell.winner {
+                transform: scale(1.05);
             }
         }
     </style>
 </head>
 <body>
 
+    <!-- ===== ШАПКА ===== -->
+    <header class="header">
+        <div class="logo">🎮 Стример-хаб</div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Управление
+        </div>
+        <button class="admin-login" id="adminToggle">🔐 Админ</button>
+    </header>
+
+    <!-- ===== ТАБЫ ===== -->
+    <nav class="tabs">
+        <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
+        <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
+        <button class="tab-btn" data-tab="tab3">🏆 Банк 98</button>
+    </nav>
+
+    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
+    <!-- ========================================= -->
     <div class="tab-content active" id="tab1">
         <div class="card">
-            <div class="tab-header" id="tabHeader1">
-                <div class="tab-title">
-                    <span class="icon">🎯</span>
-                    <span id="currentTabLabel">Ключевое слово</span>
-                </div>
-                <span class="tab-arrow">▼</span>
+            <div class="card-title">
+                <span class="icon">🎯</span>
+                Розыгрыш по ключевому слову
             </div>
 
-            <div class="tab-dropdown" id="tabDropdown1">
-                <div class="dropdown-item active" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
-                <div class="dropdown-item" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
-                <div class="dropdown-item" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-item settings-toggle" id="settingsToggle">
-                    <span class="icon">⚙️</span> <span id="settingsToggleLabel">Скрыть настройки</span>
-                </div>
+            <div class="keyword-setup">
+                <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут">
+                <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт набора</button>
+                <button class="btn btn-danger" id="stopKeywordBtn">⏹️ Стоп</button>
+                <button class="btn btn-gold" id="drawKeywordBtn">🎲 Крутить!</button>
+                <button class="btn btn-danger" id="resetKeywordBtn" style="background:rgba(255,71,87,0.2); border:1px solid rgba(255,71,87,0.1);">🔄 Сброс</button>
             </div>
 
-            <div class="admin-panel" id="adminPanel">
-                <div class="admin-row">
-                    <input type="text" id="keywordInput" placeholder="Кодовое слово..." value="!лут" />
-                    <button class="btn btn-success btn-sm" id="saveKeywordBtn">Сохранить</button>
-                </div>
-            </div>
-
-            <div class="control-buttons">
-                <button class="btn btn-primary btn-sm" id="startKeywordBtn">▶ Старт</button>
-                <button class="btn btn-danger btn-sm" id="stopKeywordBtn">⏹ Стоп</button>
-                <button class="btn btn-gold btn-sm" id="drawKeywordBtn">🎲 Крутить!</button>
-                <button class="btn btn-danger btn-sm" id="resetKeywordBtn" style="background:rgba(255,71,87,0.2); border:1px solid rgba(255,71,87,0.1);">↻ Сброс</button>
-            </div>
-
-            <div class="status-bar">
-                <span>Участников: <strong id="participantCount">0</strong></span>
-                <span>Статус: <strong id="keywordStatus" class="status-inactive">Остановлен</strong></span>
-                <span class="keyword-display">Слово: <strong id="displayKeyword">!лут</strong></span>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span style="font-size:14px; color:rgba(255,255,255,0.5);">
+                    Участников: <strong id="participantCount">0</strong>
+                </span>
+                <span style="font-size:14px; color:rgba(255,255,255,0.5);">
+                    Статус: <span id="keywordStatus" style="color:#ff4757;">Остановлен</span>
+                </span>
+                <span style="font-size:14px; color:rgba(255,255,255,0.3);">
+                    Слово: <strong id="displayKeyword">!лут</strong>
+                </span>
             </div>
 
             <div class="participants-grid" id="participantsGrid">
-                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:20px; font-size:13px;">
-                    Ожидаем участников 😴
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
+                    Пока никого нет 😴
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 2: КОЛЕСО ФОРТУНЫ ===== -->
+    <!-- ========================================= -->
     <div class="tab-content" id="tab2">
         <div class="card">
-            <div class="tab-header" id="tabHeader2">
-                <div class="tab-title"><span class="icon">🎡</span> Колесо фортуны</div>
-                <span class="tab-arrow">▼</span>
-            </div>
+            <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
 
-            <div class="tab-dropdown" id="tabDropdown2">
-                <div class="dropdown-item" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
-                <div class="dropdown-item active" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
-                <div class="dropdown-item" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-item settings-toggle" id="settingsToggle2">
-                    <span class="icon">⚙️</span> <span id="settingsToggleLabel2">Скрыть настройки</span>
+            <div class="wheel-container">
+                <div class="wheel-wrapper">
+                    <canvas id="wheelCanvas" width="600" height="600"></canvas>
+                    <div class="wheel-center" id="spinBtn">SPIN</div>
+                </div>
+                <div class="wheel-result" id="wheelResult">🎡 Нажмите SPIN</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">⚙️</span> Настройка секторов</div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+                <input type="text" id="sectorNameInput" placeholder="Название..." style="flex:1; min-width:150px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="width:120px; padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff;">
+                <button class="btn btn-success" id="addSectorBtn">➕ Добавить</button>
+                <button class="btn btn-danger" id="resetWheelBtn">🗑️ Сброс</button>
+            </div>
+            <div class="wheel-settings" id="sectorList">
+                <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
+                    Добавьте сектора для колеса
                 </div>
             </div>
-
-            <div class="admin-panel" id="adminPanelWheel">
-                <div class="admin-row">
-                    <input type="text" id="sectorNameInput" placeholder="Название сектора..." />
-                    <input type="number" id="sectorWeightInput" placeholder="Вес" value="1" style="max-width:80px;" />
-                    <button class="btn btn-success btn-sm" id="addSectorBtn">➕</button>
-                    <button class="btn btn-danger btn-sm" id="resetWheelBtn">🗑</button>
-                </div>
-                <div class="sector-list" id="sectorList">
-                    <div class="empty-sectors">Добавьте сектора</div>
-                </div>
-            </div>
-
-            <div class="wheel-wrapper">
-                <canvas id="wheelCanvas" width="600" height="600"></canvas>
-                <div class="wheel-center" id="wheelCenter">SPIN</div>
-            </div>
-            <div class="wheel-result" id="wheelResult">🎡 Нажмите SPIN</div>
         </div>
     </div>
 
+    <!-- ========================================= -->
     <!-- ===== ВКЛАДКА 3: БАНК 98 ===== -->
+    <!-- ========================================= -->
     <div class="tab-content" id="tab3">
         <div class="card">
-            <div class="tab-header" id="tabHeader3">
-                <div class="tab-title"><span class="icon">🏆</span> Банк 98</div>
-                <span class="tab-arrow">▼</span>
-            </div>
-
-            <div class="tab-dropdown" id="tabDropdown3">
-                <div class="dropdown-item" data-tab="tab1"><span class="icon">🎯</span> Ключевое слово</div>
-                <div class="dropdown-item" data-tab="tab2"><span class="icon">🎡</span> Колесо фортуны</div>
-                <div class="dropdown-item active" data-tab="tab3"><span class="icon">🏆</span> Банк 98</div>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-item settings-toggle" id="settingsToggle3">
-                    <span class="icon">⚙️</span> <span id="settingsToggleLabel3">Скрыть настройки</span>
-                </div>
-            </div>
-
-            <div class="control-buttons">
-                <button class="btn btn-gold" id="startBankBtn">🎲 Запустить!</button>
-                <button class="btn btn-danger" id="resetBankBtn">↻ Сброс</button>
+            <div class="card-title">
+                <span class="icon">🏆</span>
+                Банк 98
+                <span style="font-size:14px; color:rgba(255,255,255,0.4); font-weight:400; margin-left:10px;">
+                    🎲 98 ячеек, одна победит!
+                </span>
             </div>
 
             <div class="draw-status">
                 <div class="info">
+                    <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
                     <span>✅ Активных: <strong id="activeCells">98</strong></span>
                     <span>❌ Выбыло: <strong id="eliminatedCells">0</strong></span>
-                    <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.2);">—</strong></span>
+                    <span>🏆 Победитель: <strong id="winnerDisplay" style="color:rgba(255,255,255,0.3);">—</strong></span>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-gold" id="startBankBtn">🎲 Запустить розыгрыш!</button>
+                    <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
                 </div>
             </div>
 
             <div class="grid-container" id="bankGrid">
-                <!-- Генерируется JS -->
+                <!-- Ячейки генерируются JS -->
             </div>
         </div>
     </div>
@@ -921,103 +890,53 @@
     <!-- ===== JAVASCRIPT ===== -->
     <!-- ========================================= -->
     <script>
-        // ============================================================
-        // 0. ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (заполняются из ENV на Vercel)
-        // ============================================================
-        // 
-        // Названия переменных в Vercel (Environment Variables):
-        //   TWITCH_CLIENT_ID        - Client ID из Twitch Developer Console
-        //   TWITCH_ACCESS_TOKEN     - OAuth-токен (начинается с oauth:)
-        //   TWITCH_CHANNEL          - ник канала (без #)
-        //   TWITCH_WEBHOOK_SECRET   - секретная фраза для подписи Webhook
-        //
-        // Для локальной разработки можно задать вручную (не коммитить!):
-        // ============================================================
+        // ==========================================
+        // 0. API ДЛЯ СИНХРОНИЗАЦИИ
+        // ==========================================
 
-        const ENV = {
-            TWITCH_CLIENT_ID: '',
-            TWITCH_ACCESS_TOKEN: '',
-            TWITCH_CHANNEL: '',
-            TWITCH_WEBHOOK_SECRET: '',
-        };
+        const API_URL = '/api/webhook';
 
-        // ============================================================
-        // 1. ВЫПАДАЮЩЕЕ МЕНЮ ВКЛАДКИ
-        // ============================================================
+        async function sendCommand(action, data) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, data }),
+                });
+                const result = await response.json();
+                console.log('📤 Команда отправлена:', action, data || '');
+                return result;
+            } catch (error) {
+                console.error('❌ Ошибка отправки команды:', error);
+            }
+        }
 
-        document.querySelectorAll('.dropdown-item[data-tab]').forEach(item => {
-            item.addEventListener('click', function() {
-                const tabId = this.dataset.tab;
-                const tabName = this.textContent.trim();
-
-                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-
-                document.querySelectorAll('.dropdown-item[data-tab]').forEach(el => el.classList.remove('active'));
-                this.classList.add('active');
-
-                const currentTabHeader = document.querySelector(`#${tabId} .tab-title span:last-child`);
-                if (currentTabHeader) currentTabHeader.textContent = tabName;
-
-                document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
-                document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
-
-                if (tabId === 'tab2') drawWheel();
-                if (tabId === 'tab3') renderBankGrid();
-            });
-        });
-
-        document.querySelectorAll('.tab-header').forEach(header => {
-            header.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const dropdown = this.nextElementSibling;
-                const isOpen = dropdown.classList.contains('open');
-
-                document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
-                document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
-
-                if (!isOpen) {
-                    dropdown.classList.add('open');
-                    this.classList.add('open');
+        function syncState() {
+            sendCommand('syncState', {
+                keyword: state.keyword,
+                wheel: {
+                    sectors: state.wheel.sectors,
+                    currentRotation: state.wheel.currentRotation,
+                },
+                bank: {
+                    items: state.bank.items,
+                    winnerIndex: state.bank.winnerIndex,
+                    eliminated: state.bank.eliminated,
+                    revealed: state.bank.revealed,
                 }
-            });
-        });
-
-        document.addEventListener('click', function() {
-            document.querySelectorAll('.tab-dropdown').forEach(el => el.classList.remove('open'));
-            document.querySelectorAll('.tab-header').forEach(el => el.classList.remove('open'));
-        });
-
-        // ============================================================
-        // 2. НАСТРОЙКИ (показ/скрытие админ-панели)
-        // ============================================================
-
-        let isAdminVisible = true;
-
-        function toggleSettings() {
-            isAdminVisible = !isAdminVisible;
-            document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('hidden', !isAdminVisible));
-            document.querySelectorAll('.settings-toggle .settings-label').forEach(el => {
-                el.textContent = isAdminVisible ? 'Скрыть настройки' : 'Показать настройки';
-            });
-            document.querySelectorAll('.settings-toggle').forEach(el => {
-                el.classList.toggle('active-settings', !isAdminVisible);
             });
         }
 
-        document.querySelectorAll('.settings-toggle').forEach(el => {
-            el.addEventListener('click', function(e) {
-                e.stopPropagation();
-                toggleSettings();
-            });
-        });
-
-        // ============================================================
-        // 3. СОСТОЯНИЕ
-        // ============================================================
+        // ==========================================
+        // 1. СОСТОЯНИЕ
+        // ==========================================
 
         const state = {
-            keyword: { active: false, currentKeyword: '!лут', participants: [] },
+            keyword: {
+                active: false,
+                currentKeyword: '!лут',
+                participants: [],
+            },
             wheel: {
                 sectors: [
                     { label: '1000 голды', weight: 3, color: '#ff6b6b' },
@@ -1038,12 +957,31 @@
             }
         };
 
-        // ============================================================
-        // 4. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
-        // ============================================================
+        // ==========================================
+        // 2. ТАБЫ
+        // ==========================================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+
+                if (this.dataset.tab === 'tab2') {
+                    drawWheel();
+                }
+                if (this.dataset.tab === 'tab3') {
+                    renderBankGrid();
+                }
+            });
+        });
+
+        // ==========================================
+        // 3. МЕХАНИКА 1: КЛЮЧЕВОЕ СЛОВО
+        // ==========================================
 
         const keywordInput = document.getElementById('keywordInput');
-        const saveKeywordBtn = document.getElementById('saveKeywordBtn');
         const startBtn = document.getElementById('startKeywordBtn');
         const stopBtn = document.getElementById('stopKeywordBtn');
         const drawBtn = document.getElementById('drawKeywordBtn');
@@ -1058,25 +996,20 @@
             if (state.keyword.participants.includes(name)) return;
             state.keyword.participants.push(name);
             renderParticipants();
+            sendCommand('addParticipant', { username: name });
         }
 
         function renderParticipants() {
             const list = state.keyword.participants;
             participantCount.textContent = list.length;
             displayKeyword.textContent = state.keyword.currentKeyword;
-
-            if (state.keyword.active) {
-                keywordStatus.textContent = 'Активен';
-                keywordStatus.className = 'status-active';
-            } else {
-                keywordStatus.textContent = 'Остановлен';
-                keywordStatus.className = 'status-inactive';
-            }
+            keywordStatus.textContent = state.keyword.active ? 'Активен' : 'Остановлен';
+            keywordStatus.style.color = state.keyword.active ? '#00ff64' : '#ff4757';
 
             if (list.length === 0) {
                 participantsGrid.innerHTML = `
-                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:20px; font-size:13px;">
-                        Ожидаем участников 😴
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">
+                        Пока никого нет 😴
                     </div>
                 `;
                 return;
@@ -1089,19 +1022,19 @@
 
         function createConfetti() {
             const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
-            for (let i = 0; i < 45; i++) {
+            for (let i = 0; i < 50; i++) {
                 const confetti = document.createElement('div');
                 confetti.style.cssText = `
                     position: fixed;
-                    width: ${5 + Math.random() * 8}px;
-                    height: ${5 + Math.random() * 8}px;
+                    width: ${6 + Math.random() * 8}px;
+                    height: ${6 + Math.random() * 8}px;
                     background: ${colors[Math.floor(Math.random() * colors.length)]};
                     left: ${Math.random() * 100}vw;
                     top: -20px;
                     border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
                     animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
                     animation-delay: ${Math.random() * 0.5}s;
-                    z-index: 10001;
+                    z-index: 2001;
                     pointer-events: none;
                     transform: rotate(${Math.random() * 360}deg);
                 `;
@@ -1115,29 +1048,27 @@
             document.getElementById('winnerModalSub').textContent = sub || '🎉 Поздравляем!';
             document.getElementById('winnerModal').classList.add('active');
             createConfetti();
+            sendCommand('showWinner', { name, sub: sub || '🎉 Поздравляем!' });
         }
 
-        saveKeywordBtn.addEventListener('click', function() {
+        startBtn.addEventListener('click', function() {
             const kw = keywordInput.value.trim();
             if (!kw) { alert('Введите кодовое слово!'); return; }
-            state.keyword.currentKeyword = kw;
-            displayKeyword.textContent = kw;
-        });
-
-        startBtn.addEventListener('click', function() {
-            if (!state.keyword.currentKeyword) { alert('Сначала сохраните кодовое слово!'); return; }
             state.keyword.active = true;
+            state.keyword.currentKeyword = kw;
             state.keyword.participants = [];
             renderParticipants();
-            this.textContent = '▶ Идёт набор...';
+            this.textContent = '▶️ Идёт набор...';
             this.disabled = true;
+            sendCommand('startKeyword', { keyword: kw });
         });
 
         stopBtn.addEventListener('click', function() {
             state.keyword.active = false;
             renderParticipants();
-            startBtn.textContent = '▶ Старт';
+            startBtn.textContent = '▶️ Старт набора';
             startBtn.disabled = false;
+            sendCommand('stopKeyword');
         });
 
         drawBtn.addEventListener('click', function() {
@@ -1151,8 +1082,9 @@
             state.keyword.participants = [];
             state.keyword.active = false;
             renderParticipants();
-            startBtn.textContent = '▶ Старт';
+            startBtn.textContent = '▶️ Старт набора';
             startBtn.disabled = false;
+            sendCommand('resetKeyword');
         });
 
         document.getElementById('closeWinnerBtn').addEventListener('click', function() {
@@ -1163,125 +1095,13 @@
             if (e.target === this) this.classList.remove('active');
         });
 
-        // ============================================================
-        // 5. ПОДКЛЮЧЕНИЕ К TWITCH (EventSub + IRC fallback)
-        // ============================================================
-
-        let isTwitchConnected = false;
-        let ircSocket = null;
-
-        // EventSub — подписка через Vercel API
-        async function subscribeToEventSub() {
-            if (!ENV.TWITCH_CLIENT_ID || !ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
-                console.log('ℹ️ EventSub не настроен. Заполните ENV.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/twitch/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        clientId: ENV.TWITCH_CLIENT_ID,
-                        accessToken: ENV.TWITCH_ACCESS_TOKEN,
-                        channel: ENV.TWITCH_CHANNEL,
-                        webhookSecret: ENV.TWITCH_WEBHOOK_SECRET,
-                        callbackUrl: 'https://stream-helper-psi.vercel.app/api/twitch/webhook'
-                    })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    console.log('✅ EventSub подписка создана');
-                } else {
-                    console.warn('⚠️ EventSub ошибка:', result.error);
-                }
-            } catch (error) {
-                console.error('❌ EventSub ошибка:', error);
-            }
-        }
-
-        // IRC fallback
-        function connectToTwitchIRC() {
-            if (!ENV.TWITCH_ACCESS_TOKEN || !ENV.TWITCH_CHANNEL) {
-                console.log('ℹ️ IRC не настроен. Заполните ENV.');
-                return;
-            }
-
-            if (isTwitchConnected) return;
-
-            console.log('🔗 Подключение к Twitch IRC (fallback)...');
-
-            try {
-                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-
-                socket.onopen = () => {
-                    console.log('✅ Подключено к Twitch IRC');
-                    socket.send(`CAP REQ :twitch.tv/tags twitch.tv/commands`);
-                    socket.send(`PASS oauth:${ENV.TWITCH_ACCESS_TOKEN}`);
-                    socket.send(`NICK ${ENV.TWITCH_CHANNEL}`);
-                    socket.send(`JOIN #${ENV.TWITCH_CHANNEL}`);
-                    isTwitchConnected = true;
-                };
-
-                socket.onmessage = (event) => {
-                    const data = event.data;
-
-                    if (data.startsWith('PING')) {
-                        socket.send('PONG :tmi.twitch.tv');
-                        return;
-                    }
-
-                    const privmsgMatch = data.match(/PRIVMSG #\w+ :(.+)/);
-                    if (privmsgMatch) {
-                        const message = privmsgMatch[1];
-                        const userMatch = data.match(/display-name=([^;]+)/);
-                        const username = userMatch ? userMatch[1] : 'Неизвестный';
-
-                        const keyword = state.keyword.currentKeyword;
-                        if (state.keyword.active && message.toLowerCase().includes(keyword.toLowerCase())) {
-                            console.log(`📨 ${username}: ${message}`);
-                            addParticipant(username);
-                        }
-                    }
-                };
-
-                socket.onclose = () => {
-                    if (isTwitchConnected) {
-                        console.log('🔌 Отключено от Twitch IRC. Переподключение через 5 сек...');
-                    }
-                    isTwitchConnected = false;
-                    setTimeout(connectToTwitchIRC, 5000);
-                };
-
-                socket.onerror = (error) => {
-                    console.error('❌ Ошибка IRC:', error);
-                    socket.close();
-                };
-
-                ircSocket = socket;
-
-            } catch (error) {
-                console.error('❌ Ошибка подключения к IRC:', error);
-                setTimeout(connectToTwitchIRC, 10000);
-            }
-        }
-
-        // Запускаем подключение
-        if (ENV.TWITCH_CLIENT_ID && ENV.TWITCH_ACCESS_TOKEN && ENV.TWITCH_CHANNEL) {
-            subscribeToEventSub();
-            setTimeout(connectToTwitchIRC, 3000);
-        } else {
-            console.log('ℹ️ Twitch не настроен. Используется демо-режим.');
-        }
-
-        // Демо-режим (если Twitch не подключён)
+        // Демо-сообщения
         const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage', 'DarkRanger',
             'LightBringer'
         ];
         let demoIndex = 0;
 
         setInterval(() => {
-            if (isTwitchConnected) return;
             if (!state.keyword.active) return;
             const user = demoUsers[demoIndex % demoUsers.length];
             const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
@@ -1289,17 +1109,17 @@
                 addParticipant(user);
             }
             demoIndex++;
-        }, 3000);
+        }, 2000);
 
         renderParticipants();
 
-        // ============================================================
-        // 6. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
-        // ============================================================
+        // ==========================================
+        // 4. МЕХАНИКА 2: КОЛЕСО ФОРТУНЫ
+        // ==========================================
 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
-        const wheelCenter = document.getElementById('wheelCenter');
+        const spinBtn = document.getElementById('spinBtn');
         const wheelResult = document.getElementById('wheelResult');
 
         const defaultColors = [
@@ -1312,15 +1132,15 @@
             const sectors = state.wheel.sectors;
             if (sectors.length === 0) {
                 ctx.clearRect(0, 0, 600, 600);
-                ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                ctx.fillStyle = 'rgba(255,255,255,0.05)';
                 ctx.beginPath();
-                ctx.arc(300, 300, 240, 0, Math.PI * 2);
+                ctx.arc(300, 300, 250, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = 'rgba(255,255,255,0.15)';
-                ctx.font = '22px sans-serif';
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.font = '24px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('Нет секторов', 300, 300);
+                ctx.fillText('Добавьте сектора', 300, 300);
                 return;
             }
 
@@ -1340,12 +1160,12 @@
 
                 ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
                 ctx.fill();
-                ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
                 const midAngle = startAngle + sliceAngle / 2;
-                const textRadius = 195;
+                const textRadius = 200;
                 const x = 300 + Math.cos(midAngle) * textRadius;
                 const y = 300 + Math.sin(midAngle) * textRadius;
 
@@ -1353,12 +1173,13 @@
                 ctx.translate(x, y);
                 ctx.rotate(midAngle + (midAngle > Math.PI / 2 ? Math.PI : 0));
                 ctx.fillStyle = '#fff';
-                ctx.font = 'bold 15px sans-serif';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 3;
-                const label = sector.label.length > 10 ? sector.label.slice(0, 8) + '…' : sector.label;
+                ctx.shadowBlur = 4;
+
+                const label = sector.label.length > 12 ? sector.label.slice(0, 10) + '…' : sector.label;
                 ctx.fillText(label, 0, 0);
                 ctx.restore();
 
@@ -1367,24 +1188,24 @@
 
             ctx.beginPath();
             ctx.arc(300, 300, 280, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             ctx.fillStyle = '#ff4757';
-            ctx.shadowColor = 'rgba(255,71,87,0.3)';
-            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(255,71,87,0.5)';
+            ctx.shadowBlur = 20;
             ctx.beginPath();
-            ctx.moveTo(300, 6);
-            ctx.lineTo(285, 28);
-            ctx.lineTo(315, 28);
+            ctx.moveTo(300, 10);
+            ctx.lineTo(280, 40);
+            ctx.lineTo(320, 40);
             ctx.closePath();
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
             ctx.beginPath();
-            ctx.arc(300, 33, 4, 0, Math.PI * 2);
+            ctx.arc(300, 35, 6, 0, Math.PI * 2);
             ctx.fill();
         }
 
@@ -1393,7 +1214,7 @@
             if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
 
             state.wheel.isSpinning = true;
-            wheelCenter.classList.add('disabled');
+            spinBtn.classList.add('disabled');
             canvas.classList.add('spinning');
             wheelResult.className = '';
 
@@ -1444,7 +1265,7 @@
                         wheelResult.innerHTML = `🎉 ${winner.label}!`;
 
                         state.wheel.isSpinning = false;
-                        wheelCenter.classList.remove('disabled');
+                        spinBtn.classList.remove('disabled');
                         canvas.classList.remove('spinning');
 
                         showWinner(winner.label);
@@ -1453,13 +1274,16 @@
                 animate();
             } catch (error) {
                 state.wheel.isSpinning = false;
-                wheelCenter.classList.remove('disabled');
+                spinBtn.classList.remove('disabled');
                 canvas.classList.remove('spinning');
                 console.error(error);
             }
         }
 
-        wheelCenter.addEventListener('click', spinWheel);
+        spinBtn.addEventListener('click', function() {
+            spinWheel();
+            sendCommand('spinWheel');
+        });
 
         function addSector(label, weight) {
             if (!label.trim()) { alert('Введите название!'); return; }
@@ -1471,12 +1295,14 @@
             });
             renderSectors();
             drawWheel();
+            syncState();
         }
 
         function removeSector(index) {
             state.wheel.sectors.splice(index, 1);
             renderSectors();
             drawWheel();
+            syncState();
         }
 
         function renderSectors() {
@@ -1484,15 +1310,19 @@
             const sectors = state.wheel.sectors;
 
             if (sectors.length === 0) {
-                container.innerHTML = `<div class="empty-sectors">Добавьте сектора</div>`;
+                container.innerHTML = `
+                    <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:20px;">
+                        Добавьте сектора для колеса
+                    </div>
+                `;
                 return;
             }
 
             container.innerHTML = sectors.map((s, i) => `
-                <div class="sector-item">
-                    <span class="color-dot" style="background:${s.color};"></span>
-                    <span class="sector-label">${s.label}</span>
-                    <span class="sector-weight">×${s.weight}</span>
+                <div class="sector-input">
+                    <span style="color:${s.color}; font-weight:600;">●</span>
+                    <input type="text" value="${s.label}" disabled style="flex:1; padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.03); color:#fff;">
+                    <span style="font-size:13px; color:rgba(255,255,255,0.4);">×${s.weight}</span>
                     <button class="remove-btn" data-index="${i}">✕</button>
                 </div>
             `).join('');
@@ -1519,17 +1349,19 @@
                 drawWheel();
                 wheelResult.className = '';
                 wheelResult.textContent = '🎡 Нажмите SPIN';
+                syncState();
             }
         });
 
         renderSectors();
         drawWheel();
 
-        // ============================================================
-        // 7. МЕХАНИКА 3: БАНК 98
-        // ============================================================
+        // ==========================================
+        // 5. МЕХАНИКА 3: БАНК 98
+        // ==========================================
 
         const bankGrid = document.getElementById('bankGrid');
+        const totalCells = document.getElementById('totalCells');
         const activeCells = document.getElementById('activeCells');
         const eliminatedCells = document.getElementById('eliminatedCells');
         const winnerDisplay = document.getElementById('winnerDisplay');
@@ -1548,7 +1380,11 @@
             const items = [];
             for (let i = 0; i < 98; i++) {
                 const idx = Math.floor(Math.random() * itemIcons.length);
-                items.push({ id: i, icon: itemIcons[idx], name: itemNames[idx] });
+                items.push({
+                    id: i,
+                    icon: itemIcons[idx],
+                    name: itemNames[idx],
+                });
             }
             return items;
         }
@@ -1571,6 +1407,7 @@
                 state.bank.revealed = false;
             }
 
+            totalCells.textContent = items.length;
             const active = items.length - state.bank.eliminated.length;
             activeCells.textContent = active;
             eliminatedCells.textContent = state.bank.eliminated.length;
@@ -1580,7 +1417,7 @@
                 winnerDisplay.style.color = '#f9ca24';
             } else {
                 winnerDisplay.textContent = '—';
-                winnerDisplay.style.color = 'rgba(255,255,255,0.2)';
+                winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
             }
 
             bankGrid.innerHTML = items.map((item, index) => {
@@ -1607,13 +1444,18 @@
             state.bank.winnerIndex = -1;
             state.bank.revealed = false;
             renderBankGrid();
-            startBankBtn.textContent = '🎲 Запустить!';
+            startBankBtn.textContent = '🎲 Запустить розыгрыш!';
             startBankBtn.disabled = false;
+            sendCommand('resetBank');
         }
 
         function startBankDraw() {
             if (state.bank.isRunning) return;
-            if (state.bank.items.length === 0) { resetBank(); return; }
+            if (state.bank.items.length === 0) {
+                resetBank();
+                return;
+            }
+
             if (state.bank.revealed && state.bank.winnerIndex >= 0) {
                 resetBank();
                 setTimeout(() => startBankDraw(), 300);
@@ -1622,7 +1464,7 @@
 
             state.bank.isRunning = true;
             state.bank.revealed = false;
-            startBankBtn.textContent = '⏳ Идёт...';
+            startBankBtn.textContent = '⏳ Идёт розыгрыш...';
             startBankBtn.disabled = true;
 
             const winnerIdx = Math.floor(Math.random() * state.bank.items.length);
@@ -1641,14 +1483,13 @@
                     state.bank.revealed = true;
                     renderBankGrid();
                     state.bank.isRunning = false;
-                    startBankBtn.textContent = '🎲 Запустить!';
+                    startBankBtn.textContent = '🎲 Запустить розыгрыш!';
                     startBankBtn.disabled = false;
 
                     const winner = state.bank.items[winnerIdx];
-                    showWinner(
-                        `${winner.icon} #${winnerIdx + 1}`,
-                        `🎉 ${winner.icon} ${winner.name}!`
-                    );
+                    const winnerName = `${winner.icon} #${winnerIdx + 1}`;
+                    const winnerSub = `🎉 ${winner.icon} ${winner.name}!`;
+                    showWinner(winnerName, winnerSub);
                     return;
                 }
 
@@ -1657,39 +1498,52 @@
                     state.bank.eliminated.push(idxToEliminate);
                 }
                 currentIndex++;
+
                 renderBankGrid();
-            }, 50 + Math.random() * 30);
+                const active = state.bank.items.length - state.bank.eliminated.length;
+                activeCells.textContent = active;
+                eliminatedCells.textContent = state.bank.eliminated.length;
+
+            }, 60 + Math.random() * 40);
         }
 
-        startBankBtn.addEventListener('click', startBankDraw);
-        resetBankBtn.addEventListener('click', resetBank);
+        startBankBtn.addEventListener('click', function() {
+            startBankDraw();
+            sendCommand('startBankDraw');
+        });
+
+        resetBankBtn.addEventListener('click', function() {
+            resetBank();
+            sendCommand('resetBank');
+        });
+
         renderBankGrid();
 
-        // ============================================================
-        // 8. КОНСОЛЬ
-        // ============================================================
+        // ==========================================
+        // 6. АДМИНКА
+        // ==========================================
+
+        document.getElementById('adminToggle').addEventListener('click', function() {
+            const password = prompt('Введите пароль админа:');
+            if (password === 'admin123') {
+                alert('🔓 Добро пожаловать в админ-панель!');
+            } else if (password !== null) {
+                alert('❌ Неверный пароль!');
+            }
+        });
+
+        // ==========================================
+        // 7. КОНСОЛЬ
+        // ==========================================
 
         console.log('🎮 Стример-хаб загружен!');
         console.log('📦 Состояние:', state);
-        console.log('📌 Нажмите на название вкладки для открытия меню');
-        console.log('⚙️ Настройки скрываются через меню');
-        console.log('🎯 Кнопки управления всегда видны');
-        console.log('🔄 Колесо запускается кликом по SPIN в центре');
-
-        if (ENV.TWITCH_CLIENT_ID && ENV.TWITCH_CLIENT_ID !== '') {
-            console.log('✅ Twitch API настроен');
-            console.log(`📡 Канал: ${ENV.TWITCH_CHANNEL}`);
-            console.log(`🔑 Client ID: ${ENV.TWITCH_CLIENT_ID}`);
-            console.log(`🔐 Webhook Secret: ${ENV.TWITCH_WEBHOOK_SECRET ? '✅ установлен' : '❌ не установлен'}`);
-        } else {
-            console.log('ℹ️ Twitch API не настроен. Используется демо-режим.');
-        }
-
+        console.log('📡 Синхронизация через Webhook:', API_URL);
         window.state = state;
         window.resetBank = resetBank;
         window.startBankDraw = startBankDraw;
         window.spinWheel = spinWheel;
+        window.sendCommand = sendCommand;
     </script>
-
 </body>
 </html>
