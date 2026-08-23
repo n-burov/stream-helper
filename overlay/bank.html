@@ -227,7 +227,6 @@
 
         function hideBank() {
             bankWrapper.classList.remove('active');
-            // Очищаем грид
             bankGrid.innerHTML = '';
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -265,10 +264,8 @@
             const eliminated = [];
             let revealed = false;
 
-            // Сразу рендерим все ячейки
             renderGrid(items, eliminated, winnerIndex, false);
 
-            // Перемешиваем порядок устранения
             const allIndices = Array.from({ length: items.length }, (_, i) => i);
             const toEliminate = allIndices.filter(i => i !== winnerIndex);
             shuffleArray(toEliminate);
@@ -281,16 +278,13 @@
                     clearInterval(currentAnimationId);
                     currentAnimationId = null;
 
-                    // Показываем победителя
                     revealed = true;
                     renderGrid(items, eliminated, winnerIndex, true);
                     isAnimating = false;
 
-                    // Скрываем через 3 секунды
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideBank();
-                        // Сбрасываем состояние
                         isAnimating = false;
                         lastProcessedTimestamp = 0;
                         hideTimeout = null;
@@ -312,27 +306,19 @@
         function renderState(data) {
             if (!data) return;
 
-            // Если idle — скрываем оверлей
             if (data.status === 'idle') {
-                if (isAnimating) {
-                    // Если анимация запущена, не прерываем, но помечаем для сброса
-                }
-                // Если оверлей виден — скрываем
                 if (bankWrapper.classList.contains('active')) {
                     hideBank();
                 }
                 return;
             }
 
-            // Если running и есть данные — запускаем анимацию
             if (data.status === 'running' && data.items && data.winnerIndex !== undefined) {
-                // Проверяем timestamp, чтобы не запускать одну и ту же анимацию дважды
                 const timestamp = data.timestamp || Date.now();
                 startBankAnimation(data.items, data.winnerIndex, timestamp);
                 return;
             }
 
-            // Если completed — скрываем оверлей
             if (data.status === 'completed') {
                 if (bankWrapper.classList.contains('active')) {
                     if (hideTimeout) clearTimeout(hideTimeout);
