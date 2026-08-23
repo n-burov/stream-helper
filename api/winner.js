@@ -14,14 +14,12 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST =====
   if (req.method === 'POST') {
     try {
       const data = req.body;
       if (!data || !data.name) {
         return res.status(400).json({ error: 'name is required' });
       }
-      // Сохраняем все данные: name, icon, color, subtitle, tag, emoji, title
       await redis.set('winner', JSON.stringify(data));
       console.log('🏆 Победитель сохранён:', data.name);
       return res.status(200).json({ success: true });
@@ -31,7 +29,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // ===== GET =====
   if (req.method === 'GET') {
     try {
       const raw = await redis.get('winner');
