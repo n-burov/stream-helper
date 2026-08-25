@@ -14,7 +14,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // ===== POST =====
   if (req.method === 'POST') {
     try {
       const { mechanic, data } = req.body;
@@ -25,9 +24,8 @@ export default async function handler(req, res) {
 
       const key = `${mechanic}_state`;
       await redis.set(key, JSON.stringify(data));
-      console.log(`📥 Состояние ${mechanic} обновлено:`, data.status || 'unknown');
+      console.log(`📥 Состояние ${mechanic} обновлено`);
 
-      // Если есть победитель — отправляем в общий оверлей
       if (data.winner) {
         const winnerData = {
           name: data.winner,
@@ -35,6 +33,8 @@ export default async function handler(req, res) {
           title: data.title || 'ПОБЕДИТЕЛЬ!',
           subtitle: data.subtitle || '🎉 Поздравляем!',
           tag: data.tag || '🎯 Розыгрыш',
+          icon: data.icon || null,
+          color: data.color || null,
         };
         await redis.set('winner', JSON.stringify(winnerData));
         console.log('🏆 Победитель отправлен в winner-канал');
@@ -47,7 +47,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // ===== GET =====
   if (req.method === 'GET') {
     try {
       const { mechanic } = req.query;
@@ -77,7 +76,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // ===== DELETE =====
   if (req.method === 'DELETE') {
     try {
       const { mechanic } = req.query;
