@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Стример-хаб | Управление</title>
     <style>
-        /* ===== БАЗА ===== */
         * {
             margin: 0;
             padding: 0;
@@ -20,7 +19,6 @@
             padding: 20px;
         }
 
-        /* ===== ЭКРАН АВТОРИЗАЦИИ ===== */
         .auth-overlay {
             position: fixed;
             top: 0;
@@ -135,7 +133,6 @@
             opacity: 1;
         }
 
-        /* ===== ОСТАЛЬНЫЕ СТИЛИ ===== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -874,7 +871,6 @@
             font-size: 14px;
         }
 
-        /* ===== ПОЛЯ ДЛЯ ID ===== */
         .item-ids-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -936,7 +932,6 @@
             color: rgba(255, 255, 255, 0.1);
         }
 
-        /* ===== ПОЛЕ ДЛЯ ЭКСПОРТА ===== */
         .export-area {
             margin-bottom: 14px;
         }
@@ -1117,7 +1112,6 @@
 </head>
 <body>
 
-    <!-- ===== ЭКРАН АВТОРИЗАЦИИ ===== -->
     <div class="auth-overlay" id="authOverlay">
         <div class="auth-box">
             <span class="lock-icon">🔐</span>
@@ -1129,10 +1123,8 @@
         </div>
     </div>
 
-    <!-- ===== ОСНОВНОЙ КОНТЕНТ ===== -->
     <div id="mainContent" style="display:none;">
 
-        <!-- ===== ШАПКА ===== -->
         <header class="header">
             <div class="logo">🎮 Стример-хаб</div>
             <div class="status-badge">
@@ -1142,14 +1134,12 @@
             <button class="logout-btn" id="logoutBtn">🚪 Выйти</button>
         </header>
 
-        <!-- ===== ТАБЫ ===== -->
         <nav class="tabs">
             <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
             <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
             <button class="tab-btn" data-tab="tab3">🏆 Банк 98</button>
         </nav>
 
-        <!-- ===== ВКЛАДКА 1: КЛЮЧЕВОЕ СЛОВО ===== -->
         <div class="tab-content active" id="tab1">
             <div class="card">
                 <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
@@ -1177,7 +1167,6 @@
             </div>
         </div>
 
-        <!-- ===== ВКЛАДКА 2: КОЛЕСО ФОРТУНЫ ===== -->
         <div class="tab-content" id="tab2">
             <div class="card">
                 <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
@@ -1201,7 +1190,6 @@
             </div>
         </div>
 
-        <!-- ===== ВКЛАДКА 3: БАНК 98 ===== -->
         <div class="tab-content" id="tab3">
             <div class="card">
                 <div class="card-title">
@@ -1209,14 +1197,12 @@
                     <span style="font-size:14px; color:rgba(255,255,255,0.4); font-weight:400; margin-left:10px;">🎲 98 ячеек, одна победит!</span>
                 </div>
 
-                <!-- ===== КНОПКИ УПРАВЛЕНИЯ ===== -->
                 <div class="control-buttons">
                     <button class="btn btn-gold" id="startBankBtn" disabled>🎲 Запустить розыгрыш!</button>
                     <button class="btn btn-danger" id="resetBankBtn">🔄 Сбросить</button>
                     <button class="btn btn-primary" id="refreshItemsBtn">🔄 Обновить иконки</button>
                 </div>
 
-                <!-- ===== ПОЛЕ ДЛЯ ВСТАВКИ ЭКСПОРТА ===== -->
                 <div class="export-area">
                     <div class="export-header">
                         <label>📋 Вставьте экспорт из BankScanner:</label>
@@ -1225,10 +1211,8 @@
                     <textarea id="exportInput" placeholder="Вставьте сюда результат сканирования из BankScanner (текст из окна экспорта)..."></textarea>
                 </div>
 
-                <!-- ===== 98 ПОЛЕЙ ДЛЯ ID (ПУСТЫЕ ПО УМОЛЧАНИЮ) ===== -->
                 <div class="item-ids-grid" id="itemIdsGrid"></div>
 
-                <!-- ===== СТАТУС ===== -->
                 <div class="draw-status">
                     <div class="info">
                         <span>📊 Ячеек: <strong id="totalCells">98</strong></span>
@@ -1238,7 +1222,6 @@
                     </div>
                 </div>
 
-                <!-- ===== СЕТКА БАНКА ===== -->
                 <div class="grid-container" id="bankGrid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">Загрузите предметы (вставьте экспорт из BankScanner)</div>
                 </div>
@@ -1246,7 +1229,6 @@
         </div>
     </div>
 
-    <!-- ===== МОДАЛКА ПОБЕДИТЕЛЯ ===== -->
     <div class="winner-modal" id="winnerModal">
         <div class="winner-modal-content">
             <div class="winner-emoji">🏆</div>
@@ -1257,14 +1239,7 @@
         </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- ===== JAVASCRIPT ===== -->
-    <!-- ========================================= -->
     <script>
-        // ==========================================
-        // 0. АВТОРИЗАЦИЯ
-        // ==========================================
-
         const AUTH_TOKEN_KEY = 'streamer_hub_auth_token';
         const authOverlay = document.getElementById('authOverlay');
         const mainContent = document.getElementById('mainContent');
@@ -1349,10 +1324,6 @@
             }
         });
 
-        // ==========================================
-        // 1. ИНИЦИАЛИЗАЦИЯ
-        // ==========================================
-
         let appInitialized = false;
 
         function initApp() {
@@ -1376,9 +1347,6 @@
                 }
             }
 
-            // ==========================================
-            // 2. СОСТОЯНИЕ
-            // ==========================================
             const state = {
                 keyword: { active: false, currentKeyword: '!лут', participants: [], winner: null },
                 wheel: {
@@ -1408,9 +1376,6 @@
                 history: [],
             };
 
-            // ==========================================
-            // 3. ТАБЫ
-            // ==========================================
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1422,9 +1387,6 @@
                 });
             });
 
-            // ==========================================
-            // 4. КЛЮЧЕВОЕ СЛОВО
-            // ==========================================
             const keywordInput = document.getElementById('keywordInput');
             const startBtn = document.getElementById('startKeywordBtn');
             const drawBtn = document.getElementById('drawKeywordBtn');
@@ -1447,6 +1409,7 @@
                     participants: state.keyword.participants,
                     winner: state.keyword.winner,
                 });
+                saveStateToDB();
             }
 
             function renderParticipants() {
@@ -1493,6 +1456,7 @@
                 state.history.unshift({ keyword, participants: participants.length, winner: winner || '—',
                     status: winner ? 'completed' : 'active', time: timeStr });
                 renderHistory();
+                saveStateToDB();
             }
 
             function createConfetti() {
@@ -1533,12 +1497,21 @@
                 startBtn.disabled = false;
             }
 
+            async function saveStateToDB() {
+                await updateMechanic('keyword', {
+                    status: state.keyword.active ? 'active' : 'idle',
+                    keyword: state.keyword.currentKeyword,
+                    participants: state.keyword.participants,
+                    winner: state.keyword.winner,
+                    history: state.history,
+                });
+            }
+
             startBtn.addEventListener('click', function() {
                 const kw = keywordInput.value.trim();
                 if (!kw) { alert('Введите кодовое слово!'); return; }
 
                 if (state.keyword.active) {
-                    // ===== ОСТАНОВКА =====
                     state.keyword.active = false;
                     renderParticipants();
                     this.textContent = '▶️ Старт';
@@ -1555,11 +1528,11 @@
                         keyword: state.keyword.currentKeyword,
                         participants: state.keyword.participants,
                         winner: state.keyword.winner,
+                        history: state.history,
                     });
                     return;
                 }
 
-                // ===== СТАРТ =====
                 state.keyword.active = true;
                 state.keyword.currentKeyword = kw;
                 state.keyword.participants = [];
@@ -1576,6 +1549,7 @@
                     keyword: kw,
                     participants: [],
                     winner: null,
+                    history: state.history,
                 });
             });
 
@@ -1602,10 +1576,12 @@
                     title: 'ПОБЕДИТЕЛЬ!',
                     subtitle: '🎉 Поздравляем!',
                     tag: '🎯 Ключевое слово',
+                    history: state.history,
                 });
 
                 drawBtn.style.display = 'none';
                 resetKeywordUI();
+                saveStateToDB();
             });
 
             resetKeywordBtn.addEventListener('click', function() {
@@ -1620,13 +1596,16 @@
                     keyword: state.keyword.currentKeyword,
                     participants: [],
                     winner: null,
+                    history: state.history,
                 });
+                saveStateToDB();
             });
 
             clearHistoryBtn.addEventListener('click', function() {
                 if (confirm('Очистить всю историю розыгрышей?')) {
                     state.history = [];
                     renderHistory();
+                    saveStateToDB();
                 }
             });
 
@@ -1652,9 +1631,34 @@
             renderParticipants();
             renderHistory();
 
-            // ==========================================
-            // 5. КОЛЕСО ФОРТУНЫ
-            // ==========================================
+            async function loadStateFromDB() {
+                try {
+                    const response = await fetch('/api/webhook?mechanic=keyword');
+                    const data = await response.json();
+                    if (data && data.status !== 'idle') {
+                        if (data.keyword) state.keyword.currentKeyword = data.keyword;
+                        if (data.participants) state.keyword.participants = data.participants;
+                        if (data.winner) state.keyword.winner = data.winner;
+                        if (data.history) state.history = data.history;
+                        state.keyword.active = data.status === 'active';
+                        renderParticipants();
+                        renderHistory();
+                        if (data.status === 'active') {
+                            startBtn.textContent = '⏹️ Стоп';
+                            startBtn.className = 'btn btn-danger';
+                            startBtn.disabled = false;
+                        }
+                        if (data.status === 'completed' || data.status === 'inactive') {
+                            if (state.keyword.participants.length > 0) {
+                                drawBtn.style.display = 'inline-block';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.log('ℹ️ Нет сохранённого состояния для ключевого слова');
+                }
+            }
+
             const canvas = document.getElementById('wheelCanvas');
             const ctx = canvas.getContext('2d');
             const spinBtn = document.getElementById('spinBtn');
@@ -1875,9 +1879,21 @@
             renderSectors();
             drawWheel();
 
-            // ==========================================
-            // 6. БАНК 98 (ОБНОВЛЁННЫЙ)
-            // ==========================================
+            async function loadWheelState() {
+                try {
+                    const response = await fetch('/api/webhook?mechanic=wheel');
+                    const data = await response.json();
+                    if (data && data.sectors && data.sectors.length > 0) {
+                        state.wheel.sectors = data.sectors;
+                        state.wheel.currentRotation = data.currentRotation || 0;
+                        renderSectors();
+                        drawWheel();
+                    }
+                } catch (error) {
+                    console.log('ℹ️ Нет сохранённого состояния для колеса');
+                }
+            }
+
             const bankGrid = document.getElementById('bankGrid');
             const totalCells = document.getElementById('totalCells');
             const activeCells = document.getElementById('activeCells');
@@ -1890,7 +1906,6 @@
             const exportInput = document.getElementById('exportInput');
             const itemIdsGrid = document.getElementById('itemIdsGrid');
 
-            // ===== ГЕНЕРАЦИЯ 98 ПУСТЫХ ПОЛЕЙ =====
             function generateEmptyItemIdFields() {
                 let html = '';
                 for (let i = 0; i < 98; i++) {
@@ -1905,7 +1920,6 @@
                 updateBankState();
             }
 
-            // ===== ОБНОВЛЕНИЕ СОСТОЯНИЯ КНОПОК =====
             function updateBankState() {
                 const inputs = document.querySelectorAll('.item-id-input');
                 let hasValues = false;
@@ -1917,26 +1931,23 @@
                         validCount++;
                     }
                 });
-                
+
                 state.bank.hasItems = hasValues;
                 startBankBtn.disabled = !hasValues;
-                
+
                 if (hasValues) {
                     activeCells.textContent = validCount;
                 } else {
                     activeCells.textContent = '0';
                 }
-                
-                // Обновляем победителя, если он был
+
                 if (!hasValues) {
                     winnerDisplay.textContent = '—';
                     winnerDisplay.style.color = 'rgba(255,255,255,0.3)';
                 }
             }
 
-            // ===== ПАРСИНГ ЭКСПОРТА =====
             function parseLuaTable(content) {
-                // Пробуем найти массив items = {...}
                 let match = content.match(/items\s*=\s*\{([^}]*)\}/);
                 if (!match) {
                     match = content.match(/([\d,\s]+)/);
@@ -1974,7 +1985,6 @@
                             input.value = ids[index] || '';
                         });
                         updateBankState();
-                        // Автоматически загружаем иконки
                         refreshItemsFromAPI();
                         console.log('✅ Загружено', ids.filter(id => id > 0).length, 'ID из экспорта');
                         alert(`✅ Загружено ${ids.filter(id => id > 0).length} ID предметов из экспорта!`);
@@ -1987,20 +1997,19 @@
                 }
             });
 
-            // ===== ЗАГРУЗКА ИКОНОК ИЗ API =====
             async function refreshItemsFromAPI() {
                 if (state.bank.isLoading) return;
-                
+
                 const inputs = document.querySelectorAll('.item-id-input');
                 const ids = Array.from(inputs).map(input => parseInt(input.value) || 0);
-                
+
                 const validIds = ids.filter(id => id > 0);
                 if (validIds.length === 0) {
                     bankGrid.innerHTML = `
-                        <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
-                            Нет ID предметов. Вставьте экспорт из BankScanner.
-                        </div>
-                    `;
+                            <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
+                                Нет ID предметов. Вставьте экспорт из BankScanner.
+                            </div>
+                        `;
                     updateBankState();
                     return;
                 }
@@ -2090,12 +2099,10 @@
                 refreshItemsBtn.textContent = '🔄 Обновить иконки';
                 refreshItemsBtn.disabled = false;
 
-                // Перемешиваем ячейки
                 const itemsCopy = [...state.bank.items];
                 const itemsDataCopy = [...state.bank.itemsData];
                 shuffleArray(itemsCopy);
                 state.bank.items = itemsCopy;
-                // Сохраняем соответствие данных
                 const newItemsData = itemsCopy.map(item => {
                     const found = itemsDataCopy.find(d => d.id === item.id);
                     return found || { id: item.id, name: item.name, icon: item.icon, color: 'ffffff', quality: 0 };
@@ -2109,6 +2116,16 @@
                 renderBankGrid();
                 updateBankState();
                 console.log('✅ Загружено', validIds.length, 'предметов');
+
+                await updateMechanic('bank', {
+                    status: 'idle',
+                    items: state.bank.items,
+                    itemsData: state.bank.itemsData,
+                    eliminated: [],
+                    winnerIndex: -1,
+                    revealed: false,
+                    winner: null,
+                });
             }
 
             function shuffleArray(arr) {
@@ -2122,13 +2139,13 @@
             function renderBankGrid() {
                 const items = state.bank.items;
                 const validItems = items.filter(item => item.id > 0);
-                
+
                 if (validItems.length === 0) {
                     bankGrid.innerHTML = `
-                        <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
-                            Нет предметов. Вставьте экспорт из BankScanner и нажмите "Обновить иконки".
-                        </div>
-                    `;
+                            <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">
+                                Нет предметов. Вставьте экспорт из BankScanner и нажмите "Обновить иконки".
+                            </div>
+                        `;
                     return;
                 }
 
@@ -2162,15 +2179,15 @@
                     const itemData = itemsData[index] || { color: 'ffffff', icon: '', id: 0 };
                     const color = itemData.color || 'ffffff';
                     const iconUrl = itemData.icon || 'https://cdn3.scourge.tech/icons/inv_misc_questionmark.png';
-                    
+
                     if (itemData.id === 0) {
                         return `
-                            <div class="grid-cell" style="background:rgba(255,255,255,0.01); border-color:rgba(255,255,255,0.02);">
-                                <span style="font-size:8px; color:rgba(255,255,255,0.05);">#${index + 1}</span>
-                            </div>
-                        `;
+                                <div class="grid-cell" style="background:rgba(255,255,255,0.01); border-color:rgba(255,255,255,0.02);">
+                                    <span style="font-size:8px; color:rgba(255,255,255,0.05);">#${index + 1}</span>
+                                </div>
+                            `;
                     }
-                    
+
                     let classes = 'grid-cell';
                     if (isEliminated) classes += ' eliminated';
                     if (isWinner) classes += ' winner';
@@ -2224,7 +2241,6 @@
                 startBankBtn.textContent = '⏳ Идёт розыгрыш...';
                 startBankBtn.disabled = true;
 
-                // Выбираем победителя только из валидных предметов
                 const validIndices = state.bank.items
                     .map((item, idx) => item.id > 0 ? idx : -1)
                     .filter(idx => idx >= 0);
@@ -2291,10 +2307,28 @@
                 setTimeout(waitForBankDone, 500);
             }
 
-            // ===== ИНИЦИАЛИЗАЦИЯ =====
+            async function loadBankState() {
+                try {
+                    const response = await fetch('/api/webhook?mechanic=bank');
+                    const data = await response.json();
+                    if (data && data.items && data.items.length > 0) {
+                        state.bank.items = data.items;
+                        state.bank.itemsData = data.itemsData || [];
+                        state.bank.eliminated = data.eliminated || [];
+                        state.bank.winnerIndex = data.winnerIndex || -1;
+                        state.bank.revealed = data.revealed || false;
+                        state.bank.winner = data.winner || null;
+                        state.bank.hasItems = data.items.some(item => item.id > 0);
+                        renderBankGrid();
+                        updateBankState();
+                    }
+                } catch (error) {
+                    console.log('ℹ️ Нет сохранённого состояния для банка');
+                }
+            }
+
             generateEmptyItemIdFields();
 
-            // События для ввода в поля (обновление состояния)
             document.addEventListener('input', function(e) {
                 if (e.target.classList.contains('item-id-input')) {
                     updateBankState();
@@ -2307,9 +2341,10 @@
             renderBankGrid();
             updateBankState();
 
-            // ==========================================
-            // 7. КОНСОЛЬ
-            // ==========================================
+            await loadStateFromDB();
+            await loadWheelState();
+            await loadBankState();
+
             console.log('🎮 Стример-хаб загружен!');
             console.log('📦 Состояние:', state);
             window.state = state;
@@ -2319,10 +2354,6 @@
             window.updateMechanic = updateMechanic;
             window.refreshItemsFromAPI = refreshItemsFromAPI;
         }
-
-        // ==========================================
-        // СТАРТ
-        // ==========================================
 
         checkAuth();
         showAuthScreen();
