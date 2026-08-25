@@ -469,22 +469,22 @@
             width: 100%;
             max-width: 500px;
         }
-
+        
         .wheel-settings .sector-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             background: rgba(255, 255, 255, 0.04);
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.06);
             transition: all 0.3s;
         }
-
+        
         .wheel-settings .sector-item:hover {
             background: rgba(255, 255, 255, 0.07);
         }
-
+        
         .wheel-settings .sector-item .color-dot {
             width: 16px;
             height: 16px;
@@ -492,41 +492,83 @@
             flex-shrink: 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .wheel-settings .sector-item .sector-label {
+        
+        .wheel-settings .sector-item .sector-label-input {
             flex: 1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 500;
-            padding: 4px 0;
+            min-width: 80px;
+            transition: all 0.3s;
         }
-
-        .wheel-settings .sector-item .sector-weight {
+        
+        .wheel-settings .sector-item .sector-label-input:focus {
+            outline: none;
+            border-color: #9146ff;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
+        }
+        
+        .wheel-settings .sector-item .sector-label-input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .wheel-settings .sector-item .sector-weight-input {
+            width: 70px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
             font-size: 13px;
-            color: rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.05);
-            padding: 2px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            text-align: center;
+            transition: all 0.3s;
         }
-
+        
+        .wheel-settings .sector-item .sector-weight-input:focus {
+            outline: none;
+            border-color: #9146ff;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
+        }
+        
+        .wheel-settings .sector-item .save-sector-btn {
+            background: rgba(0, 212, 255, 0.12);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 6px;
+            color: #00d4ff;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .wheel-settings .sector-item .save-sector-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
         .wheel-settings .sector-item .remove-btn {
             background: none;
             border: none;
             color: rgba(255, 71, 87, 0.5);
             font-size: 18px;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 4px 6px;
             transition: all 0.3s;
             border-radius: 6px;
+            flex-shrink: 0;
         }
-
+        
         .wheel-settings .sector-item .remove-btn:hover {
             color: #ff4757;
             background: rgba(255, 71, 87, 0.1);
             transform: scale(1.1);
         }
-
+        
         .wheel-settings .empty-sectors {
             text-align: center;
             color: rgba(255, 255, 255, 0.25);
@@ -1883,23 +1925,64 @@
             function renderSectors() {
                 const container = document.getElementById('sectorList');
                 const sectors = state.wheel.sectors;
-
+            
                 if (sectors.length === 0) {
                     container.innerHTML = `
-                            <div class="empty-sectors">Добавьте сектора для колеса</div>
-                        `;
+                        <div class="empty-sectors">Добавьте сектора для колеса</div>
+                    `;
                     return;
                 }
-
+            
                 container.innerHTML = sectors.map((s, i) => `
-                        <div class="sector-item">
-                            <span class="color-dot" style="background:${s.color};"></span>
-                            <span class="sector-label">${s.label}</span>
-                            <span class="sector-weight">×${s.weight}</span>
-                            <button class="remove-btn" data-index="${i}">✕</button>
-                        </div>
-                    `).join('');
-
+                    <div class="sector-item" data-index="${i}">
+                        <span class="color-dot" style="background:${s.color};"></span>
+                        <input type="text" class="sector-label-input" value="${s.label}" data-index="${i}" placeholder="Название..." />
+                        <input type="number" class="sector-weight-input" value="${s.weight}" data-index="${i}" placeholder="Вес" min="1" style="width:70px; padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#fff; font-size:13px; text-align:center;" />
+                        <button class="save-sector-btn" data-index="${i}" style="background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.2); border-radius:6px; color:#00d4ff; padding:4px 10px; cursor:pointer; font-size:13px; transition:all 0.3s;">💾</button>
+                        <button class="remove-btn" data-index="${i}">✕</button>
+                    </div>
+                `).join('');
+            
+                container.querySelectorAll('.save-sector-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        const labelInput = container.querySelector(`.sector-label-input[data-index="${index}"]`);
+                        const weightInput = container.querySelector(`.sector-weight-input[data-index="${index}"]`);
+                        
+                        const newLabel = labelInput.value.trim();
+                        const newWeight = parseInt(weightInput.value) || 1;
+                        
+                        if (!newLabel) {
+                            alert('Введите название сектора!');
+                            labelInput.focus();
+                            return;
+                        }
+                        if (newWeight < 1) {
+                            alert('Вес должен быть >= 1');
+                            weightInput.focus();
+                            return;
+                        }
+                        
+                        state.wheel.sectors[index].label = newLabel;
+                        state.wheel.sectors[index].weight = newWeight;
+                        
+                        renderSectors();
+                        drawWheel();
+                        updateMechanic('wheel', { status: 'idle', sectors: state.wheel.sectors, winner: null });
+                        
+                        console.log('✅ Сектор обновлён:', state.wheel.sectors[index]);
+                    });
+                });
+            
+                container.querySelectorAll('.sector-label-input, .sector-weight-input').forEach(input => {
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            const saveBtn = container.querySelector(`.save-sector-btn[data-index="${this.dataset.index}"]`);
+                            if (saveBtn) saveBtn.click();
+                        }
+                    });
+                });
+            
                 container.querySelectorAll('.remove-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         removeSector(parseInt(this.dataset.index));
