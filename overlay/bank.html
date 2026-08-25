@@ -205,7 +205,10 @@
                 await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mechanic: 'bank', data: { status: 'done' } }),
+                    body: JSON.stringify({
+                        mechanic: 'bank',
+                        data: { status: 'done' }
+                    }),
                 });
                 console.log('✅ Отправлено done на сайт');
             } catch (error) {
@@ -263,59 +266,68 @@
             lastProcessedTimestamp = timestamp;
             isAnimating = true;
             isDoneSent = false;
-            showBank();
 
+            // Показываем оверлей СРАЗУ с полной сеткой
+            showBank();
             const eliminated = [];
             let revealed = false;
-
             renderGrid(items, itemsData, eliminated, winnerIndex, false);
 
-            const allIndices = Array.from({ length: items.length }, (_, i) => i);
-            const toEliminate = allIndices.filter(i => i !== winnerIndex);
-            shuffleArray(toEliminate);
+            // ===== ПАУЗА 3-5 СЕКУНД ПЕРЕД НАЧАЛОМ АНИМАЦИИ =====
+            const pauseDelay = 3000 + Math.random() * 2000; // 3-5 секунд
 
-            let currentIndex = 0;
-            const totalToEliminate = toEliminate.length;
+            if (hideTimeout) clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
 
-            currentAnimationId = setInterval(() => {
-                if (currentIndex >= totalToEliminate) {
-                    clearInterval(currentAnimationId);
-                    currentAnimationId = null;
+                const allIndices = Array.from({ length: items.length }, (_, i) => i);
+                const toEliminate = allIndices.filter(i => i !== winnerIndex);
+                shuffleArray(toEliminate);
 
-                    revealed = true;
-                    renderGrid(items, itemsData, eliminated, winnerIndex, true);
-                    isAnimating = false;
+                let currentIndex = 0;
+                const totalToEliminate = toEliminate.length;
 
-                    sendWinnerToCommonOverlay(
-                        winnerName,
-                        '🏆',
-                        'ВЫИГРЫШ',
-                        null,
-                        '🏆 Банк 98',
-                        winnerIcon,
-                        winnerColor
-                    );
+                currentAnimationId = setInterval(() => {
+                    if (currentIndex >= totalToEliminate) {
+                        clearInterval(currentAnimationId);
+                        currentAnimationId = null;
 
-                    sendDone();
-
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        hideBank();
+                        revealed = true;
+                        renderGrid(items, itemsData, eliminated, winnerIndex, true);
                         isAnimating = false;
-                        lastProcessedTimestamp = 0;
-                        hideTimeout = null;
-                    }, 3000);
-                    return;
-                }
 
-                const idxToEliminate = toEliminate[currentIndex];
-                if (!eliminated.includes(idxToEliminate)) {
-                    eliminated.push(idxToEliminate);
-                }
-                currentIndex++;
-                renderGrid(items, itemsData, eliminated, winnerIndex, false);
+                        sendWinnerToCommonOverlay(
+                            winnerName,
+                            '🏆',
+                            'ВЫИГРЫШ',
+                            null,
+                            '🏆 Банк 98',
+                            winnerIcon,
+                            winnerColor
+                        );
 
-            }, 60 + Math.random() * 40);
+                        sendDone();
+
+                        if (hideTimeout) clearTimeout(hideTimeout);
+                        hideTimeout = setTimeout(() => {
+                            hideBank();
+                            isAnimating = false;
+                            lastProcessedTimestamp = 0;
+                            hideTimeout = null;
+                        }, 3000);
+                        return;
+                    }
+
+                    const idxToEliminate = toEliminate[currentIndex];
+                    if (!eliminated.includes(idxToEliminate)) {
+                        eliminated.push(idxToEliminate);
+                    }
+                    currentIndex++;
+                    renderGrid(items, itemsData, eliminated, winnerIndex, false);
+
+                }, 60 + Math.random() * 40);
+
+                hideTimeout = null;
+            }, pauseDelay);
         }
 
         function renderState(data) {
