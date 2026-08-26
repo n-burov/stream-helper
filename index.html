@@ -288,7 +288,7 @@
             color: #fff;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
         }
@@ -1052,6 +1052,251 @@
             margin-bottom: 15px;
         }
 
+        .sniper-arena {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 12px;
+            min-height: 100px;
+            max-height: 50vh;
+            overflow-y: auto;
+            align-content: flex-start;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .sniper-arena::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sniper-arena::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+
+        .sniper-arena::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .sniper-participant {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            white-space: nowrap;
+            height: 32px;
+            position: relative;
+        }
+
+        .sniper-participant .id-badge {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.15);
+            margin-right: 4px;
+            font-weight: 400;
+        }
+
+        .sniper-participant.targeted {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.15);
+            color: #fff;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+            z-index: 2;
+            animation: targetPulse 0.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes targetPulse {
+            0% {
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+                transform: scale(1.03);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.35);
+                transform: scale(1.08);
+            }
+        }
+
+        .sniper-participant .crosshair-icon {
+            display: none;
+            margin-left: 6px;
+            font-size: 12px;
+        }
+
+        .sniper-participant.targeted .crosshair-icon {
+            display: inline;
+            animation: crosshairSpin 0.3s linear infinite;
+        }
+
+        @keyframes crosshairSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .sniper-participant.eliminated {
+            opacity: 0.12;
+            transform: scale(0.8);
+            border-color: rgba(255, 0, 0, 0.03);
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sniper-participant.eliminated .id-badge {
+            color: rgba(255, 0, 0, 0.15);
+        }
+
+        .sniper-participant.shot {
+            animation: shotEffect 0.9s ease-out forwards;
+        }
+
+        @keyframes shotEffect {
+            0% {
+                border-color: #ffd700;
+                box-shadow: 0 0 60px rgba(255, 215, 0, 0.5);
+                transform: scale(1.2);
+                background: rgba(255, 215, 0, 0.3);
+                color: #fff;
+            }
+            35% {
+                border-color: #ff4757;
+                box-shadow: 0 0 120px rgba(255, 71, 87, 0.8);
+                transform: scale(1.5) rotate(10deg);
+                background: rgba(255, 71, 87, 0.4);
+            }
+            100% {
+                opacity: 0.1;
+                transform: scale(0.6);
+                border-color: rgba(255, 0, 0, 0.02);
+                background: transparent;
+                color: rgba(255, 255, 255, 0.03);
+            }
+        }
+
+        .sniper-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .sniper-controls .input-group {
+            display: flex;
+            gap: 8px;
+            flex: 2;
+            min-width: 200px;
+        }
+
+        .sniper-controls .input-group input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+            font-size: 14px;
+            min-width: 120px;
+            transition: all 0.3s;
+        }
+
+        .sniper-controls .input-group input:focus {
+            outline: none;
+            border-color: #9146ff;
+            box-shadow: 0 0 20px rgba(145, 70, 255, 0.08);
+        }
+
+        .sniper-controls .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sniper-controls .input-group input:disabled {
+            opacity: 0.3;
+        }
+
+        .sniper-controls .input-group .btn {
+            flex: 0 0 auto;
+            min-width: 60px;
+            padding: 10px 16px;
+        }
+
+        .sniper-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sniper-status .status-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .sniper-status .status-text .highlight {
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .sniper-status .status-text .danger {
+            color: #ff4757;
+            font-weight: 600;
+        }
+
+        .sniper-status .status-text .winner-text {
+            color: #f9ca24;
+            font-weight: 700;
+        }
+
+        .sniper-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            flex-wrap: wrap;
+        }
+
+        .sniper-stats span strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sniper-stats .alive strong {
+            color: #00ff64;
+        }
+
+        .sniper-stats .dead strong {
+            color: #ff4757;
+        }
+
+        .shot-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.3), transparent 70%);
+            animation: flashBang 0.35s ease-out forwards;
+        }
+
+        @keyframes flashBang {
+            0% { opacity: 1; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(2.5); }
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1127,6 +1372,29 @@
             .wheel-settings {
                 max-width: 100%;
             }
+            .sniper-participant {
+                font-size: 11px;
+                padding: 3px 10px;
+                height: 26px;
+            }
+            .sniper-controls .input-group input {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            .sniper-controls .btn {
+                font-size: 13px;
+                padding: 8px 16px;
+                min-width: 70px;
+            }
+            .sniper-arena {
+                padding: 8px;
+                gap: 3px;
+                max-height: 40vh;
+            }
+            .sniper-stats {
+                font-size: 12px;
+                gap: 12px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1190,6 +1458,37 @@
                 font-size: 12px;
                 min-width: 80px;
             }
+            .sniper-participant {
+                font-size: 10px;
+                padding: 2px 8px;
+                height: 22px;
+                border-radius: 12px;
+            }
+            .sniper-participant .id-badge {
+                font-size: 7px;
+            }
+            .sniper-stats span {
+                font-size: 10px;
+            }
+            .sniper-status .status-text {
+                font-size: 11px;
+            }
+            .sniper-controls {
+                gap: 6px;
+            }
+            .sniper-controls .btn {
+                font-size: 11px;
+                padding: 6px 12px;
+                min-width: 60px;
+            }
+            .sniper-controls .input-group input {
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+            .sniper-controls .input-group .btn {
+                min-width: 50px;
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
@@ -1221,6 +1520,7 @@
             <button class="tab-btn active" data-tab="tab1">🎯 Ключевое слово</button>
             <button class="tab-btn" data-tab="tab2">🎡 Колесо фортуны</button>
             <button class="tab-btn" data-tab="tab3">🏆 Банк</button>
+            <button class="tab-btn" data-tab="tab4">🔫 Снайпер</button>
         </nav>
 
         <div class="tab-content active" id="tab1">
@@ -1311,6 +1611,36 @@
 
                 <div class="grid-container" id="bankGrid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.2); padding:30px; font-size:14px;">Загрузите предметы (вставьте экспорт из BankScanner)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab4">
+            <div class="card">
+                <div class="card-title"><span class="icon">🔫</span> Снайпер</div>
+                
+                <div class="sniper-status">
+                    <div class="status-text" id="sniperStatus">⏸️ Нажмите "Выстрел!"</div>
+                    <div class="status-text" style="font-size:12px;color:rgba(255,255,255,0.2);" id="sniperTimer">👥 Ожидание</div>
+                </div>
+
+                <div class="sniper-stats">
+                    <span class="alive">🟢 Живых: <strong id="sniperAlive">0</strong></span>
+                    <span class="dead">💀 Выбыло: <strong id="sniperDead">0</strong></span>
+                    <span>👥 Всего: <strong id="sniperTotal">0</strong></span>
+                </div>
+
+                <div class="sniper-arena" id="sniperArena">
+                    <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">👥 Добавьте участников и нажмите "Выстрел!"</div>
+                </div>
+
+                <div class="sniper-controls">
+                    <div class="input-group">
+                        <input type="text" id="sniperNameInput" placeholder="Имя участника..." />
+                        <button class="btn btn-primary" id="sniperAddBtn">➕</button>
+                    </div>
+                    <button class="btn btn-danger" id="sniperShootBtn">🔫 Выстрел!</button>
+                    <button class="btn btn-reset" id="sniperResetBtn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff;">🔄 Сброс</button>
                 </div>
             </div>
         </div>
@@ -1460,6 +1790,13 @@
                     isLoading: false,
                     hasItems: false,
                 },
+                sniper: {
+                    participants: [],
+                    isShooting: false,
+                    targetedIndex: -1,
+                    victimId: null,
+                    nextId: 1,
+                },
                 history: [],
             };
 
@@ -1471,6 +1808,7 @@
                     document.getElementById(this.dataset.tab).classList.add('active');
                     if (this.dataset.tab === 'tab2') drawWheel();
                     if (this.dataset.tab === 'tab3') renderBankGrid();
+                    if (this.dataset.tab === 'tab4') renderSniper();
                 });
             });
 
@@ -2472,6 +2810,308 @@
             startBankBtn.addEventListener('click', startBankDraw);
             renderBankGrid();
             updateBankState();
+
+            const sniperArena = document.getElementById('sniperArena');
+            const sniperAlive = document.getElementById('sniperAlive');
+            const sniperDead = document.getElementById('sniperDead');
+            const sniperTotal = document.getElementById('sniperTotal');
+            const sniperStatus = document.getElementById('sniperStatus');
+            const sniperTimer = document.getElementById('sniperTimer');
+            const sniperShootBtn = document.getElementById('sniperShootBtn');
+            const sniperResetBtn = document.getElementById('sniperResetBtn');
+            const sniperAddBtn = document.getElementById('sniperAddBtn');
+            const sniperNameInput = document.getElementById('sniperNameInput');
+
+            let sniperAnimationTimer = null;
+
+            function renderSniper() {
+                const all = state.sniper.participants;
+                if (all.length === 0) {
+                    sniperArena.innerHTML = `
+                        <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">
+                            👥 Добавьте участников и нажмите "Выстрел!"
+                        </div>
+                    `;
+                    updateSniperUI();
+                    return;
+                }
+
+                const sorted = [...all].sort((a, b) => {
+                    if (a.alive && !b.alive) return -1;
+                    if (!a.alive && b.alive) return 1;
+                    return a.id - b.id;
+                });
+
+                sniperArena.innerHTML = sorted.map((p) => {
+                    const isTargeted = state.sniper.targetedIndex === p.id && p.alive;
+                    const isEliminated = !p.alive;
+
+                    let classes = 'sniper-participant';
+                    if (isEliminated) classes += ' eliminated';
+                    if (isTargeted) classes += ' targeted';
+                    if (p.id === state.sniper.victimId && state.sniper.isShooting && p.alive === false) {
+                        classes += ' shot';
+                    }
+
+                    return `
+                        <div class="${classes}" data-id="${p.id}">
+                            <span class="id-badge">#${p.id}</span>
+                            ${p.name}
+                            <span class="crosshair-icon">🎯</span>
+                        </div>
+                    `;
+                }).join('');
+
+                updateSniperUI();
+            }
+
+            function updateSniperUI() {
+                const alive = state.sniper.participants.filter(p => p.alive);
+                const dead = state.sniper.participants.filter(p => !p.alive);
+                sniperAlive.textContent = alive.length;
+                sniperDead.textContent = dead.length;
+                sniperTotal.textContent = state.sniper.participants.length;
+
+                const canShoot = !state.sniper.isShooting && alive.length > 1 && state.sniper.participants.length > 0;
+                sniperShootBtn.disabled = !canShoot;
+                sniperResetBtn.disabled = state.sniper.isShooting;
+
+                const canEdit = !state.sniper.isShooting;
+                sniperNameInput.disabled = !canEdit;
+                sniperAddBtn.disabled = !canEdit;
+
+                if (alive.length === 1 && state.sniper.participants.length > 0) {
+                    sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
+                    sniperTimer.textContent = '🎉 Поздравляем!';
+                    sniperShootBtn.disabled = true;
+                } else if (alive.length === 0 && state.sniper.participants.length > 0) {
+                    sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
+                    sniperTimer.textContent = '😵 Никто не выжил';
+                    sniperShootBtn.disabled = true;
+                } else if (state.sniper.isShooting) {
+                    // статус обновляется в анимации
+                } else {
+                    sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Нажмите "Выстрел!"</span>`;
+                    sniperTimer.textContent = `👥 Осталось: ${alive.length}`;
+                }
+            }
+
+            function stopSniperAnimation() {
+                if (sniperAnimationTimer) {
+                    clearTimeout(sniperAnimationTimer);
+                    sniperAnimationTimer = null;
+                }
+            }
+
+            function addSniperParticipant(name) {
+                if (state.sniper.isShooting) return;
+                const trimmed = name.trim();
+                if (!trimmed) return;
+                state.sniper.participants.push({
+                    id: state.sniper.nextId++,
+                    name: trimmed,
+                    alive: true,
+                });
+                renderSniper();
+                sniperNameInput.value = '';
+                sniperNameInput.focus();
+            }
+
+            function resetSniper() {
+                if (state.sniper.isShooting) return;
+                stopSniperAnimation();
+                state.sniper.participants = [];
+                state.sniper.isShooting = false;
+                state.sniper.targetedIndex = -1;
+                state.sniper.victimId = null;
+                state.sniper.nextId = 1;
+                sniperStatus.innerHTML = '⏸️ Нажмите "Выстрел!"';
+                sniperTimer.textContent = '👥 Ожидание';
+                renderSniper();
+            }
+
+            function startSniperShoot() {
+                if (state.sniper.isShooting) return;
+
+                const alive = state.sniper.participants.filter(p => p.alive);
+                if (alive.length <= 1) {
+                    if (alive.length === 1) {
+                        sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
+                        sniperTimer.textContent = '🎉 Поздравляем!';
+                    }
+                    return;
+                }
+
+                const victim = alive[Math.floor(Math.random() * alive.length)];
+                state.sniper.victimId = victim.id;
+                state.sniper.isShooting = true;
+                state.sniper.targetedIndex = -1;
+
+                sniperStatus.innerHTML = `🔍 <span class="highlight">Сканирование...</span>`;
+                sniperTimer.textContent = '🎯 Ищем цель';
+                renderSniper();
+
+                const targets = state.sniper.participants.filter(p => p.alive);
+                let currentTargetIdx = Math.floor(Math.random() * targets.length);
+                let steps = 0;
+                const maxSteps = 14 + Math.floor(Math.random() * 10);
+                let delay = 80 + Math.random() * 40;
+                let isFinished = false;
+
+                function animateStep() {
+                    if (isFinished) return;
+
+                    if (steps >= maxSteps) {
+                        finishAiming(victim);
+                        return;
+                    }
+
+                    let nextIdx;
+                    let attempts = 0;
+                    do {
+                        nextIdx = Math.floor(Math.random() * targets.length);
+                        attempts++;
+                    } while (nextIdx === currentTargetIdx && attempts < 20 && targets.length > 1);
+
+                    currentTargetIdx = nextIdx;
+                    const target = targets[currentTargetIdx];
+                    state.sniper.targetedIndex = target.id;
+
+                    document.querySelectorAll('.sniper-participant').forEach(el => {
+                        const id = parseFloat(el.dataset.id);
+                        el.classList.toggle('targeted', id === state.sniper.targetedIndex);
+                    });
+
+                    sniperStatus.innerHTML = `🔍 <span class="highlight">${target.name}</span>`;
+
+                    steps++;
+                    delay *= 1.09;
+                    const currentDelay = Math.min(delay, 350);
+
+                    sniperAnimationTimer = setTimeout(animateStep, currentDelay);
+                }
+
+                function finishAiming(victim) {
+                    if (isFinished) return;
+                    isFinished = true;
+
+                    state.sniper.targetedIndex = victim.id;
+
+                    document.querySelectorAll('.sniper-participant').forEach(el => {
+                        const id = parseFloat(el.dataset.id);
+                        el.classList.toggle('targeted', id === state.sniper.targetedIndex);
+                    });
+
+                    sniperStatus.innerHTML = `🎯 <span class="danger">ЦЕЛЬ: ${victim.name}</span>`;
+                    sniperTimer.textContent = '💀 Приготовиться...';
+
+                    sniperAnimationTimer = setTimeout(() => {
+                        executeSniperShot(victim);
+                    }, 600 + Math.random() * 400);
+                }
+
+                animateStep();
+            }
+
+            function executeSniperShot(victim) {
+                const el = document.querySelector(`.sniper-participant[data-id="${victim.id}"]`);
+
+                const flash = document.createElement('div');
+                flash.className = 'shot-flash';
+                document.body.appendChild(flash);
+                setTimeout(() => flash.remove(), 400);
+
+                if (navigator.vibrate) {
+                    navigator.vibrate([30, 30, 30, 30, 60]);
+                }
+
+                state.sniper.targetedIndex = -1;
+                document.querySelectorAll('.sniper-participant').forEach(el => {
+                    el.classList.remove('targeted');
+                });
+
+                if (el) {
+                    el.classList.add('shot');
+                }
+
+                sniperStatus.innerHTML = `💥 <span class="danger">ВЫСТРЕЛ! ${victim.name}</span>`;
+                sniperTimer.textContent = '💀 Попадание!';
+
+                sniperAnimationTimer = setTimeout(() => {
+                    finishSniperRound(victim);
+                }, 900);
+            }
+
+            function finishSniperRound(victim) {
+                victim.alive = false;
+                state.sniper.victimId = null;
+                state.sniper.targetedIndex = -1;
+                state.sniper.isShooting = false;
+
+                renderSniper();
+
+                const alive = state.sniper.participants.filter(p => p.alive);
+
+                if (alive.length === 0) {
+                    sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
+                    sniperTimer.textContent = '😵 Никто не выжил';
+                    renderSniper();
+                    return;
+                }
+
+                if (alive.length === 1) {
+                    showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
+                    sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
+                    sniperTimer.textContent = '🎉 Поздравляем!';
+                    renderSniper();
+                    return;
+                }
+
+                sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Нажмите "Выстрел!"</span>`;
+                sniperTimer.textContent = `👥 Осталось: ${alive.length}`;
+                renderSniper();
+            }
+
+            sniperAddBtn.addEventListener('click', () => addSniperParticipant(sniperNameInput.value));
+            sniperNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') addSniperParticipant(sniperNameInput.value);
+            });
+
+            sniperShootBtn.addEventListener('click', function() {
+                if (this.disabled) return;
+                startSniperShoot();
+            });
+
+            sniperResetBtn.addEventListener('click', resetSniper);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Space') {
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && activeTab.id === 'tab4') {
+                        e.preventDefault();
+                        if (!sniperShootBtn.disabled) sniperShootBtn.click();
+                    }
+                }
+                if (e.key === 'r' || e.key === 'R') {
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && activeTab.id === 'tab4') {
+                        resetSniper();
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                addSniperParticipant('NightWolf');
+                addSniperParticipant('ShadowStrike');
+                addSniperParticipant('MoonFury');
+                addSniperParticipant('ThunderBolt');
+                addSniperParticipant('IceQueen');
+                addSniperParticipant('FireMage');
+                addSniperParticipant('DarkRanger');
+                addSniperParticipant('LightBringer');
+            }, 300);
+
+            renderSniper();
 
             await loadStateFromDB();
             await loadWheelState();
