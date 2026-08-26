@@ -294,14 +294,9 @@
         let overlayVisible = false;
         let hideTimeout = null;
         let isAnimating = false;
-        let currentTargetId = null;
-        let animSteps = 0;
-        let animMaxSteps = 0;
-        let animDelay = 0;
         let animTimer = null;
         let victimId = null;
         let participants = [];
-        let animationPhase = 'idle';
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -334,7 +329,7 @@
             setTimeout(() => flash.remove(), 400);
         }
 
-        function renderArena() {
+        function renderArena(targetId, shotVictimId) {
             const all = participants;
             if (!all || all.length === 0) {
                 arena.innerHTML = `
@@ -357,14 +352,14 @@
             });
 
             arena.innerHTML = sorted.map((p) => {
-                const isTargeted = currentTargetId === p.id && p.alive;
+                const isTargeted = targetId === p.id && p.alive;
                 const isEliminated = !p.alive;
-                const isVictim = victimId === p.id && p.alive === false;
+                const isVictim = shotVictimId === p.id && p.alive === false;
 
                 let classes = 'sniper-participant';
                 if (isEliminated) classes += ' eliminated';
                 if (isTargeted) classes += ' targeted';
-                if (isVictim && animationPhase === 'shot') classes += ' shot';
+                if (isVictim) classes += ' shot';
 
                 return `
                     <div class="${classes}" data-id="${p.id}">
@@ -379,17 +374,20 @@
         function startAnimation(data) {
             if (isAnimating) return;
             if (!data.participants || data.participants.length === 0) return;
+            if (!data.victimId) return;
 
             participants = JSON.parse(JSON.stringify(data.participants));
+            const victim = participants.find(p => p.id === data.victimId);
+            if (!victim || !victim.alive) return;
+
             victimId = data.victimId;
-            animationPhase = 'shooting';
             isAnimating = true;
-            currentTargetId = null;
+            let currentTargetId = null;
 
             const alive = participants.filter(p => p.alive);
             if (alive.length <= 1) {
                 isAnimating = false;
-                renderArena();
+                renderArena(null, null);
                 return;
             }
 
@@ -416,7 +414,7 @@
                 const target = targets[currentTargetIdx];
                 currentTargetId = target.id;
 
-                renderArena();
+                renderArena(currentTargetId, null);
 
                 steps++;
                 delay *= 1.09;
@@ -426,15 +424,14 @@
             }
 
             function finishAiming() {
-                const victim = participants.find(p => p.id === victimId);
-                if (!victim || !victim.alive) {
+                const victimAlive = participants.find(p => p.id === victimId && p.alive);
+                if (!victimAlive) {
                     isAnimating = false;
-                    renderArena();
+                    renderArena(null, null);
                     return;
                 }
 
-                currentTargetId = victim.id;
-                renderArena();
+                renderArena(victimId, null);
 
                 animTimer = setTimeout(() => {
                     executeShot();
@@ -445,24 +442,19 @@
                 const victim = participants.find(p => p.id === victimId);
                 if (!victim) {
                     isAnimating = false;
-                    renderArena();
+                    renderArena(null, null);
                     return;
                 }
 
                 createFlash();
 
                 victim.alive = false;
-                animationPhase = 'shot';
-                currentTargetId = null;
-
-                renderArena();
+                renderArena(null, victimId);
 
                 animTimer = setTimeout(() => {
-                    animationPhase = 'idle';
                     isAnimating = false;
-                    currentTargetId = null;
                     victimId = null;
-                    renderArena();
+                    renderArena(null, null);
 
                     const aliveLeft = participants.filter(p => p.alive);
                     if (aliveLeft.length === 1) {
@@ -508,34 +500,33 @@
             if (data.status === 'shot' && data.victimId) {
                 if (!isAnimating) {
                     participants = JSON.parse(JSON.stringify(data.participants));
-                    victimId = data.victimId;
-                    animationPhase = 'shot';
-                    currentTargetId = null;
-                    renderArena();
-                    createFlash();
+                    const victim = participants.find(p => p.id === data.victimId);
+                    if (victim) {
+                        victim.alive = false;
+                        renderArena(null, data.victimId);
+                        createFlash();
 
-                    setTimeout(() => {
-                        animationPhase = 'idle';
-                        victimId = null;
-                        renderArena();
-                        const aliveLeft = participants.filter(p => p.alive);
-                        if (aliveLeft.length === 1) {
-                            const winner = aliveLeft[0];
-                            const winnerEl = document.createElement('div');
-                            winnerEl.className = 'winner-text';
-                            winnerEl.textContent = `🏆 ${winner.name}`;
-                            overlay.appendChild(winnerEl);
-                            setTimeout(() => {
-                                if (winnerEl.parentNode) winnerEl.remove();
-                            }, 4000);
-                        }
-                        if (hideTimeout) clearTimeout(hideTimeout);
-                        hideTimeout = setTimeout(() => {
-                            if (!isAnimating) {
-                                hideOverlay();
+                        setTimeout(() => {
+                            renderArena(null, null);
+                            const aliveLeft = participants.filter(p => p.alive);
+                            if (aliveLeft.length === 1) {
+                                const winner = aliveLeft[0];
+                                const winnerEl = document.createElement('div');
+                                winnerEl.className = 'winner-text';
+                                winnerEl.textContent = `🏆 ${winner.name}`;
+                                overlay.appendChild(winnerEl);
+                                setTimeout(() => {
+                                    if (winnerEl.parentNode) winnerEl.remove();
+                                }, 4000);
                             }
-                        }, 3000);
-                    }, 900);
+                            if (hideTimeout) clearTimeout(hideTimeout);
+                            hideTimeout = setTimeout(() => {
+                                if (!isAnimating) {
+                                    hideOverlay();
+                                }
+                            }, 3000);
+                        }, 900);
+                    }
                     return;
                 }
             }
@@ -552,7 +543,7 @@
                         if (winnerEl.parentNode) winnerEl.remove();
                     }, 4000);
                 }
-                renderArena();
+                renderArena(null, null);
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
                     if (!isAnimating) {
@@ -564,10 +555,7 @@
 
             if (data.status === 'idle' && !isAnimating) {
                 participants = JSON.parse(JSON.stringify(data.participants));
-                victimId = null;
-                currentTargetId = null;
-                animationPhase = 'idle';
-                renderArena();
+                renderArena(null, null);
             }
         }
 
