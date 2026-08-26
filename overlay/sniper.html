@@ -206,27 +206,39 @@
             100% { opacity: 0; transform: scale(2.5); }
         }
 
-        .winner-text {
+        .victim-banner {
             position: absolute;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 48px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #f9ca24, #f0932b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 60px rgba(249, 202, 36, 0.3);
-            animation: winnerPop 0.6s ease;
-            z-index: 10;
-            pointer-events: none;
-            text-align: center;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 71, 87, 0.5);
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            animation: victimAppear 0.3s ease-out;
+            z-index: 5;
+            white-space: nowrap;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.2);
         }
 
-        @keyframes winnerPop {
-            0% { transform: translate(-50%, -50%) scale(0.5) rotate(-10deg); opacity: 0; }
-            60% { transform: translate(-50%, -50%) scale(1.1) rotate(2deg); }
-            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        @keyframes victimAppear {
+            0% {
+                transform: translateX(-50%) scale(0.5) translateY(20px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .victim-banner.hidden {
+            display: none;
         }
 
         @media (max-width: 768px) {
@@ -247,8 +259,10 @@
                 font-size: 12px;
                 gap: 16px;
             }
-            .winner-text {
-                font-size: 32px;
+            .victim-banner {
+                font-size: 18px;
+                padding: 8px 20px;
+                bottom: 12px;
             }
         }
 
@@ -270,8 +284,10 @@
                 gap: 2px;
                 max-height: 40vh;
             }
-            .winner-text {
-                font-size: 24px;
+            .victim-banner {
+                font-size: 14px;
+                padding: 6px 14px;
+                bottom: 8px;
             }
         }
     </style>
@@ -287,6 +303,7 @@
         <div class="sniper-arena" id="sniperArena">
             <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:30px; font-size:14px;">Ожидание участников...</div>
         </div>
+        <div class="victim-banner hidden" id="victimBanner">💀 Жертва</div>
     </div>
 
     <script>
@@ -304,6 +321,7 @@
         const aliveEl = document.getElementById('sniperAlive');
         const deadEl = document.getElementById('sniperDead');
         const totalEl = document.getElementById('sniperTotal');
+        const victimBanner = document.getElementById('victimBanner');
 
         function showOverlay() {
             overlay.classList.add('active');
@@ -317,10 +335,19 @@
         function hideOverlay() {
             overlay.classList.remove('active');
             overlayVisible = false;
+            victimBanner.classList.add('hidden');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
+        }
+
+        function showVictim(name) {
+            victimBanner.textContent = `💀 ${name}`;
+            victimBanner.classList.remove('hidden');
+            setTimeout(() => {
+                victimBanner.classList.add('hidden');
+            }, 2500);
         }
 
         function createFlash() {
@@ -450,6 +477,7 @@
                 }
 
                 createFlash();
+                showVictim(victim.name);
 
                 victim.alive = false;
                 renderArena(null, shotId);
@@ -458,18 +486,6 @@
                     isAnimating = false;
                     animationCompleted = true;
                     renderArena(null, null);
-
-                    const aliveLeft = overlayParticipants.filter(p => p.alive);
-                    if (aliveLeft.length === 1) {
-                        const winner = aliveLeft[0];
-                        const winnerEl = document.createElement('div');
-                        winnerEl.className = 'winner-text';
-                        winnerEl.textContent = `🏆 ${winner.name}`;
-                        overlay.appendChild(winnerEl);
-                        setTimeout(() => {
-                            if (winnerEl.parentNode) winnerEl.remove();
-                        }, 4000);
-                    }
 
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
@@ -493,7 +509,6 @@
 
             showOverlay();
 
-            // Проверяем, есть ли новый victimId для анимации
             if (data.victimId && data.victimId !== lastVictimId && !isAnimating) {
                 lastVictimId = data.victimId;
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
@@ -501,33 +516,10 @@
                 return;
             }
 
-            // Если анимация уже завершилась или не идёт — просто показываем состояние
             if (!isAnimating && animationCompleted) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
-
-                // Если есть победитель
-                if (data.status === 'winner' || data.winnerName) {
-                    const winner = overlayParticipants.find(p => p.alive);
-                    if (winner) {
-                        const winnerEl = document.createElement('div');
-                        winnerEl.className = 'winner-text';
-                        winnerEl.textContent = `🏆 ${winner.name}`;
-                        overlay.appendChild(winnerEl);
-                        setTimeout(() => {
-                            if (winnerEl.parentNode) winnerEl.remove();
-                        }, 4000);
-                    }
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        if (!isAnimating) {
-                            hideOverlay();
-                        }
-                    }, 4000);
-                }
             }
-
-            // Если анимация идёт — ничего не делаем, она сама всё обновляет
         }
 
         async function pollState() {
