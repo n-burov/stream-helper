@@ -2843,9 +2843,7 @@
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
                     status: state.sniper.status,
-                    targetedIndex: state.sniper.targetedIndex,
                     victimId: state.sniper.victimId,
-                    targetedName: state.sniper.targetedName,
                     victimName: state.sniper.victimName,
                     winnerName: state.sniper.winnerName,
                 });
@@ -2992,12 +2990,13 @@
                 state.sniper.targetedIndex = -1;
                 state.sniper.status = 'shooting';
                 state.sniper.targetedName = null;
-                state.sniper.victimName = null;
+                state.sniper.victimName = victim.name;
+
+                sendSniperState();
 
                 sniperStatus.innerHTML = `🔍 <span class="highlight">Сканирование...</span>`;
                 sniperTimer.textContent = '🎯 Ищем цель';
                 renderSniper();
-                sendSniperState();
 
                 const targets = state.sniper.participants.filter(p => p.alive);
                 let currentTargetIdx = Math.floor(Math.random() * targets.length);
@@ -3032,7 +3031,6 @@
                     });
 
                     sniperStatus.innerHTML = `🔍 <span class="highlight">${target.name}</span>`;
-                    sendSniperState();
 
                     steps++;
                     delay *= 1.09;
@@ -3048,7 +3046,6 @@
                     state.sniper.targetedIndex = victim.id;
                     state.sniper.targetedName = victim.name;
                     state.sniper.status = 'aiming';
-                    state.sniper.victimName = victim.name;
 
                     document.querySelectorAll('.sniper-participant').forEach(el => {
                         const id = parseFloat(el.dataset.id);
@@ -3081,7 +3078,6 @@
 
                 state.sniper.targetedIndex = -1;
                 state.sniper.status = 'shot';
-                state.sniper.victimName = victim.name;
                 document.querySelectorAll('.sniper-participant').forEach(el => {
                     el.classList.remove('targeted');
                 });
