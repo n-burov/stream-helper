@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🔫 Снайпер | Оверлей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: transparent !important;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .sniper-overlay {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .sniper-overlay.active {
+            display: block;
+        }
+
+        .sniper-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .sniper-stats span strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sniper-stats .alive strong {
+            color: #00ff64;
+        }
+
+        .sniper-stats .dead strong {
+            color: #ff4757;
+        }
+
+        .sniper-arena {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 12px;
+            min-height: 80px;
+            max-height: 60vh;
+            overflow-y: auto;
+            align-content: flex-start;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            justify-content: center;
+        }
+
+        .sniper-arena::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sniper-arena::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+
+        .sniper-arena::-webkit-scrollbar-thumb {
+            background: rgba(145, 70, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .sniper-participant {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            white-space: nowrap;
+            height: 32px;
+            position: relative;
+        }
+
+        .sniper-participant .id-badge {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.15);
+            margin-right: 4px;
+            font-weight: 400;
+        }
+
+        .sniper-participant.targeted {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.15);
+            color: #fff;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+            z-index: 2;
+            animation: targetPulse 0.2s ease-in-out infinite alternate;
+        }
+
+        @keyframes targetPulse {
+            0% {
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+                transform: scale(1.03);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.35);
+                transform: scale(1.08);
+            }
+        }
+
+        .sniper-participant .crosshair-icon {
+            display: none;
+            margin-left: 6px;
+            font-size: 12px;
+        }
+
+        .sniper-participant.targeted .crosshair-icon {
+            display: inline;
+            animation: crosshairSpin 0.3s linear infinite;
+        }
+
+        @keyframes crosshairSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .sniper-participant.eliminated {
+            opacity: 0.12;
+            transform: scale(0.8);
+            border-color: rgba(255, 0, 0, 0.03);
+            text-decoration: line-through;
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sniper-participant.eliminated .id-badge {
+            color: rgba(255, 0, 0, 0.15);
+        }
+
+        .sniper-participant.shot {
+            animation: shotEffect 0.9s ease-out forwards;
+        }
+
+        @keyframes shotEffect {
+            0% {
+                border-color: #ffd700;
+                box-shadow: 0 0 60px rgba(255, 215, 0, 0.5);
+                transform: scale(1.2);
+                background: rgba(255, 215, 0, 0.3);
+                color: #fff;
+            }
+            35% {
+                border-color: #ff4757;
+                box-shadow: 0 0 120px rgba(255, 71, 87, 0.8);
+                transform: scale(1.5) rotate(10deg);
+                background: rgba(255, 71, 87, 0.4);
+            }
+            100% {
+                opacity: 0.1;
+                transform: scale(0.6);
+                border-color: rgba(255, 0, 0, 0.02);
+                background: transparent;
+                color: rgba(255, 255, 255, 0.03);
+            }
+        }
+
+        .sniper-status {
+            text-align: center;
+            padding: 8px 16px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.5);
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sniper-status .highlight {
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .sniper-status .danger {
+            color: #ff4757;
+            font-weight: 600;
+        }
+
+        .sniper-status .winner-text {
+            color: #f9ca24;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .sniper-overlay {
+                padding: 12px;
+            }
+            .sniper-participant {
+                font-size: 11px;
+                padding: 3px 10px;
+                height: 26px;
+            }
+            .sniper-arena {
+                padding: 8px;
+                gap: 3px;
+                max-height: 50vh;
+            }
+            .sniper-stats {
+                font-size: 12px;
+                gap: 16px;
+            }
+            .sniper-status {
+                font-size: 14px;
+                min-height: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sniper-participant {
+                font-size: 10px;
+                padding: 2px 8px;
+                height: 22px;
+                border-radius: 12px;
+            }
+            .sniper-participant .id-badge {
+                font-size: 7px;
+            }
+            .sniper-stats span {
+                font-size: 10px;
+            }
+            .sniper-status {
+                font-size: 12px;
+                min-height: 26px;
+            }
+            .sniper-arena {
+                padding: 6px;
+                gap: 2px;
+                max-height: 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sniper-overlay" id="sniperOverlay">
+        <div class="sniper-status" id="sniperStatus">⏸️ Ожидание</div>
+        <div class="sniper-stats">
+            <span class="alive">🟢 Живых: <strong id="sniperAlive">0</strong></span>
+            <span class="dead">💀 Выбыло: <strong id="sniperDead">0</strong></span>
+            <span>👥 Всего: <strong id="sniperTotal">0</strong></span>
+        </div>
+        <div class="sniper-arena" id="sniperArena">
+            <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:30px; font-size:14px;">Ожидание участников...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/webhook?mechanic=sniper';
+        let overlayVisible = false;
+        let hideTimeout = null;
+
+        const overlay = document.getElementById('sniperOverlay');
+        const arena = document.getElementById('sniperArena');
+        const statusEl = document.getElementById('sniperStatus');
+        const aliveEl = document.getElementById('sniperAlive');
+        const deadEl = document.getElementById('sniperDead');
+        const totalEl = document.getElementById('sniperTotal');
+
+        function showOverlay() {
+            overlay.classList.add('active');
+            overlayVisible = true;
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        function hideOverlay() {
+            overlay.classList.remove('active');
+            overlayVisible = false;
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        function renderState(data) {
+            if (!data || !data.participants || data.participants.length === 0) {
+                if (overlayVisible) {
+                    hideTimeout = setTimeout(hideOverlay, 3000);
+                }
+                return;
+            }
+
+            showOverlay();
+
+            const all = data.participants;
+            const alive = all.filter(p => p.alive);
+            const dead = all.filter(p => !p.alive);
+
+            aliveEl.textContent = alive.length;
+            deadEl.textContent = dead.length;
+            totalEl.textContent = all.length;
+
+            if (data.status === 'shooting') {
+                if (data.targetedName) {
+                    statusEl.innerHTML = `🔍 <span class="highlight">${data.targetedName}</span>`;
+                } else {
+                    statusEl.innerHTML = `🔍 <span class="highlight">Сканирование...</span>`;
+                }
+            } else if (data.status === 'aiming') {
+                statusEl.innerHTML = `🎯 <span class="danger">${data.victimName}</span>`;
+            } else if (data.status === 'shot') {
+                statusEl.innerHTML = `💥 <span class="danger">${data.victimName}</span>`;
+            } else if (data.status === 'winner') {
+                statusEl.innerHTML = `🏆 <span class="winner-text">${data.winnerName}</span>`;
+            } else {
+                statusEl.innerHTML = `⏸️ Осталось: ${alive.length}`;
+            }
+
+            const sorted = [...all].sort((a, b) => {
+                if (a.alive && !b.alive) return -1;
+                if (!a.alive && b.alive) return 1;
+                return a.id - b.id;
+            });
+
+            arena.innerHTML = sorted.map((p) => {
+                const isTargeted = data.targetedIndex === p.id && p.alive;
+                const isEliminated = !p.alive;
+
+                let classes = 'sniper-participant';
+                if (isEliminated) classes += ' eliminated';
+                if (isTargeted) classes += ' targeted';
+                if (p.id === data.victimId && data.status === 'shot' && p.alive === false) {
+                    classes += ' shot';
+                }
+
+                return `
+                    <div class="${classes}" data-id="${p.id}">
+                        <span class="id-badge">#${p.id}</span>
+                        ${p.name}
+                        <span class="crosshair-icon">🎯</span>
+                    </div>
+                `;
+            }).join('');
+
+            if (data.status === 'shot' || data.status === 'winner') {
+                if (hideTimeout) clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(() => {
+                    hideOverlay();
+                }, 4000);
+            }
+        }
+
+        async function pollState() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                renderState(data);
+            } catch (error) {
+                console.error('Poll error:', error);
+            }
+        }
+
+        setTimeout(pollState, 500);
+        setInterval(pollState, 1000);
+
+        console.log('🎬 Оверлей "Снайпер" загружен');
+        console.log('📡 Опрос состояния каждую 1 секунду');
+    </script>
+</body>
+</html>
