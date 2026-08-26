@@ -189,31 +189,44 @@
             }
         }
 
-        .sniper-status {
+        .shot-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.4), transparent 70%);
+            animation: flashBang 0.35s ease-out forwards;
+        }
+
+        @keyframes flashBang {
+            0% { opacity: 1; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(2.5); }
+        }
+
+        .winner-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 60px rgba(249, 202, 36, 0.3);
+            animation: winnerPop 0.6s ease;
+            z-index: 10;
+            pointer-events: none;
             text-align: center;
-            padding: 8px 16px;
-            margin-bottom: 12px;
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.5);
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .sniper-status .highlight {
-            color: #ffd700;
-            font-weight: 600;
-        }
-
-        .sniper-status .danger {
-            color: #ff4757;
-            font-weight: 600;
-        }
-
-        .sniper-status .winner-text {
-            color: #f9ca24;
-            font-weight: 700;
+        @keyframes winnerPop {
+            0% { transform: translate(-50%, -50%) scale(0.5) rotate(-10deg); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.1) rotate(2deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
         }
 
         @media (max-width: 768px) {
@@ -234,9 +247,8 @@
                 font-size: 12px;
                 gap: 16px;
             }
-            .sniper-status {
-                font-size: 14px;
-                min-height: 30px;
+            .winner-text {
+                font-size: 32px;
             }
         }
 
@@ -253,14 +265,13 @@
             .sniper-stats span {
                 font-size: 10px;
             }
-            .sniper-status {
-                font-size: 12px;
-                min-height: 26px;
-            }
             .sniper-arena {
                 padding: 6px;
                 gap: 2px;
                 max-height: 40vh;
+            }
+            .winner-text {
+                font-size: 24px;
             }
         }
     </style>
@@ -268,7 +279,6 @@
 <body>
 
     <div class="sniper-overlay" id="sniperOverlay">
-        <div class="sniper-status" id="sniperStatus">⏸️ Ожидание</div>
         <div class="sniper-stats">
             <span class="alive">🟢 Живых: <strong id="sniperAlive">0</strong></span>
             <span class="dead">💀 Выбыло: <strong id="sniperDead">0</strong></span>
@@ -283,10 +293,18 @@
         const API_URL = '/api/webhook?mechanic=sniper';
         let overlayVisible = false;
         let hideTimeout = null;
+        let isAnimating = false;
+        let currentTargetId = null;
+        let animSteps = 0;
+        let animMaxSteps = 0;
+        let animDelay = 0;
+        let animTimer = null;
+        let victimId = null;
+        let participants = [];
+        let animationPhase = 'idle';
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
-        const statusEl = document.getElementById('sniperStatus');
         const aliveEl = document.getElementById('sniperAlive');
         const deadEl = document.getElementById('sniperDead');
         const totalEl = document.getElementById('sniperTotal');
@@ -309,39 +327,28 @@
             }
         }
 
-        function renderState(data) {
-            if (!data || !data.participants || data.participants.length === 0) {
-                if (overlayVisible) {
-                    hideTimeout = setTimeout(hideOverlay, 3000);
-                }
+        function createFlash() {
+            const flash = document.createElement('div');
+            flash.className = 'shot-flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 400);
+        }
+
+        function renderArena() {
+            const all = participants;
+            if (!all || all.length === 0) {
+                arena.innerHTML = `
+                    <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:30px; font-size:14px;">Ожидание участников...</div>
+                `;
                 return;
             }
 
-            showOverlay();
-
-            const all = data.participants;
             const alive = all.filter(p => p.alive);
             const dead = all.filter(p => !p.alive);
 
             aliveEl.textContent = alive.length;
             deadEl.textContent = dead.length;
             totalEl.textContent = all.length;
-
-            if (data.status === 'shooting') {
-                if (data.targetedName) {
-                    statusEl.innerHTML = `🔍 <span class="highlight">${data.targetedName}</span>`;
-                } else {
-                    statusEl.innerHTML = `🔍 <span class="highlight">Сканирование...</span>`;
-                }
-            } else if (data.status === 'aiming') {
-                statusEl.innerHTML = `🎯 <span class="danger">${data.victimName}</span>`;
-            } else if (data.status === 'shot') {
-                statusEl.innerHTML = `💥 <span class="danger">${data.victimName}</span>`;
-            } else if (data.status === 'winner') {
-                statusEl.innerHTML = `🏆 <span class="winner-text">${data.winnerName}</span>`;
-            } else {
-                statusEl.innerHTML = `⏸️ Осталось: ${alive.length}`;
-            }
 
             const sorted = [...all].sort((a, b) => {
                 if (a.alive && !b.alive) return -1;
@@ -350,15 +357,14 @@
             });
 
             arena.innerHTML = sorted.map((p) => {
-                const isTargeted = data.targetedIndex === p.id && p.alive;
+                const isTargeted = currentTargetId === p.id && p.alive;
                 const isEliminated = !p.alive;
+                const isVictim = victimId === p.id && p.alive === false;
 
                 let classes = 'sniper-participant';
                 if (isEliminated) classes += ' eliminated';
                 if (isTargeted) classes += ' targeted';
-                if (p.id === data.victimId && data.status === 'shot' && p.alive === false) {
-                    classes += ' shot';
-                }
+                if (isVictim && animationPhase === 'shot') classes += ' shot';
 
                 return `
                     <div class="${classes}" data-id="${p.id}">
@@ -368,12 +374,200 @@
                     </div>
                 `;
             }).join('');
+        }
 
-            if (data.status === 'shot' || data.status === 'winner') {
+        function startAnimation(data) {
+            if (isAnimating) return;
+            if (!data.participants || data.participants.length === 0) return;
+
+            participants = JSON.parse(JSON.stringify(data.participants));
+            victimId = data.victimId;
+            animationPhase = 'shooting';
+            isAnimating = true;
+            currentTargetId = null;
+
+            const alive = participants.filter(p => p.alive);
+            if (alive.length <= 1) {
+                isAnimating = false;
+                renderArena();
+                return;
+            }
+
+            const targets = alive;
+            let currentTargetIdx = Math.floor(Math.random() * targets.length);
+            let steps = 0;
+            const maxSteps = 14 + Math.floor(Math.random() * 10);
+            let delay = 80 + Math.random() * 40;
+
+            function animateStep() {
+                if (steps >= maxSteps) {
+                    finishAiming();
+                    return;
+                }
+
+                let nextIdx;
+                let attempts = 0;
+                do {
+                    nextIdx = Math.floor(Math.random() * targets.length);
+                    attempts++;
+                } while (nextIdx === currentTargetIdx && attempts < 20 && targets.length > 1);
+
+                currentTargetIdx = nextIdx;
+                const target = targets[currentTargetIdx];
+                currentTargetId = target.id;
+
+                renderArena();
+
+                steps++;
+                delay *= 1.09;
+                const currentDelay = Math.min(delay, 350);
+
+                animTimer = setTimeout(animateStep, currentDelay);
+            }
+
+            function finishAiming() {
+                const victim = participants.find(p => p.id === victimId);
+                if (!victim || !victim.alive) {
+                    isAnimating = false;
+                    renderArena();
+                    return;
+                }
+
+                currentTargetId = victim.id;
+                renderArena();
+
+                animTimer = setTimeout(() => {
+                    executeShot();
+                }, 600 + Math.random() * 400);
+            }
+
+            function executeShot() {
+                const victim = participants.find(p => p.id === victimId);
+                if (!victim) {
+                    isAnimating = false;
+                    renderArena();
+                    return;
+                }
+
+                createFlash();
+
+                victim.alive = false;
+                animationPhase = 'shot';
+                currentTargetId = null;
+
+                renderArena();
+
+                animTimer = setTimeout(() => {
+                    animationPhase = 'idle';
+                    isAnimating = false;
+                    currentTargetId = null;
+                    victimId = null;
+                    renderArena();
+
+                    const aliveLeft = participants.filter(p => p.alive);
+                    if (aliveLeft.length === 1) {
+                        const winner = aliveLeft[0];
+                        const winnerEl = document.createElement('div');
+                        winnerEl.className = 'winner-text';
+                        winnerEl.textContent = `🏆 ${winner.name}`;
+                        overlay.appendChild(winnerEl);
+                        setTimeout(() => {
+                            if (winnerEl.parentNode) winnerEl.remove();
+                        }, 4000);
+                    }
+
+                    if (hideTimeout) clearTimeout(hideTimeout);
+                    hideTimeout = setTimeout(() => {
+                        if (!isAnimating) {
+                            hideOverlay();
+                        }
+                    }, 3000);
+                }, 900);
+            }
+
+            animateStep();
+        }
+
+        function renderState(data) {
+            if (!data || !data.participants || data.participants.length === 0) {
+                if (overlayVisible && !isAnimating) {
+                    hideTimeout = setTimeout(hideOverlay, 3000);
+                }
+                return;
+            }
+
+            showOverlay();
+
+            if (data.status === 'shooting' || data.status === 'aiming') {
+                if (!isAnimating && data.victimId) {
+                    startAnimation(data);
+                    return;
+                }
+            }
+
+            if (data.status === 'shot' && data.victimId) {
+                if (!isAnimating) {
+                    participants = JSON.parse(JSON.stringify(data.participants));
+                    victimId = data.victimId;
+                    animationPhase = 'shot';
+                    currentTargetId = null;
+                    renderArena();
+                    createFlash();
+
+                    setTimeout(() => {
+                        animationPhase = 'idle';
+                        victimId = null;
+                        renderArena();
+                        const aliveLeft = participants.filter(p => p.alive);
+                        if (aliveLeft.length === 1) {
+                            const winner = aliveLeft[0];
+                            const winnerEl = document.createElement('div');
+                            winnerEl.className = 'winner-text';
+                            winnerEl.textContent = `🏆 ${winner.name}`;
+                            overlay.appendChild(winnerEl);
+                            setTimeout(() => {
+                                if (winnerEl.parentNode) winnerEl.remove();
+                            }, 4000);
+                        }
+                        if (hideTimeout) clearTimeout(hideTimeout);
+                        hideTimeout = setTimeout(() => {
+                            if (!isAnimating) {
+                                hideOverlay();
+                            }
+                        }, 3000);
+                    }, 900);
+                    return;
+                }
+            }
+
+            if (data.status === 'winner') {
+                participants = JSON.parse(JSON.stringify(data.participants));
+                const winner = participants.find(p => p.alive);
+                if (winner) {
+                    const winnerEl = document.createElement('div');
+                    winnerEl.className = 'winner-text';
+                    winnerEl.textContent = `🏆 ${winner.name}`;
+                    overlay.appendChild(winnerEl);
+                    setTimeout(() => {
+                        if (winnerEl.parentNode) winnerEl.remove();
+                    }, 4000);
+                }
+                renderArena();
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    hideOverlay();
+                    if (!isAnimating) {
+                        hideOverlay();
+                    }
                 }, 4000);
+                return;
+            }
+
+            if (data.status === 'idle' && !isAnimating) {
+                participants = JSON.parse(JSON.stringify(data.participants));
+                victimId = null;
+                currentTargetId = null;
+                animationPhase = 'idle';
+                renderArena();
             }
         }
 
@@ -388,10 +582,10 @@
         }
 
         setTimeout(pollState, 500);
-        setInterval(pollState, 1000);
+        setInterval(pollState, 800);
 
         console.log('🎬 Оверлей "Снайпер" загружен');
-        console.log('📡 Опрос состояния каждую 1 секунду');
+        console.log('📡 Опрос состояния каждые 0.8 секунды');
     </script>
 </body>
 </html>
