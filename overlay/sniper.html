@@ -296,8 +296,8 @@
         let isAnimating = false;
         let animTimer = null;
         let lastVictimId = null;
-        let lastParticipants = [];
         let overlayParticipants = [];
+        let animationCompleted = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -330,8 +330,8 @@
             setTimeout(() => flash.remove(), 400);
         }
 
-        function renderArena(targetId, shotVictimId, participants) {
-            const all = participants || overlayParticipants;
+        function renderArena(targetId, shotVictimId) {
+            const all = overlayParticipants;
             if (!all || all.length === 0) {
                 arena.innerHTML = `
                     <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:30px; font-size:14px;">Ожидание участников...</div>
@@ -372,22 +372,23 @@
             }).join('');
         }
 
-        function startOverlayAnimation(victimId, participants) {
+        function runAnimation(victimId) {
             if (isAnimating) return;
             if (!victimId) return;
-            if (!participants || participants.length === 0) return;
+            if (!overlayParticipants || overlayParticipants.length === 0) return;
 
-            overlayParticipants = JSON.parse(JSON.stringify(participants));
             const victim = overlayParticipants.find(p => p.id === victimId);
             if (!victim || !victim.alive) return;
 
             isAnimating = true;
+            animationCompleted = false;
             let currentTargetId = null;
 
             const alive = overlayParticipants.filter(p => p.alive);
             if (alive.length <= 1) {
                 isAnimating = false;
-                renderArena(null, null, overlayParticipants);
+                animationCompleted = true;
+                renderArena(null, null);
                 return;
             }
 
@@ -414,7 +415,7 @@
                 const target = targets[currentTargetIdx];
                 currentTargetId = target.id;
 
-                renderArena(currentTargetId, null, overlayParticipants);
+                renderArena(currentTargetId, null);
 
                 steps++;
                 delay *= 1.09;
@@ -427,33 +428,36 @@
                 const victimAlive = overlayParticipants.find(p => p.id === victimId && p.alive);
                 if (!victimAlive) {
                     isAnimating = false;
-                    renderArena(null, null, overlayParticipants);
+                    animationCompleted = true;
+                    renderArena(null, null);
                     return;
                 }
 
-                renderArena(victimId, null, overlayParticipants);
+                renderArena(victimId, null);
 
                 animTimer = setTimeout(() => {
-                    executeOverlayShot(victimId);
+                    executeShot(victimId);
                 }, 600 + Math.random() * 400);
             }
 
-            function executeOverlayShot(shotId) {
+            function executeShot(shotId) {
                 const victim = overlayParticipants.find(p => p.id === shotId);
                 if (!victim) {
                     isAnimating = false;
-                    renderArena(null, null, overlayParticipants);
+                    animationCompleted = true;
+                    renderArena(null, null);
                     return;
                 }
 
                 createFlash();
 
                 victim.alive = false;
-                renderArena(null, shotId, overlayParticipants);
+                renderArena(null, shotId);
 
                 animTimer = setTimeout(() => {
                     isAnimating = false;
-                    renderArena(null, null, overlayParticipants);
+                    animationCompleted = true;
+                    renderArena(null, null);
 
                     const aliveLeft = overlayParticipants.filter(p => p.alive);
                     if (aliveLeft.length === 1) {
@@ -489,18 +493,18 @@
 
             showOverlay();
 
-            // Если есть victimId и он новый — запускаем анимацию
+            // Проверяем, есть ли новый victimId для анимации
             if (data.victimId && data.victimId !== lastVictimId && !isAnimating) {
                 lastVictimId = data.victimId;
-                lastParticipants = JSON.parse(JSON.stringify(data.participants));
-                startOverlayAnimation(data.victimId, data.participants);
+                overlayParticipants = JSON.parse(JSON.stringify(data.participants));
+                runAnimation(data.victimId);
                 return;
             }
 
-            // Если анимация не идёт — просто показываем состояние
-            if (!isAnimating) {
+            // Если анимация уже завершилась или не идёт — просто показываем состояние
+            if (!isAnimating && animationCompleted) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
-                renderArena(null, null, overlayParticipants);
+                renderArena(null, null);
 
                 // Если есть победитель
                 if (data.status === 'winner' || data.winnerName) {
@@ -522,6 +526,8 @@
                     }, 4000);
                 }
             }
+
+            // Если анимация идёт — ничего не делаем, она сама всё обновляет
         }
 
         async function pollState() {
