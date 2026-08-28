@@ -331,6 +331,7 @@
         let overlayParticipants = [];
         let animationCompleted = false;
         let isActive = false;
+        let hasEverShown = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -342,6 +343,7 @@
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
+                hasEverShown = true;
                 overlay.classList.add('active');
                 overlayVisible = true;
             }
@@ -520,14 +522,33 @@
         }
 
         function renderState(data) {
+            // Если нет данных или нет участников — скрываем оверлей
             if (!data || !data.participants || data.participants.length === 0) {
                 if (overlayVisible && !isAnimating) {
-                    hideTimeout = setTimeout(hideOverlay, 3000);
+                    hideOverlay();
                 }
                 return;
             }
 
-            showOverlay();
+            // Проверяем, есть ли живые участники
+            const hasAlive = data.participants.some(p => p.alive);
+            if (!hasAlive) {
+                if (overlayVisible && !isAnimating) {
+                    hideOverlay();
+                }
+                return;
+            }
+
+            // Показываем оверлей только если есть victimId (активный розыгрыш)
+            if (data.victimId) {
+                showOverlay();
+            } else {
+                // Если нет victimId — скрываем
+                if (overlayVisible && !isAnimating) {
+                    hideOverlay();
+                }
+                return;
+            }
 
             if (data.victimId && data.victimId !== lastVictimId && !isAnimating) {
                 lastVictimId = data.victimId;
