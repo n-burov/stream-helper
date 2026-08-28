@@ -94,7 +94,6 @@
         let spinDuration = 15000;
         let spinTargetAngle = 0;
         let spinStartRotation = 0;
-        let processedSpinIds = new Set();
         let currentSpinId = null;
         let hideScheduled = false;
 
@@ -295,46 +294,39 @@
                 }
             }
 
-            // Если есть spinId и он НЕ был обработан
-            if (data.status === 'spinning' && data.spinId) {
-                if (!processedSpinIds.has(data.spinId)) {
-                    processedSpinIds.add(data.spinId);
-                    
-                    if (data.targetAngle !== undefined) {
-                        if (hideTimeout) {
-                            clearTimeout(hideTimeout);
-                            hideTimeout = null;
-                        }
-                        
-                        let baseAngle = data.targetAngle;
-                        let finalAngle = baseAngle;
-                        
-                        if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
-                            const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
-                            const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
-                            const maxOffset = sliceAngle * 0.4;
-                            const randomOffset = (Math.random() * 2 - 1) * maxOffset;
-                            finalAngle = baseAngle + randomOffset;
-                        }
-                        
-                        const extraSpins = 15 * Math.PI * 2;
-                        const targetWithSpins = finalAngle + extraSpins;
-                        const duration = data.duration || 15000;
-                        startSpin(targetWithSpins, duration, data.spinId);
+            // Если мы не крутимся и статус spinning — запускаем анимацию
+            if (data.status === 'spinning' && !isSpinning && data.targetAngle !== undefined) {
+                const spinId = data.spinId || Date.now().toString();
+                
+                // Проверяем, не тот же ли это spinId, что уже запускали
+                if (currentSpinId !== spinId) {
+                    if (hideTimeout) {
+                        clearTimeout(hideTimeout);
+                        hideTimeout = null;
                     }
+                    
+                    let baseAngle = data.targetAngle;
+                    let finalAngle = baseAngle;
+                    
+                    // Добавляем случайное смещение внутри сектора
+                    if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
+                        const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
+                        const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                        const maxOffset = sliceAngle * 0.4;
+                        const randomOffset = (Math.random() * 2 - 1) * maxOffset;
+                        finalAngle = baseAngle + randomOffset;
+                    }
+                    
+                    const extraSpins = 15 * Math.PI * 2;
+                    const targetWithSpins = finalAngle + extraSpins;
+                    const duration = data.duration || 15000;
+                    startSpin(targetWithSpins, duration, spinId);
                 }
                 return;
             }
 
+            // Если статус completed или idle — скрываем
             if (data.status === 'completed' || data.status === 'idle') {
-                if (data.spinId) {
-                    // Очищаем обработанные ID старше 5 минут (чтобы не переполнять память)
-                    if (processedSpinIds.size > 100) {
-                        const toDelete = Array.from(processedSpinIds).slice(0, 50);
-                        toDelete.forEach(id => processedSpinIds.delete(id));
-                    }
-                }
-                
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
