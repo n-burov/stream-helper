@@ -100,7 +100,8 @@
         let spinDuration = 15000;
         let spinTargetAngle = 0;
         let spinStartRotation = 0;
-        let isWaitingForResult = false;
+        let lastTargetAngle = null;
+        let isCompleted = false;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -111,6 +112,7 @@
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
+                isCompleted = false;
                 wheelOverlay.classList.add('active');
             }
             if (hideTimeout) {
@@ -121,7 +123,7 @@
 
         function hideOverlay() {
             isActive = false;
-            isWaitingForResult = false;
+            isCompleted = false;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -214,7 +216,6 @@
                 animationId = null;
             }
             isSpinning = false;
-            isWaitingForResult = false;
             canvas.classList.remove('spinning');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -237,10 +238,11 @@
                 isSpinning = false;
                 canvas.classList.remove('spinning');
                 animationId = null;
+                isCompleted = true;
 
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    if (!isSpinning && !isWaitingForResult) {
+                    if (!isSpinning) {
                         hideOverlay();
                     }
                     hideTimeout = null;
@@ -254,7 +256,6 @@
 
             showOverlay();
             isSpinning = true;
-            isWaitingForResult = false;
             canvas.classList.add('spinning');
 
             spinStartTime = Date.now();
@@ -288,24 +289,28 @@
                 }
             }
 
-            if (data.status === 'spinning' && !isSpinning) {
+            if (data.status === 'spinning' && !isSpinning && !isCompleted) {
                 if (data.targetAngle !== undefined) {
-                    if (hideTimeout) {
-                        clearTimeout(hideTimeout);
-                        hideTimeout = null;
+                    const targetKey = data.targetAngle.toFixed(2);
+                    if (lastTargetAngle !== targetKey) {
+                        lastTargetAngle = targetKey;
+                        if (hideTimeout) {
+                            clearTimeout(hideTimeout);
+                            hideTimeout = null;
+                        }
+                        const extraSpins = 15 * Math.PI * 2;
+                        const targetWithSpins = data.targetAngle + extraSpins;
+                        const duration = data.duration || 15000;
+                        startSpin(targetWithSpins, duration);
                     }
-                    const extraSpins = 15 * Math.PI * 2;
-                    const targetWithSpins = data.targetAngle + extraSpins;
-                    const duration = data.duration || 15000;
-                    startSpin(targetWithSpins, duration);
                 }
                 return;
             }
 
             if (data.status === 'completed' || data.status === 'idle') {
+                lastTargetAngle = null;
                 if (isSpinning) {
                     isSpinning = false;
-                    isWaitingForResult = false;
                     canvas.classList.remove('spinning');
                     if (animationId) {
                         cancelAnimationFrame(animationId);
@@ -322,10 +327,6 @@
                     }, 3000);
                 }
                 return;
-            }
-
-            if (data.status === 'waiting') {
-                isWaitingForResult = true;
             }
         }
 
