@@ -100,8 +100,7 @@
         let spinDuration = 15000;
         let spinTargetAngle = 0;
         let spinStartRotation = 0;
-        let lastTargetAngle = null;
-        let isCompleted = false;
+        let currentSpinId = null;
         let hideScheduled = false;
 
         const defaultColors = [
@@ -113,8 +112,6 @@
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
-                isCompleted = false;
-                hideScheduled = false;
                 wheelOverlay.classList.add('active');
             }
             if (hideTimeout) {
@@ -125,7 +122,6 @@
 
         function hideOverlay() {
             isActive = false;
-            isCompleted = false;
             hideScheduled = false;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
@@ -257,14 +253,12 @@
                 isSpinning = false;
                 canvas.classList.remove('spinning');
                 animationId = null;
-                isCompleted = true;
-                lastTargetAngle = null;
 
                 scheduleHide(3000);
             }
         }
 
-        function startSpin(targetAngle, duration) {
+        function startSpin(targetAngle, duration, spinId) {
             if (isSpinning) return;
             if (!sectors || sectors.length === 0) return;
 
@@ -272,6 +266,7 @@
             isSpinning = true;
             canvas.classList.add('spinning');
             hideScheduled = false;
+            currentSpinId = spinId;
 
             spinStartTime = Date.now();
             spinDuration = duration || 15000;
@@ -304,11 +299,10 @@
                 }
             }
 
-            if (data.status === 'spinning' && !isSpinning && !isCompleted) {
-                if (data.targetAngle !== undefined) {
-                    const targetKey = data.targetAngle.toFixed(2);
-                    if (lastTargetAngle !== targetKey) {
-                        lastTargetAngle = targetKey;
+            if (data.status === 'spinning') {
+                if (data.targetAngle !== undefined && !isSpinning && !isActive) {
+                    const spinId = data.spinId || Date.now().toString();
+                    if (currentSpinId !== spinId) {
                         if (hideTimeout) {
                             clearTimeout(hideTimeout);
                             hideTimeout = null;
@@ -316,14 +310,14 @@
                         const extraSpins = 15 * Math.PI * 2;
                         const targetWithSpins = data.targetAngle + extraSpins;
                         const duration = data.duration || 15000;
-                        startSpin(targetWithSpins, duration);
+                        startSpin(targetWithSpins, duration, spinId);
                     }
                 }
                 return;
             }
 
             if (data.status === 'completed' || data.status === 'idle') {
-                lastTargetAngle = null;
+                currentSpinId = null;
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
@@ -331,7 +325,9 @@
                         cancelAnimationFrame(animationId);
                         animationId = null;
                     }
-                    scheduleHide(3000);
+                    if (!hideScheduled) {
+                        scheduleHide(3000);
+                    }
                 }
                 if (isActive && !isSpinning) {
                     if (!hideScheduled) {
@@ -359,7 +355,6 @@
 
         console.log('🎬 Оверлей "Колесо фортуны" загружен');
         console.log('📡 Опрос состояния каждые 1.5 секунды');
-        console.log('👁️ Оверлей появляется при вращении и скрывается через 3 секунды после остановки');
     </script>
 </body>
 </html>
