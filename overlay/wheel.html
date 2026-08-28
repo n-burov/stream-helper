@@ -35,18 +35,6 @@
             display: flex;
         }
 
-        .wheel-bg {
-            position: absolute;
-            width: 420px;
-            height: 420px;
-            border-radius: 50%;
-            background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.02);
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
-            z-index: 0;
-        }
-
         .wheel-wrapper {
             position: relative;
             z-index: 1;
@@ -58,25 +46,31 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            box-shadow: 0 0 40px rgba(145, 70, 255, 0.1);
+            box-shadow: 
+                0 0 60px rgba(145, 70, 255, 0.15),
+                0 0 120px rgba(145, 70, 255, 0.08),
+                0 0 200px rgba(145, 70, 255, 0.04);
             transition: box-shadow 0.3s;
         }
 
         #wheelCanvas.spinning {
-            box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
+            box-shadow: 
+                0 0 80px rgba(145, 70, 255, 0.25),
+                0 0 160px rgba(145, 70, 255, 0.12),
+                0 0 240px rgba(145, 70, 255, 0.06);
         }
 
         @media (max-width: 480px) {
             .wheel-overlay { width: 280px; height: 280px; }
-            .wheel-bg { width: 280px; height: 280px; }
             .wheel-wrapper { width: 220px; height: 220px; }
+            #wheelCanvas { box-shadow: 0 0 30px rgba(145, 70, 255, 0.12); }
+            #wheelCanvas.spinning { box-shadow: 0 0 50px rgba(145, 70, 255, 0.2); }
         }
     </style>
 </head>
 <body>
 
     <div class="wheel-overlay" id="wheelOverlay">
-        <div class="wheel-bg"></div>
         <div class="wheel-wrapper">
             <canvas id="wheelCanvas" width="600" height="600"></canvas>
         </div>
