@@ -96,6 +96,7 @@
         let spinStartRotation = 0;
         let currentSpinId = null;
         let hideScheduled = false;
+        let fixedTargetAngle = null;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -117,6 +118,7 @@
         function hideOverlay() {
             isActive = false;
             hideScheduled = false;
+            fixedTargetAngle = null;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -225,6 +227,7 @@
                 animationId = null;
             }
             isSpinning = false;
+            fixedTargetAngle = null;
             canvas.classList.remove('spinning');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -247,6 +250,7 @@
                 isSpinning = false;
                 canvas.classList.remove('spinning');
                 animationId = null;
+                fixedTargetAngle = null;
 
                 scheduleHide(3000);
             }
@@ -302,25 +306,27 @@
                             hideTimeout = null;
                         }
                         
-                        // Получаем угол сектора и добавляем случайное смещение внутри сектора
-                        let targetWithSpins = data.targetAngle;
-                        
-                        // Если есть информация о секторе, добавляем случайное смещение
-                        if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
-                            const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
-                            const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                        // Если у нас ещё нет зафиксированного угла, вычисляем его
+                        if (fixedTargetAngle === null) {
+                            let baseAngle = data.targetAngle;
                             
-                            // Случайное смещение внутри сектора (от -40% до +40% от половины сектора)
-                            const maxOffset = sliceAngle * 0.4;
-                            const randomOffset = (Math.random() * 2 - 1) * maxOffset;
-                            
-                            // Применяем смещение к целевому углу
-                            targetWithSpins = data.targetAngle + randomOffset;
+                            // Добавляем случайное смещение внутри сектора
+                            if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
+                                const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
+                                const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                                
+                                const maxOffset = sliceAngle * 0.4;
+                                const randomOffset = (Math.random() * 2 - 1) * maxOffset;
+                                
+                                fixedTargetAngle = data.targetAngle + randomOffset;
+                            } else {
+                                fixedTargetAngle = data.targetAngle;
+                            }
                         }
                         
                         // Добавляем обороты
                         const extraSpins = 15 * Math.PI * 2;
-                        targetWithSpins += extraSpins;
+                        const targetWithSpins = fixedTargetAngle + extraSpins;
                         
                         const duration = data.duration || 15000;
                         startSpin(targetWithSpins, duration, spinId);
@@ -331,6 +337,7 @@
 
             if (data.status === 'completed' || data.status === 'idle') {
                 currentSpinId = null;
+                fixedTargetAngle = null;
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
