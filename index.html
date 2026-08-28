@@ -2183,6 +2183,10 @@
                 spinBtn.classList.add('disabled');
                 canvas.classList.add('spinning');
                 wheelResult.className = '';
+                
+                // Генерируем уникальный ID для этого вращения
+                const spinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                
                 try {
                     const sectors = state.wheel.sectors;
                     const totalWeight = sectors.reduce((sum, s) => sum + s.weight, 0);
@@ -2201,6 +2205,8 @@
                     const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
                     const targetAngle = -Math.PI / 2 - winnerMidAngle;
                     const duration = 15000;
+                    
+                    // Отправляем состояние с spinId
                     updateMechanic('wheel', {
                         status: 'spinning',
                         sectors: state.wheel.sectors,
@@ -2208,16 +2214,17 @@
                         targetAngle: targetAngle,
                         winnerLabel: sectors[winnerIndex].label,
                         duration: duration,
+                        spinId: spinId,  // <-- УНИКАЛЬНЫЙ ID
                     });
+                    
                     const startTime = Date.now();
                     const startRotation = state.wheel.currentRotation;
-
+            
                     function animate() {
                         const elapsed = Date.now() - startTime;
                         const progress = Math.min(elapsed / duration, 1);
                         const eased = 1 - Math.pow(1 - progress, 5);
-                        const currentAngle = startRotation + (targetAngle + Math.PI * 2 * 15 - startRotation) *
-                        eased;
+                        const currentAngle = startRotation + (targetAngle + Math.PI * 2 * 15 - startRotation) * eased;
                         state.wheel.currentRotation = currentAngle;
                         drawWheel();
                         if (progress < 1) {
@@ -2233,10 +2240,13 @@
                             spinBtn.classList.remove('disabled');
                             canvas.classList.remove('spinning');
                             showWinnerOnSite(winner.label);
+                            
+                            // Отправляем статус completed
                             updateMechanic('wheel', {
                                 status: 'completed',
                                 sectors: state.wheel.sectors,
                                 winner: winner.label,
+                                spinId: spinId,  // <-- ТОТ ЖЕ ID
                                 emoji: '🎉',
                                 title: 'ВЫИГРЫШ',
                                 tag: '🎡 Колесо фортуны',
