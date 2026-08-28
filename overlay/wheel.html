@@ -42,7 +42,7 @@
             border-radius: 50%;
             background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.02);
             box-shadow: 0 0 60px rgba(0, 0, 0, 0.3);
             z-index: 0;
         }
@@ -178,7 +178,7 @@
                 ctx.fillStyle = sector.color || defaultColors[i % defaultColors.length];
                 ctx.fill();
                 ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1;
                 ctx.stroke();
 
                 const midAngle = startAngle + sliceAngle / 2;
@@ -204,7 +204,7 @@
 
             ctx.beginPath();
             ctx.arc(300, 300, 280, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
             ctx.lineWidth = 2;
             ctx.stroke();
 
