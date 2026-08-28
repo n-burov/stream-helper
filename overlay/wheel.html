@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Оверлей | Колесо фортуны</title>
+    <title>🎡 Колесо фортуны | Оверлей</title>
     <style>
         * {
             margin: 0;
@@ -66,10 +66,44 @@
             box-shadow: 0 0 60px rgba(145, 70, 255, 0.2);
         }
 
+        .winner-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: 900;
+            color: #f9ca24;
+            text-shadow: 0 0 40px rgba(249, 202, 36, 0.3);
+            z-index: 10;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 16px 30px;
+            border-radius: 16px;
+            border: 2px solid rgba(249, 202, 36, 0.3);
+            animation: winnerPop 0.6s ease;
+            text-align: center;
+        }
+
+        @keyframes winnerPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 480px) {
             .wheel-overlay { width: 280px; height: 280px; }
             .wheel-bg { width: 280px; height: 280px; }
             .wheel-wrapper { width: 220px; height: 220px; }
+            .winner-label { font-size: 22px; padding: 10px 18px; }
         }
     </style>
 </head>
@@ -95,6 +129,8 @@
         let isSpinning = false;
         let hideTimeout = null;
         let animationId = null;
+        let isActive = false;
+        let lastWinner = null;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -103,7 +139,10 @@
         ];
 
         function showOverlay() {
-            wheelOverlay.classList.add('active');
+            if (!isActive) {
+                isActive = true;
+                wheelOverlay.classList.add('active');
+            }
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
@@ -111,6 +150,7 @@
         }
 
         function hideOverlay() {
+            isActive = false;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -204,11 +244,27 @@
             }
             isSpinning = false;
             canvas.classList.remove('spinning');
-            hideOverlay();
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
+            // Удаляем старый победный текст
+            const oldWinner = document.querySelector('.winner-label');
+            if (oldWinner) oldWinner.remove();
+        }
+
+        function showWinner(label) {
+            const oldWinner = document.querySelector('.winner-label');
+            if (oldWinner) oldWinner.remove();
+            
+            const winnerEl = document.createElement('div');
+            winnerEl.className = 'winner-label';
+            winnerEl.textContent = `🎉 ${label}`;
+            wheelOverlay.appendChild(winnerEl);
+            
+            setTimeout(() => {
+                if (winnerEl.parentNode) winnerEl.remove();
+            }, 4000);
         }
 
         function spinWheelToTarget(targetAngle, duration, callback) {
@@ -225,7 +281,6 @@
             function animate() {
                 const elapsed = Date.now() - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                // easeOutQuint — плавное замедление
                 const eased = 1 - Math.pow(1 - progress, 5);
                 currentRotation = startRotation + (targetAngle - startRotation) * eased;
                 drawWheel();
@@ -240,7 +295,6 @@
 
                     if (callback) callback();
 
-                    // Скрываем через 3 секунды после остановки
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
                         hideOverlay();
@@ -252,19 +306,15 @@
         }
 
         function renderState(data) {
-            if (!data) {
-                resetOverlay();
-                return;
-            }
-
-            if (data.status === 'idle' || data.status === 'completed') {
-                if (wheelOverlay.classList.contains('active')) {
+            if (!data || !data.sectors || data.sectors.length === 0) {
+                if (isActive && !isSpinning) {
                     resetOverlay();
+                    hideOverlay();
                 }
                 return;
             }
 
-            // Обновляем сектора
+            // Обновляем сектора если изменились
             if (data.sectors) {
                 const newSectors = JSON.stringify(data.sectors);
                 const oldSectors = JSON.stringify(sectors);
@@ -274,27 +324,21 @@
                 }
             }
 
-            // Запускаем вращение к целевому углу
+            // Если статус spinning и мы не крутим — запускаем
             if (data.status === 'spinning' && !isSpinning) {
                 if (data.targetAngle !== undefined) {
-                    // Убираем предыдущий таймер скрытия
                     if (hideTimeout) {
                         clearTimeout(hideTimeout);
                         hideTimeout = null;
                     }
 
-                    // ===== УВЕЛИЧИВАЕМ КОЛИЧЕСТВО ОБОРОТОВ =====
-                    // 15 полных оборотов + доворот до целевого угла
                     const extraSpins = 15 * Math.PI * 2;
                     const targetWithSpins = data.targetAngle + extraSpins;
-
-                    // Длительность вращения: 15 секунд
                     const duration = 15000;
 
                     spinWheelToTarget(targetWithSpins, duration, () => {
-                        // После завершения анимации отправляем победителя в общий оверлей
                         if (data.winnerLabel) {
-                            // Отправляем победителя через API winner
+                            showWinner(data.winnerLabel);
                             fetch('/api/winner', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -310,6 +354,33 @@
                         }
                     });
                 }
+                return;
+            }
+
+            // Если статус completed — показываем победителя если его ещё нет
+            if (data.status === 'completed' && data.winner) {
+                if (lastWinner !== data.winner) {
+                    lastWinner = data.winner;
+                    showWinner(data.winner);
+                }
+                if (isSpinning) {
+                    isSpinning = false;
+                    canvas.classList.remove('spinning');
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
+                        animationId = null;
+                    }
+                }
+                return;
+            }
+
+            // Если статус idle — скрываем
+            if (data.status === 'idle' || data.status === 'completed') {
+                if (isActive && !isSpinning) {
+                    resetOverlay();
+                    hideOverlay();
+                }
+                return;
             }
         }
 
@@ -329,7 +400,8 @@
         drawWheel();
 
         console.log('🎬 Оверлей "Колесо фортуны" загружен');
-        console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
+        console.log('📡 Опрос состояния каждые 1.5 секунды');
+        console.log('👁️ Оверлей появляется только при активном вращении');
     </script>
 </body>
 </html>
