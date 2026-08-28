@@ -119,6 +119,7 @@
             isActive = false;
             hideScheduled = false;
             fixedTargetAngle = null;
+            currentSpinId = null;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -297,45 +298,43 @@
                 }
             }
 
-            if (data.status === 'spinning') {
+            // Проверяем spinId — если он изменился, значит новое вращение
+            if (data.status === 'spinning' && data.spinId) {
                 if (data.targetAngle !== undefined && !isSpinning && !isActive) {
-                    const spinId = data.spinId || Date.now().toString();
-                    if (currentSpinId !== spinId) {
+                    if (currentSpinId !== data.spinId) {
                         if (hideTimeout) {
                             clearTimeout(hideTimeout);
                             hideTimeout = null;
                         }
                         
-                        // Если у нас ещё нет зафиксированного угла, вычисляем его
                         if (fixedTargetAngle === null) {
                             let baseAngle = data.targetAngle;
                             
-                            // Добавляем случайное смещение внутри сектора
                             if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
                                 const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
                                 const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
-                                
                                 const maxOffset = sliceAngle * 0.4;
                                 const randomOffset = (Math.random() * 2 - 1) * maxOffset;
-                                
                                 fixedTargetAngle = data.targetAngle + randomOffset;
                             } else {
                                 fixedTargetAngle = data.targetAngle;
                             }
                         }
                         
-                        // Добавляем обороты
                         const extraSpins = 15 * Math.PI * 2;
                         const targetWithSpins = fixedTargetAngle + extraSpins;
-                        
                         const duration = data.duration || 15000;
-                        startSpin(targetWithSpins, duration, spinId);
+                        startSpin(targetWithSpins, duration, data.spinId);
                     }
                 }
                 return;
             }
 
             if (data.status === 'completed' || data.status === 'idle') {
+                // Если пришёл completed с тем же spinId — просто скрываем
+                if (data.spinId && data.spinId === currentSpinId) {
+                    // Всё ок, просто скрываем
+                }
                 currentSpinId = null;
                 fixedTargetAngle = null;
                 if (isSpinning) {
@@ -344,9 +343,6 @@
                     if (animationId) {
                         cancelAnimationFrame(animationId);
                         animationId = null;
-                    }
-                    if (!hideScheduled) {
-                        scheduleHide(3000);
                     }
                 }
                 if (isActive && !isSpinning) {
