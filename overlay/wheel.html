@@ -94,9 +94,9 @@
         let spinDuration = 15000;
         let spinTargetAngle = 0;
         let spinStartRotation = 0;
+        let processedSpinIds = new Set();
         let currentSpinId = null;
         let hideScheduled = false;
-        let fixedTargetAngle = null;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -118,7 +118,6 @@
         function hideOverlay() {
             isActive = false;
             hideScheduled = false;
-            fixedTargetAngle = null;
             currentSpinId = null;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
@@ -228,7 +227,6 @@
                 animationId = null;
             }
             isSpinning = false;
-            fixedTargetAngle = null;
             canvas.classList.remove('spinning');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -251,7 +249,6 @@
                 isSpinning = false;
                 canvas.classList.remove('spinning');
                 animationId = null;
-                fixedTargetAngle = null;
 
                 scheduleHide(3000);
             }
@@ -298,31 +295,30 @@
                 }
             }
 
-            // Проверяем spinId — если он изменился, значит новое вращение
+            // Если есть spinId и он НЕ был обработан
             if (data.status === 'spinning' && data.spinId) {
-                if (data.targetAngle !== undefined && !isSpinning && !isActive) {
-                    if (currentSpinId !== data.spinId) {
+                if (!processedSpinIds.has(data.spinId)) {
+                    processedSpinIds.add(data.spinId);
+                    
+                    if (data.targetAngle !== undefined) {
                         if (hideTimeout) {
                             clearTimeout(hideTimeout);
                             hideTimeout = null;
                         }
                         
-                        if (fixedTargetAngle === null) {
-                            let baseAngle = data.targetAngle;
-                            
-                            if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
-                                const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
-                                const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
-                                const maxOffset = sliceAngle * 0.4;
-                                const randomOffset = (Math.random() * 2 - 1) * maxOffset;
-                                fixedTargetAngle = data.targetAngle + randomOffset;
-                            } else {
-                                fixedTargetAngle = data.targetAngle;
-                            }
+                        let baseAngle = data.targetAngle;
+                        let finalAngle = baseAngle;
+                        
+                        if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
+                            const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
+                            const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                            const maxOffset = sliceAngle * 0.4;
+                            const randomOffset = (Math.random() * 2 - 1) * maxOffset;
+                            finalAngle = baseAngle + randomOffset;
                         }
                         
                         const extraSpins = 15 * Math.PI * 2;
-                        const targetWithSpins = fixedTargetAngle + extraSpins;
+                        const targetWithSpins = finalAngle + extraSpins;
                         const duration = data.duration || 15000;
                         startSpin(targetWithSpins, duration, data.spinId);
                     }
@@ -331,12 +327,14 @@
             }
 
             if (data.status === 'completed' || data.status === 'idle') {
-                // Если пришёл completed с тем же spinId — просто скрываем
-                if (data.spinId && data.spinId === currentSpinId) {
-                    // Всё ок, просто скрываем
+                if (data.spinId) {
+                    // Очищаем обработанные ID старше 5 минут (чтобы не переполнять память)
+                    if (processedSpinIds.size > 100) {
+                        const toDelete = Array.from(processedSpinIds).slice(0, 50);
+                        toDelete.forEach(id => processedSpinIds.delete(id));
+                    }
                 }
-                currentSpinId = null;
-                fixedTargetAngle = null;
+                
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
