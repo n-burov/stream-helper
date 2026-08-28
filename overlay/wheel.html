@@ -102,6 +102,7 @@
         let spinStartRotation = 0;
         let lastTargetAngle = null;
         let isCompleted = false;
+        let hideScheduled = false;
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -113,6 +114,7 @@
             if (!isActive) {
                 isActive = true;
                 isCompleted = false;
+                hideScheduled = false;
                 wheelOverlay.classList.add('active');
             }
             if (hideTimeout) {
@@ -124,11 +126,28 @@
         function hideOverlay() {
             isActive = false;
             isCompleted = false;
+            hideScheduled = false;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
+        }
+
+        function scheduleHide(delay) {
+            if (hideScheduled) return;
+            hideScheduled = true;
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+            hideTimeout = setTimeout(() => {
+                if (!isSpinning) {
+                    hideOverlay();
+                }
+                hideTimeout = null;
+                hideScheduled = false;
+            }, delay || 3000);
         }
 
         function drawWheel() {
@@ -239,14 +258,9 @@
                 canvas.classList.remove('spinning');
                 animationId = null;
                 isCompleted = true;
+                lastTargetAngle = null;
 
-                if (hideTimeout) clearTimeout(hideTimeout);
-                hideTimeout = setTimeout(() => {
-                    if (!isSpinning) {
-                        hideOverlay();
-                    }
-                    hideTimeout = null;
-                }, 3000);
+                scheduleHide(3000);
             }
         }
 
@@ -257,6 +271,7 @@
             showOverlay();
             isSpinning = true;
             canvas.classList.add('spinning');
+            hideScheduled = false;
 
             spinStartTime = Date.now();
             spinDuration = duration || 15000;
@@ -316,15 +331,12 @@
                         cancelAnimationFrame(animationId);
                         animationId = null;
                     }
+                    scheduleHide(3000);
                 }
-                if (isActive) {
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        if (!isSpinning) {
-                            hideOverlay();
-                        }
-                        hideTimeout = null;
-                    }, 3000);
+                if (isActive && !isSpinning) {
+                    if (!hideScheduled) {
+                        scheduleHide(3000);
+                    }
                 }
                 return;
             }
@@ -347,7 +359,7 @@
 
         console.log('🎬 Оверлей "Колесо фортуны" загружен');
         console.log('📡 Опрос состояния каждые 1.5 секунды');
-        console.log('👁️ Оверлей появляется только при активном вращении и скрывается после завершения');
+        console.log('👁️ Оверлей появляется при вращении и скрывается через 3 секунды после остановки');
     </script>
 </body>
 </html>
