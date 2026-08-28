@@ -301,8 +301,27 @@
                             clearTimeout(hideTimeout);
                             hideTimeout = null;
                         }
+                        
+                        // Получаем угол сектора и добавляем случайное смещение внутри сектора
+                        let targetWithSpins = data.targetAngle;
+                        
+                        // Если есть информация о секторе, добавляем случайное смещение
+                        if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
+                            const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
+                            const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                            
+                            // Случайное смещение внутри сектора (от -40% до +40% от половины сектора)
+                            const maxOffset = sliceAngle * 0.4;
+                            const randomOffset = (Math.random() * 2 - 1) * maxOffset;
+                            
+                            // Применяем смещение к целевому углу
+                            targetWithSpins = data.targetAngle + randomOffset;
+                        }
+                        
+                        // Добавляем обороты
                         const extraSpins = 15 * Math.PI * 2;
-                        const targetWithSpins = data.targetAngle + extraSpins;
+                        targetWithSpins += extraSpins;
+                        
                         const duration = data.duration || 15000;
                         startSpin(targetWithSpins, duration, spinId);
                     }
