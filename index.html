@@ -1893,7 +1893,7 @@
             // ============================================================
             //  СНАЙПЕР
             // ============================================================
-
+            
             const sniperArena = document.getElementById('sniperArena');
             const sniperAlive = document.getElementById('sniperAlive');
             const sniperDead = document.getElementById('sniperDead');
@@ -1973,6 +1973,19 @@
                     state.sniper.status = 'winner';
                     state.sniper.winnerName = alive[0].name;
                     sendSniperState();
+                    
+                    // Отправляем в winner-канал
+                    updateMechanic('winner', {
+                        name: alive[0].name,
+                        emoji: '🔫',
+                        title: 'СНАЙПЕР!',
+                        subtitle: '🎯 Выжил в перестрелке!',
+                        tag: '🔫 Снайпер',
+                        icon: null,
+                        color: null,
+                    });
+                    
+                    showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                 } else if (alive.length === 0 && state.sniper.participants.length > 0) {
                     sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
                     sniperTimer.textContent = '😵 Никто не выжил';
@@ -2057,6 +2070,18 @@
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
+                        
+                        updateMechanic('winner', {
+                            name: alive[0].name,
+                            emoji: '🔫',
+                            title: 'СНАЙПЕР!',
+                            subtitle: '🎯 Выжил в перестрелке!',
+                            tag: '🔫 Снайпер',
+                            icon: null,
+                            color: null,
+                        });
+                        
+                        showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                     }
                     return;
                 }
@@ -2109,12 +2134,23 @@
                             
                             const aliveLeft = state.sniper.participants.filter(p => p.alive);
                             if (aliveLeft.length === 1) {
-                                showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
-                                sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${aliveLeft[0].name}!</span>`;
-                                sniperTimer.textContent = '🎉 Поздравляем!';
                                 state.sniper.status = 'winner';
                                 state.sniper.winnerName = aliveLeft[0].name;
                                 sendSniperState();
+                                
+                                updateMechanic('winner', {
+                                    name: aliveLeft[0].name,
+                                    emoji: '🔫',
+                                    title: 'СНАЙПЕР!',
+                                    subtitle: '🎯 Выжил в перестрелке!',
+                                    tag: '🔫 Снайпер',
+                                    icon: null,
+                                    color: null,
+                                });
+                                
+                                showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
+                                sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${aliveLeft[0].name}!</span>`;
+                                sniperTimer.textContent = '🎉 Поздравляем!';
                                 sniperShootBtn.disabled = true;
                             } else if (aliveLeft.length === 0) {
                                 sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
