@@ -1893,7 +1893,7 @@
             // ============================================================
             //  СНАЙПЕР
             // ============================================================
-
+            
             const sniperArena = document.getElementById('sniperArena');
             const sniperAlive = document.getElementById('sniperAlive');
             const sniperDead = document.getElementById('sniperDead');
@@ -1906,6 +1906,7 @@
             const sniperNameInput = document.getElementById('sniperNameInput');
             
             let sniperCheckInterval = null;
+            let sniperTimeoutId = null;
             
             function sendSniperState() {
                 updateMechanic('sniper', {
@@ -1943,10 +1944,12 @@
                     if (isEliminated) classes += ' eliminated';
                     if (isSelected) classes += ' selected';
             
+                    const skullIcon = isEliminated ? ' 💀' : '';
+            
                     return `
                         <div class="${classes}" data-id="${p.id}">
                             <span class="id-badge">#${p.id}</span>
-                            ${p.name}
+                            ${p.name}${skullIcon}
                         </div>
                     `;
                 }).join('');
@@ -2020,6 +2023,10 @@
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
+                if (sniperTimeoutId) {
+                    clearTimeout(sniperTimeoutId);
+                    sniperTimeoutId = null;
+                }
                 state.sniper.participants = [];
                 state.sniper.isShooting = false;
                 state.sniper.victimId = null;
@@ -2030,7 +2037,6 @@
                 sniperStatus.innerHTML = '⏸️ Ожидание';
                 sniperTimer.textContent = '👥 Ожидание';
                 renderSniper();
-                // Отправляем сброс в оверлей
                 updateMechanic('sniper', { status: 'reset' });
                 sendSniperState();
             }
@@ -2086,13 +2092,15 @@
                     spinId: spinId,
                 });
             
-                // Очищаем старый интервал если был
                 if (sniperCheckInterval) {
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
+                if (sniperTimeoutId) {
+                    clearTimeout(sniperTimeoutId);
+                    sniperTimeoutId = null;
+                }
             
-                // Ждём команду от оверлея о завершении выстрела
                 sniperCheckInterval = setInterval(async () => {
                     try {
                         const resp = await fetch('/api/webhook?mechanic=sniper');
@@ -2100,8 +2108,11 @@
                         if (data && data.status === 'shot' && data.victimId === state.sniper.victimId) {
                             clearInterval(sniperCheckInterval);
                             sniperCheckInterval = null;
+                            if (sniperTimeoutId) {
+                                clearTimeout(sniperTimeoutId);
+                                sniperTimeoutId = null;
+                            }
                             
-                            // Убиваем жертву
                             const victimToKill = state.sniper.participants.find(p => p.id === state.sniper.victimId);
                             if (victimToKill) {
                                 victimToKill.alive = false;
@@ -2114,7 +2125,6 @@
                             renderSniper();
                             sendSniperState();
                             
-                            // Проверяем победителя
                             const aliveLeft = state.sniper.participants.filter(p => p.alive);
                             if (aliveLeft.length === 1) {
                                 showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
@@ -2129,7 +2139,6 @@
                                 sniperTimer.textContent = '😵 Никто не выжил';
                                 sniperShootBtn.disabled = true;
                             } else {
-                                // Сбрасываем статус shot через 2 секунды
                                 setTimeout(() => {
                                     if (state.sniper.status === 'shot') {
                                         state.sniper.status = 'idle';
@@ -2149,8 +2158,7 @@
                     }
                 }, 500);
             
-                // Таймаут на случай если оверлей не ответил (увеличен до 30 секунд)
-                setTimeout(() => {
+                sniperTimeoutId = setTimeout(() => {
                     if (sniperCheckInterval) {
                         clearInterval(sniperCheckInterval);
                         sniperCheckInterval = null;
@@ -2165,6 +2173,7 @@
                         sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Ожидание</span>`;
                         sniperTimer.textContent = '⏱️ Таймаут';
                     }
+                    sniperTimeoutId = null;
                 }, 30000);
             }
             
