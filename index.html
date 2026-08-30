@@ -1909,6 +1909,27 @@
             
             let sniperCheckInterval = null;
             let hasGameStarted = false;
+            let sniperCurrentSpinId = null;
+            
+            async function sendWinnerToOverlay(name) {
+                try {
+                    await fetch('/api/winner', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name,
+                            emoji: '🔫',
+                            title: 'Победитель!',
+                            subtitle: '🎯 Выжил в перестрелке!',
+                            tag: '🔫 Снайпер',
+                            icon: null,
+                            color: null,
+                        })
+                    });
+                } catch (error) {
+                    console.error('❌ Ошибка отправки победителя:', error);
+                }
+            }
             
             function sendSniperState() {
                 updateMechanic('sniper', {
@@ -1922,11 +1943,7 @@
             function renderSniper() {
                 const all = state.sniper.participants;
                 if (all.length === 0) {
-                    sniperArena.innerHTML = `
-                        <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">
-                            👥 Добавьте участников
-                        </div>
-                    `;
+                    sniperArena.innerHTML = `<div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">👥 Добавьте участников</div>`;
                     updateSniperUI();
                     return;
                 }
@@ -1940,19 +1957,11 @@
                 sniperArena.innerHTML = sorted.map((p) => {
                     const isEliminated = !p.alive;
                     const isSelected = state.sniper.victimId === p.id;
-            
                     let classes = 'sniper-participant';
                     if (isEliminated) classes += ' eliminated';
                     if (isSelected) classes += ' selected';
-            
                     const skullIcon = isEliminated ? ' 💀' : '';
-            
-                    return `
-                        <div class="${classes}" data-id="${p.id}">
-                            <span class="id-badge">#${p.id}</span>
-                            ${p.name}${skullIcon}
-                        </div>
-                    `;
+                    return `<div class="${classes}" data-id="${p.id}"><span class="id-badge">#${p.id}</span>${p.name}${skullIcon}</div>`;
                 }).join('');
             
                 updateSniperUI();
@@ -1967,29 +1976,14 @@
             
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
-            
                 sniperStuckBtn.style.display = (state.sniper.status === 'shooting') ? 'inline-block' : 'none';
             
-                // Победа только если игра началась (было >1 участника) и остался 1
+                // Победа
                 if (alive.length === 1 && hasGameStarted && state.sniper.participants.length > 1 && state.sniper.status !== 'winner') {
                     state.sniper.status = 'winner';
                     state.sniper.winnerName = alive[0].name;
                     sendSniperState();
-                    
-                    fetch('/api/winner', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: alive[0].name,
-                            emoji: '🔫',
-                            title: 'Победитель!',
-                            subtitle: '🎯 Выжил в перестрелке!',
-                            tag: '🔫 Снайпер',
-                            icon: null,
-                            color: null,
-                        })
-                    }).catch(() => {});
-                    
+                    sendWinnerToOverlay(alive[0].name);
                     showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                     sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
                     sniperTimer.textContent = '🎉 Поздравляем!';
@@ -2039,7 +2033,6 @@
                     alive: true,
                 });
                 
-                // Игра началась, если стало 2+ участников
                 const alive = state.sniper.participants.filter(p => p.alive);
                 if (alive.length >= 2) {
                     hasGameStarted = true;
@@ -2064,6 +2057,7 @@
                 state.sniper.status = 'idle';
                 state.sniper.winnerName = null;
                 hasGameStarted = false;
+                sniperCurrentSpinId = null;
                 sniperStatus.innerHTML = '⏸️ Ожидание';
                 sniperTimer.textContent = '👥 Ожидание';
                 sniperStuckBtn.style.display = 'none';
@@ -2076,6 +2070,7 @@
                 if (state.sniper.status === 'shooting') {
                     state.sniper.status = 'idle';
                     state.sniper.victimId = null;
+                    sniperCurrentSpinId = null;
                     sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Сброшено</span>`;
                     sniperTimer.textContent = '🔄 Готово';
                     sniperStuckBtn.style.display = 'none';
@@ -2088,7 +2083,6 @@
                             sniperTimer.textContent = `👥 Живых: ${alive.length}`;
                         }
                     }, 2000);
-                    console.log('🔄 Ожидание выстрела сброшено');
                 }
             }
             
@@ -2114,21 +2108,7 @@
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
-                        
-                        fetch('/api/winner', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                name: alive[0].name,
-                                emoji: '🔫',
-                                title: 'Победитель!',
-                                subtitle: '🎯 Выжил в перестрелке!',
-                                tag: '🔫 Снайпер',
-                                icon: null,
-                                color: null,
-                            })
-                        }).catch(() => {});
-                        
+                        sendWinnerToOverlay(alive[0].name);
                         showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                         sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
                         sniperTimer.textContent = '🎉 Поздравляем!';
@@ -2143,7 +2123,7 @@
                 const victim = alive[Math.floor(Math.random() * alive.length)];
                 state.sniper.victimId = victim.id;
                 state.sniper.status = 'shooting';
-                const spinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                sniperCurrentSpinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
             
                 renderSniper();
                 sendSniperState();
@@ -2157,7 +2137,7 @@
                     participants: state.sniper.participants,
                     status: 'shooting',
                     victimId: state.sniper.victimId,
-                    spinId: spinId,
+                    spinId: sniperCurrentSpinId,
                 });
             
                 if (sniperCheckInterval) {
@@ -2190,21 +2170,7 @@
                                 state.sniper.status = 'winner';
                                 state.sniper.winnerName = aliveLeft[0].name;
                                 sendSniperState();
-                                
-                                fetch('/api/winner', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        name: aliveLeft[0].name,
-                                        emoji: '🔫',
-                                        title: 'Победитель!',
-                                        subtitle: '🎯 Выжил в перестрелке!',
-                                        tag: '🔫 Снайпер',
-                                        icon: null,
-                                        color: null,
-                                    })
-                                }).catch(() => {});
-                                
+                                sendWinnerToOverlay(aliveLeft[0].name);
                                 showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
                                 sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${aliveLeft[0].name}!</span>`;
                                 sniperTimer.textContent = '🎉 Поздравляем!';
