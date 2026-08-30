@@ -341,7 +341,6 @@
         let animTimer = null;
         let lastVictimId = null;
         let overlayParticipants = [];
-        let animationCompleted = false;
         let isActive = false;
         let currentSpinId = null;
         let hideTimeout = null;
@@ -439,7 +438,7 @@
             }).join('');
         }
 
-        function sendShotComplete(victimId) {
+        function setShotStatus(victimId) {
             fetch('/api/webhook', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -469,17 +468,15 @@
 
             currentSpinId = spinId;
             isAnimating = true;
-            animationCompleted = false;
             let currentTargetId = null;
 
             const alive = overlayParticipants.filter(p => p.alive);
             if (alive.length <= 1) {
                 isAnimating = false;
-                animationCompleted = true;
                 renderArena(null, null);
                 if (alive.length === 1) {
                     isWinner = true;
-                    sendShotComplete(victimId);
+                    setShotStatus(victimId);
                     hideTimeout = setTimeout(() => {
                         hideOverlay();
                         hideTimeout = null;
@@ -524,9 +521,8 @@
                 const victimAlive = overlayParticipants.find(p => p.id === victimId && p.alive);
                 if (!victimAlive) {
                     isAnimating = false;
-                    animationCompleted = true;
                     renderArena(null, null);
-                    sendShotComplete(victimId);
+                    setShotStatus(victimId);
                     return;
                 }
 
@@ -541,9 +537,8 @@
                 const victim = overlayParticipants.find(p => p.id === shotId);
                 if (!victim) {
                     isAnimating = false;
-                    animationCompleted = true;
                     renderArena(null, null);
-                    sendShotComplete(shotId);
+                    setShotStatus(shotId);
                     return;
                 }
 
@@ -553,11 +548,10 @@
                 victim.alive = false;
                 renderArena(null, shotId);
 
-                sendShotComplete(shotId);
+                setShotStatus(shotId);
 
                 animTimer = setTimeout(() => {
                     isAnimating = false;
-                    animationCompleted = true;
                     
                     const aliveLeft = overlayParticipants.filter(p => p.alive);
                     
@@ -590,7 +584,7 @@
 
         function renderState(data) {
             if (!data || !data.participants || data.participants.length === 0) {
-                if (overlayVisible && !isAnimating && !isWinner) {
+                if (overlayVisible && !isAnimating) {
                     hideOverlay();
                 }
                 return;
@@ -598,7 +592,7 @@
 
             const hasAlive = data.participants.some(p => p.alive);
             if (!hasAlive) {
-                if (overlayVisible && !isAnimating && !isWinner) {
+                if (overlayVisible && !isAnimating) {
                     hideOverlay();
                 }
                 return;
@@ -607,7 +601,6 @@
             if (data.status === 'reset') {
                 if (isAnimating) {
                     isAnimating = false;
-                    animationCompleted = true;
                     if (animTimer) {
                         clearTimeout(animTimer);
                         animTimer = null;
@@ -620,7 +613,7 @@
             if (data.status === 'shooting' && data.victimId && data.spinId) {
                 showOverlay();
                 
-                if (data.victimId !== lastVictimId || data.spinId !== currentSpinId) {
+                if (data.victimId !== lastVictimId) {
                     lastVictimId = data.victimId;
                     overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                     runAnimation(data.victimId, data.spinId);
@@ -641,7 +634,7 @@
                 return;
             }
 
-            if (isActive && !isAnimating && animationCompleted && !isWinner) {
+            if (isActive && !isAnimating && !isWinner) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
             }
@@ -662,7 +655,6 @@
 
         console.log('🎬 Оверлей "Снайпер" загружен');
         console.log('📡 Опрос состояния каждые 0.5 секунды');
-        console.log('🔄 Оверлей остаётся активным до сброса или победы');
     </script>
 </body>
 </html>
