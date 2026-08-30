@@ -1907,6 +1907,27 @@
             
             let sniperCheckInterval = null;
             
+            async function sendWinnerToOverlay(name) {
+                try {
+                    await fetch('/api/winner', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name,
+                            emoji: '🔫',
+                            title: 'СНАЙПЕР!',
+                            subtitle: '🎯 Выжил в перестрелке!',
+                            tag: '🔫 Снайпер',
+                            icon: null,
+                            color: null,
+                        })
+                    });
+                    console.log('🏆 Победитель отправлен в winner-оверлей:', name);
+                } catch (error) {
+                    console.error('❌ Ошибка отправки победителя:', error);
+                }
+            }
+            
             function sendSniperState() {
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
@@ -1963,33 +1984,39 @@
                 sniperDead.textContent = dead.length;
                 sniperTotal.textContent = state.sniper.participants.length;
             
+                // Блокируем кнопку если нет 2+ живых
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
             
-                if (alive.length === 1 && state.sniper.participants.length > 0) {
-                    sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
-                    sniperTimer.textContent = '🎉 Поздравляем!';
-                    sniperShootBtn.disabled = true;
-                    state.sniper.status = 'winner';
-                    state.sniper.winnerName = alive[0].name;
-                    sendSniperState();
-                    
-                    // Отправляем в winner-канал
-                    updateMechanic('winner', {
-                        name: alive[0].name,
-                        emoji: '🔫',
-                        title: 'СНАЙПЕР!',
-                        subtitle: '🎯 Выжил в перестрелке!',
-                        tag: '🔫 Снайпер',
-                        icon: null,
-                        color: null,
-                    });
-                    
-                    showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
-                } else if (alive.length === 0 && state.sniper.participants.length > 0) {
-                    sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
-                    sniperTimer.textContent = '😵 Никто не выжил';
-                    sniperShootBtn.disabled = true;
+                // Только если есть участники и статус не shooting/shot
+                if (state.sniper.participants.length > 0 && state.sniper.status !== 'shooting' && state.sniper.status !== 'shot') {
+                    if (alive.length === 1) {
+                        // Это ПОБЕДА — показываем один раз
+                        sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
+                        sniperTimer.textContent = '🎉 Поздравляем!';
+                        sniperShootBtn.disabled = true;
+                        
+                        if (state.sniper.status !== 'winner') {
+                            state.sniper.status = 'winner';
+                            state.sniper.winnerName = alive[0].name;
+                            sendSniperState();
+                            sendWinnerToOverlay(alive[0].name);
+                            showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
+                        }
+                    } else if (alive.length === 0) {
+                        sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
+                        sniperTimer.textContent = '😵 Никто не выжил';
+                        sniperShootBtn.disabled = true;
+                    } else {
+                        // Обычное состояние
+                        if (state.sniper.status === 'winner') {
+                            state.sniper.status = 'idle';
+                            state.sniper.winnerName = null;
+                            sendSniperState();
+                        }
+                        sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Ожидание</span>`;
+                        sniperTimer.textContent = `👥 Живых: ${alive.length}`;
+                    }
                 } else if (state.sniper.status === 'shooting') {
                     sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                     sniperTimer.textContent = '🎯 Ожидание оверлея';
@@ -2008,21 +2035,24 @@
                             renderSniper();
                         }
                     }, 2000);
-                } else {
-                    sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Ожидание</span>`;
-                    sniperTimer.textContent = `👥 Живых: ${alive.length}`;
                 }
             }
             
             function addSniperParticipant(name) {
                 const trimmed = name.trim();
                 if (!trimmed) return;
+                
+                // Сбрасываем статус winner при добавлении нового участника
+                if (state.sniper.status === 'winner') {
+                    state.sniper.status = 'idle';
+                    state.sniper.winnerName = null;
+                }
+                
                 state.sniper.participants.push({
                     id: state.sniper.nextId++,
                     name: trimmed,
                     alive: true,
                 });
-                state.sniper.status = 'idle';
                 renderSniper();
                 sendSniperState();
                 sniperNameInput.value = '';
@@ -2064,24 +2094,17 @@
             
                 const alive = state.sniper.participants.filter(p => p.alive);
                 if (alive.length <= 1) {
-                    if (alive.length === 1) {
-                        sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
-                        sniperTimer.textContent = '🎉 Поздравляем!';
+                    // Если остался 1 — отправляем победителя
+                    if (alive.length === 1 && state.sniper.status !== 'winner') {
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
-                        
-                        updateMechanic('winner', {
-                            name: alive[0].name,
-                            emoji: '🔫',
-                            title: 'СНАЙПЕР!',
-                            subtitle: '🎯 Выжил в перестрелке!',
-                            tag: '🔫 Снайпер',
-                            icon: null,
-                            color: null,
-                        });
-                        
+                        sendWinnerToOverlay(alive[0].name);
                         showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
+                        sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
+                        sniperTimer.textContent = '🎉 Поздравляем!';
+                        sniperShootBtn.disabled = true;
+                        renderSniper();
                     }
                     return;
                 }
@@ -2137,21 +2160,12 @@
                                 state.sniper.status = 'winner';
                                 state.sniper.winnerName = aliveLeft[0].name;
                                 sendSniperState();
-                                
-                                updateMechanic('winner', {
-                                    name: aliveLeft[0].name,
-                                    emoji: '🔫',
-                                    title: 'СНАЙПЕР!',
-                                    subtitle: '🎯 Выжил в перестрелке!',
-                                    tag: '🔫 Снайпер',
-                                    icon: null,
-                                    color: null,
-                                });
-                                
+                                sendWinnerToOverlay(aliveLeft[0].name);
                                 showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
                                 sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${aliveLeft[0].name}!</span>`;
                                 sniperTimer.textContent = '🎉 Поздравляем!';
                                 sniperShootBtn.disabled = true;
+                                renderSniper();
                             } else if (aliveLeft.length === 0) {
                                 sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
                                 sniperTimer.textContent = '😵 Никто не выжил';
