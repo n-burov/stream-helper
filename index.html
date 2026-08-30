@@ -1338,13 +1338,7 @@
             const state = {
                 keyword: { active: false, currentKeyword: '!лут', participants: [], winner: null },
                 wheel: {
-                    sectors: [
-                        { label: '1000 голды', weight: 3, color: '#ff6b6b' },
-                        { label: '500 голды', weight: 5, color: '#feca57' },
-                        { label: '200 голды', weight: 8, color: '#48dbfb' },
-                        { label: 'Питомец', weight: 2, color: '#ff9ff3' },
-                        { label: 'Ничего', weight: 4, color: '#8395a7' },
-                    ],
+                    sectors: [],
                     currentRotation: 0,
                     isSpinning: false,
                     winner: null,
@@ -1376,19 +1370,18 @@
             //  ЗАГРУЗКА СОСТОЯНИЙ ИЗ БД
             // ============================================================
 
-            async function loadState(mechanic, callback) {
+            async function loadState(mechanic) {
                 try {
                     const response = await fetch(`/api/webhook?mechanic=${mechanic}`);
                     const data = await response.json();
                     if (data && data.status !== 'idle') {
                         console.log(`📥 Загружено состояние ${mechanic}:`, data);
-                        callback(data);
-                        return true;
+                        return data;
                     }
                 } catch (error) {
                     console.log(`ℹ️ Нет сохранённого состояния для ${mechanic}`);
                 }
-                return false;
+                return null;
             }
 
             // ============================================================
@@ -1572,42 +1565,30 @@
             });
 
             // Загрузка состояния ключевого слова
-            await loadState('keyword', function(data) {
-                if (data.keyword) {
-                    state.keyword.currentKeyword = data.keyword;
-                    keywordInput.value = data.keyword;
+            const keywordData = await loadState('keyword');
+            if (keywordData) {
+                if (keywordData.keyword) {
+                    state.keyword.currentKeyword = keywordData.keyword;
+                    keywordInput.value = keywordData.keyword;
                 }
-                if (data.participants) {
-                    state.keyword.participants = data.participants;
+                if (keywordData.participants) {
+                    state.keyword.participants = keywordData.participants;
                 }
-                if (data.winner) {
-                    state.keyword.winner = data.winner;
+                if (keywordData.winner) {
+                    state.keyword.winner = keywordData.winner;
                 }
-                if (data.history) {
-                    state.history = data.history;
+                if (keywordData.history) {
+                    state.history = keywordData.history;
                 }
-                state.keyword.active = data.status === 'active';
+                state.keyword.active = keywordData.status === 'active';
                 renderParticipants();
                 renderHistory();
-                if (data.status === 'active') {
+                if (keywordData.status === 'active') {
                     startBtn.textContent = '⏹️ Стоп';
                     startBtn.className = 'btn btn-danger';
                     startBtn.disabled = false;
                 }
-            });
-
-            // Демо-участники для ключевого слова
-            const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage',
-                'DarkRanger', 'LightBringer'
-            ];
-            let demoIndex = 0;
-            setInterval(() => {
-                if (!state.keyword.active) return;
-                const user = demoUsers[demoIndex % demoUsers.length];
-                const msg = state.keyword.currentKeyword + ' ' + Math.random().toString(36).substring(2, 6);
-                if (msg.toLowerCase().includes(state.keyword.currentKeyword.toLowerCase())) addParticipant(user);
-                demoIndex++;
-            }, 2000);
+            }
 
             // ============================================================
             //  КОЛЕСО ФОРТУНЫ
@@ -1799,18 +1780,30 @@
             });
 
             // Загрузка состояния колеса
-            await loadState('wheel', function(data) {
-                if (data.sectors && data.sectors.length > 0) {
-                    state.wheel.sectors = data.sectors;
-                    renderSectors();
-                    drawWheel();
-                }
-                if (data.winner) {
-                    state.wheel.winner = data.winner;
+            const wheelData = await loadState('wheel');
+            if (wheelData && wheelData.sectors && wheelData.sectors.length > 0) {
+                state.wheel.sectors = wheelData.sectors;
+                renderSectors();
+                drawWheel();
+                if (wheelData.winner) {
+                    state.wheel.winner = wheelData.winner;
                     wheelStatus.className = 'wheel-status';
-                    wheelStatus.innerHTML = `🏆 <span class="winner-text">${data.winner}</span>`;
+                    wheelStatus.innerHTML = `🏆 <span class="winner-text">${wheelData.winner}</span>`;
                 }
-            });
+            } else {
+                // Если нет сохранённых секторов — добавляем стандартные
+                const defaultSectors = [
+                    { label: '1000 голды', weight: 3, color: '#ff6b6b' },
+                    { label: '500 голды', weight: 5, color: '#feca57' },
+                    { label: '200 голды', weight: 8, color: '#48dbfb' },
+                    { label: 'Питомец', weight: 2, color: '#ff9ff3' },
+                    { label: 'Ничего', weight: 4, color: '#8395a7' },
+                ];
+                state.wheel.sectors = defaultSectors;
+                renderSectors();
+                drawWheel();
+                updateMechanic('wheel', { status: 'idle', sectors: defaultSectors, winner: null });
+            }
 
             // Кнопка запуска — отправляем команду в оверлей
             spinBtn.addEventListener('click', function() {
@@ -2013,25 +2006,16 @@
             }
 
             // Загрузка состояния снайпера
-            await loadState('sniper', function(data) {
-                if (data.participants && data.participants.length > 0) {
-                    state.sniper.participants = data.participants;
-                    state.sniper.nextId = data.participants.reduce((max, p) => Math.max(max, p.id), 0) + 1;
-                }
-                if (data.status) {
-                    state.sniper.status = data.status;
-                }
-                if (data.victimId) {
-                    state.sniper.victimId = data.victimId;
-                }
-                if (data.victimName) {
-                    state.sniper.victimName = data.victimName;
-                }
-                if (data.winnerName) {
-                    state.sniper.winnerName = data.winnerName;
-                }
+            const sniperData = await loadState('sniper');
+            if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
+                state.sniper.participants = sniperData.participants;
+                state.sniper.nextId = sniperData.participants.reduce((max, p) => Math.max(max, p.id), 0) + 1;
+                if (sniperData.status) state.sniper.status = sniperData.status;
+                if (sniperData.victimId) state.sniper.victimId = sniperData.victimId;
+                if (sniperData.victimName) state.sniper.victimName = sniperData.victimName;
+                if (sniperData.winnerName) state.sniper.winnerName = sniperData.winnerName;
                 renderSniper();
-            });
+            }
 
             // Кнопка выстрела — отправляем команду в оверлей
             function startSniperShoot() {
@@ -2139,20 +2123,6 @@
 
             sniperShootBtn.addEventListener('click', startSniperShoot);
             sniperResetBtn.addEventListener('click', resetSniper);
-
-            // Добавляем демо-участников для снайпера (только если нет сохранённых)
-            if (state.sniper.participants.length === 0) {
-                setTimeout(() => {
-                    addSniperParticipant('NightWolf');
-                    addSniperParticipant('ShadowStrike');
-                    addSniperParticipant('MoonFury');
-                    addSniperParticipant('ThunderBolt');
-                    addSniperParticipant('IceQueen');
-                    addSniperParticipant('FireMage');
-                    addSniperParticipant('DarkRanger');
-                    addSniperParticipant('LightBringer');
-                }, 300);
-            }
 
             renderSniper();
 
