@@ -1893,7 +1893,7 @@
             // ============================================================
             //  СНАЙПЕР
             // ============================================================
-            
+
             const sniperArena = document.getElementById('sniperArena');
             const sniperAlive = document.getElementById('sniperAlive');
             const sniperDead = document.getElementById('sniperDead');
@@ -1906,7 +1906,6 @@
             const sniperNameInput = document.getElementById('sniperNameInput');
             
             let sniperCheckInterval = null;
-            let sniperTimeoutId = null;
             
             function sendSniperState() {
                 updateMechanic('sniper', {
@@ -1987,7 +1986,6 @@
                         sniperStatus.innerHTML = `💥 <span class="danger">${victim.name}</span>`;
                         sniperTimer.textContent = '💀 Попадание!';
                     }
-                    // Сбрасываем статус shot после отображения
                     setTimeout(() => {
                         if (state.sniper.status === 'shot') {
                             state.sniper.status = 'idle';
@@ -2023,10 +2021,6 @@
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
-                if (sniperTimeoutId) {
-                    clearTimeout(sniperTimeoutId);
-                    sniperTimeoutId = null;
-                }
                 state.sniper.participants = [];
                 state.sniper.isShooting = false;
                 state.sniper.victimId = null;
@@ -2041,7 +2035,6 @@
                 sendSniperState();
             }
             
-            // Загрузка состояния снайпера
             const sniperData = await loadState('sniper');
             if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
                 state.sniper.participants = sniperData.participants;
@@ -2053,7 +2046,6 @@
                 renderSniper();
             }
             
-            // Кнопка выстрела — отправляем команду в оверлей
             function startSniperShoot() {
                 if (state.sniper.status === 'shooting' || state.sniper.status === 'shot') return;
             
@@ -2069,7 +2061,6 @@
                     return;
                 }
             
-                // Выбираем жертву
                 const victim = alive[Math.floor(Math.random() * alive.length)];
                 state.sniper.victimId = victim.id;
                 state.sniper.victimName = victim.name;
@@ -2083,7 +2074,6 @@
                 sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                 sniperTimer.textContent = '🎯 Ожидание оверлея';
             
-                // Отправляем команду в оверлей
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
                     status: 'shooting',
@@ -2096,10 +2086,6 @@
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
-                if (sniperTimeoutId) {
-                    clearTimeout(sniperTimeoutId);
-                    sniperTimeoutId = null;
-                }
             
                 sniperCheckInterval = setInterval(async () => {
                     try {
@@ -2108,10 +2094,6 @@
                         if (data && data.status === 'shot' && data.victimId === state.sniper.victimId) {
                             clearInterval(sniperCheckInterval);
                             sniperCheckInterval = null;
-                            if (sniperTimeoutId) {
-                                clearTimeout(sniperTimeoutId);
-                                sniperTimeoutId = null;
-                            }
                             
                             const victimToKill = state.sniper.participants.find(p => p.id === state.sniper.victimId);
                             if (victimToKill) {
@@ -2157,24 +2139,6 @@
                         console.error('Check interval error:', e);
                     }
                 }, 500);
-            
-                sniperTimeoutId = setTimeout(() => {
-                    if (sniperCheckInterval) {
-                        clearInterval(sniperCheckInterval);
-                        sniperCheckInterval = null;
-                    }
-                    if (state.sniper.status === 'shooting') {
-                        state.sniper.status = 'idle';
-                        state.sniper.victimId = null;
-                        state.sniper.victimName = null;
-                        renderSniper();
-                        sendSniperState();
-                        sniperShootBtn.disabled = false;
-                        sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Ожидание</span>`;
-                        sniperTimer.textContent = '⏱️ Таймаут';
-                    }
-                    sniperTimeoutId = null;
-                }, 30000);
             }
             
             sniperAddBtn.addEventListener('click', () => addSniperParticipant(sniperNameInput.value));
