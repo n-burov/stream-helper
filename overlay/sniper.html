@@ -345,6 +345,7 @@
         let currentSpinId = null;
         let hideTimeout = null;
         let isWinner = false;
+        let needReset = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -352,6 +353,26 @@
         const deadEl = document.getElementById('sniperDead');
         const totalEl = document.getElementById('sniperTotal');
         const victimBanner = document.getElementById('victimBanner');
+
+        function fullReset() {
+            if (animTimer) {
+                clearTimeout(animTimer);
+                animTimer = null;
+            }
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+            isAnimating = false;
+            isActive = false;
+            isWinner = false;
+            needReset = false;
+            lastVictimId = null;
+            currentSpinId = null;
+            overlay.classList.remove('active');
+            overlayVisible = false;
+            victimBanner.classList.add('hidden');
+        }
 
         function showOverlay() {
             if (!isActive) {
@@ -478,7 +499,7 @@
                     isWinner = true;
                     setShotStatus(victimId);
                     hideTimeout = setTimeout(() => {
-                        hideOverlay();
+                        fullReset();
                         hideTimeout = null;
                     }, 2500);
                 }
@@ -559,13 +580,13 @@
                         renderArena(null, null);
                         isWinner = true;
                         hideTimeout = setTimeout(() => {
-                            hideOverlay();
+                            fullReset();
                             hideTimeout = null;
                         }, 2500);
                     } else if (aliveLeft.length === 0) {
                         renderArena(null, null);
                         hideTimeout = setTimeout(() => {
-                            hideOverlay();
+                            fullReset();
                             hideTimeout = null;
                         }, 2500);
                     } else {
@@ -583,9 +604,15 @@
         }
 
         function renderState(data) {
+            // Если пришёл сброс — полный сброс оверлея
+            if (data && data.status === 'reset') {
+                fullReset();
+                return;
+            }
+
             if (!data || !data.participants || data.participants.length === 0) {
                 if (overlayVisible && !isAnimating) {
-                    hideOverlay();
+                    fullReset();
                 }
                 return;
             }
@@ -593,20 +620,8 @@
             const hasAlive = data.participants.some(p => p.alive);
             if (!hasAlive) {
                 if (overlayVisible && !isAnimating) {
-                    hideOverlay();
+                    fullReset();
                 }
-                return;
-            }
-
-            if (data.status === 'reset') {
-                if (isAnimating) {
-                    isAnimating = false;
-                    if (animTimer) {
-                        clearTimeout(animTimer);
-                        animTimer = null;
-                    }
-                }
-                hideOverlay();
                 return;
             }
 
@@ -628,7 +643,7 @@
                 isWinner = true;
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    hideOverlay();
+                    fullReset();
                     hideTimeout = null;
                 }, 2500);
                 return;
