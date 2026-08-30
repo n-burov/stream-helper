@@ -329,6 +329,7 @@
         let isActive = false;
         let currentSpinId = null;
         let hideTimeout = null;
+        let isWinnerShown = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -348,6 +349,7 @@
             }
             isAnimating = false;
             isActive = false;
+            isWinnerShown = false;
             lastVictimId = null;
             currentSpinId = null;
             overlay.classList.remove('active');
@@ -357,6 +359,7 @@
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
+                isWinnerShown = false;
                 overlay.classList.add('active');
             }
             if (hideTimeout) {
@@ -578,19 +581,21 @@
                 return;
             }
 
-            if (data.status === 'winner' && data.winnerName) {
+            if (data.status === 'winner' && data.winnerName && !isWinnerShown) {
+                isWinnerShown = true;
                 showOverlay();
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
+                
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
                     fullReset();
                     hideTimeout = null;
-                }, 3000);
+                }, 2500);
                 return;
             }
 
-            if (isActive && !isAnimating) {
+            if (isActive && !isAnimating && !isWinnerShown) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
             }
