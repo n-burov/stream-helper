@@ -299,7 +299,6 @@
             isAnimating = false;
             isActive = false;
             isWinnerShown = false;
-            isBlocked = false;
             lastVictimId = null;
             currentSpinId = null;
             overlay.classList.remove('active');
@@ -454,14 +453,14 @@
         }
 
         function renderState(data) {
-            // Сброс — разблокируем и сбрасываем всё
+            // Сброс — разблокируем и сбрасываем
             if (data && data.status === 'reset') {
                 isBlocked = false;
                 fullReset();
                 return;
             }
 
-            // Если заблокированы — игнорируем все обновления
+            // Если заблокированы — игнорируем всё
             if (isBlocked) {
                 return;
             }
@@ -493,7 +492,7 @@
                 return;
             }
 
-            // Победа — блокируем оверлей и скрываем
+            // Победа — блокируем и скрываем
             if (data.status === 'winner' && data.winnerName) {
                 if (!isWinnerShown) {
                     isWinnerShown = true;
@@ -506,7 +505,6 @@
                     
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
-                        // БЛОКИРУЕМ оверлей и скрываем
                         isBlocked = true;
                         fullReset();
                         hideTimeout = null;
