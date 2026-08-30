@@ -24,8 +24,9 @@ export default async function handler(req, res) {
 
       const key = `${mechanic}_state`;
       await redis.set(key, JSON.stringify(data));
-      console.log(`📥 Состояние ${mechanic} обновлено`);
+      console.log(`📥 Состояние ${mechanic} обновлено:`, data);
 
+      // Если есть победитель — отправляем в winner-канал
       if (data.winner) {
         const winnerData = {
           name: data.winner,
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
           color: data.color || null,
         };
         await redis.set('winner', JSON.stringify(winnerData));
-        console.log('🏆 Победитель отправлен в winner-канал');
+        console.log('🏆 Победитель отправлен в winner-канал:', data.winner);
       }
 
       return res.status(200).json({ success: true, mechanic });
