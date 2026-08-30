@@ -163,15 +163,25 @@
         }
 
         .sniper-participant.eliminated {
-            opacity: 0.12;
-            transform: scale(0.8);
-            border-color: rgba(255, 0, 0, 0.03);
+            opacity: 0.4;
+            transform: scale(0.9);
+            border-color: rgba(255, 0, 0, 0.1);
+            color: rgba(255, 255, 255, 0.3);
             text-decoration: line-through;
-            color: rgba(255, 255, 255, 0.1);
         }
 
         .sniper-participant.eliminated .id-badge {
-            color: rgba(255, 0, 0, 0.15);
+            color: rgba(255, 0, 0, 0.2);
+        }
+
+        .sniper-participant.eliminated .skull-icon {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 14px;
+        }
+
+        .sniper-participant .skull-icon {
+            display: none;
         }
 
         .sniper-participant.shot {
@@ -193,11 +203,12 @@
                 background: rgba(255, 71, 87, 0.4);
             }
             100% {
-                opacity: 0.1;
-                transform: scale(0.6);
-                border-color: rgba(255, 0, 0, 0.02);
-                background: transparent;
-                color: rgba(255, 255, 255, 0.03);
+                opacity: 0.4;
+                transform: scale(0.9);
+                border-color: rgba(255, 0, 0, 0.1);
+                background: rgba(255, 0, 0, 0.05);
+                color: rgba(255, 255, 255, 0.3);
+                text-decoration: line-through;
             }
         }
 
@@ -216,6 +227,48 @@
         @keyframes flashBang {
             0% { opacity: 1; transform: scale(0.5); }
             100% { opacity: 0; transform: scale(2.5); }
+        }
+
+        .winner-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(249, 202, 36, 0.15), rgba(240, 147, 43, 0.15));
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(249, 202, 36, 0.4);
+            border-radius: 24px;
+            padding: 30px 60px;
+            font-size: 48px;
+            font-weight: 900;
+            color: #f9ca24;
+            text-shadow: 0 0 60px rgba(249, 202, 36, 0.3);
+            animation: winnerPop 0.6s ease;
+            z-index: 10;
+            pointer-events: none;
+            text-align: center;
+            box-shadow: 0 0 80px rgba(249, 202, 36, 0.15);
+        }
+
+        @keyframes winnerPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.1) rotate(2deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .winner-banner .sub {
+            font-size: 20px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 4px;
         }
 
         .victim-banner {
@@ -279,6 +332,13 @@
                 padding: 8px 20px;
                 bottom: 12px;
             }
+            .winner-banner {
+                font-size: 32px;
+                padding: 20px 30px;
+            }
+            .winner-banner .sub {
+                font-size: 16px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -303,6 +363,13 @@
                 font-size: 14px;
                 padding: 6px 14px;
                 bottom: 8px;
+            }
+            .winner-banner {
+                font-size: 24px;
+                padding: 16px 20px;
+            }
+            .winner-banner .sub {
+                font-size: 14px;
             }
         }
     </style>
@@ -333,7 +400,8 @@
         let animationCompleted = false;
         let isActive = false;
         let currentSpinId = null;
-        let isWaitingForReset = false;
+        let hideTimeout = null;
+        let isWinnerShown = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -345,17 +413,51 @@
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
+                isWinnerShown = false;
                 overlay.classList.add('active');
                 overlayVisible = true;
+            }
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
             }
         }
 
         function hideOverlay() {
             isActive = false;
-            isWaitingForReset = false;
+            isWinnerShown = false;
             overlay.classList.remove('active');
             overlayVisible = false;
             victimBanner.classList.add('hidden');
+            // Удаляем баннер победителя если есть
+            const winnerBanner = document.querySelector('.winner-banner');
+            if (winnerBanner) winnerBanner.remove();
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        }
+
+        function showWinner(name) {
+            // Удаляем старый баннер
+            const oldBanner = document.querySelector('.winner-banner');
+            if (oldBanner) oldBanner.remove();
+            
+            isWinnerShown = true;
+            const banner = document.createElement('div');
+            banner.className = 'winner-banner';
+            banner.innerHTML = `
+                🏆 ${name}
+                <div class="sub">🎯 Выжил в снайперской дуэли!</div>
+            `;
+            overlay.appendChild(banner);
+            
+            // Планируем скрытие оверлея через 5 секунд после победы
+            if (hideTimeout) clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                hideOverlay();
+                hideTimeout = null;
+            }, 5000);
         }
 
         function showVictim(name) {
@@ -405,10 +507,13 @@
                 if (isTargeted) classes += ' targeted';
                 if (isVictim) classes += ' shot';
 
+                const skullIcon = isEliminated ? '<span class="skull-icon">💀</span>' : '';
+
                 return `
                     <div class="${classes}" data-id="${p.id}">
                         <span class="id-badge">#${p.id}</span>
                         ${p.name}
+                        ${skullIcon}
                         <span class="crosshair-icon">🎯</span>
                     </div>
                 `;
@@ -438,6 +543,12 @@
             const victim = overlayParticipants.find(p => p.id === victimId);
             if (!victim || !victim.alive) return;
 
+            // Очищаем таймер скрытия если был
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+
             currentSpinId = spinId;
             isAnimating = true;
             animationCompleted = false;
@@ -448,8 +559,8 @@
                 isAnimating = false;
                 animationCompleted = true;
                 renderArena(null, null);
-                // Если остался 1, отправляем завершение
                 if (alive.length === 1) {
+                    showWinner(alive[0].name);
                     sendShotComplete(victimId);
                 }
                 return;
@@ -520,28 +631,26 @@
                 victim.alive = false;
                 renderArena(null, shotId);
 
-                // Отправляем сайту команду о завершении
                 sendShotComplete(shotId);
 
                 animTimer = setTimeout(() => {
                     isAnimating = false;
                     animationCompleted = true;
                     
-                    // Проверяем, остался ли победитель
                     const aliveLeft = overlayParticipants.filter(p => p.alive);
                     
-                    // Если остался 1 победитель — оверлей остаётся активным, показываем победителя
                     if (aliveLeft.length === 1) {
                         renderArena(null, null);
-                        // Не скрываем оверлей, он остаётся показывать победителя
+                        // Показываем победителя через 1 секунду
+                        setTimeout(() => {
+                            showWinner(aliveLeft[0].name);
+                        }, 500);
                     } else if (aliveLeft.length === 0) {
                         renderArena(null, null);
                     } else {
-                        // Игра продолжается, оверлей остаётся активным
                         renderArena(null, null);
                     }
                     
-                    // Очищаем таймер, если был
                     if (animTimer) {
                         clearTimeout(animTimer);
                         animTimer = null;
@@ -553,24 +662,21 @@
         }
 
         function renderState(data) {
-            // Если нет данных или нет участников — скрываем
             if (!data || !data.participants || data.participants.length === 0) {
-                if (overlayVisible) {
+                if (overlayVisible && !isAnimating && !isWinnerShown) {
                     hideOverlay();
                 }
                 return;
             }
 
-            // Проверяем, есть ли живые участники
             const hasAlive = data.participants.some(p => p.alive);
             if (!hasAlive) {
-                if (overlayVisible) {
+                if (overlayVisible && !isAnimating && !isWinnerShown) {
                     hideOverlay();
                 }
                 return;
             }
 
-            // Если сайт просит сбросить состояние
             if (data.status === 'reset') {
                 if (isAnimating) {
                     isAnimating = false;
@@ -584,11 +690,9 @@
                 return;
             }
 
-            // Получили команду на выстрел
             if (data.status === 'shooting' && data.victimId && data.spinId) {
                 showOverlay();
                 
-                // Проверяем, не тот же ли это выстрел
                 if (data.victimId !== lastVictimId || data.spinId !== currentSpinId) {
                     lastVictimId = data.victimId;
                     overlayParticipants = JSON.parse(JSON.stringify(data.participants));
@@ -597,18 +701,17 @@
                 return;
             }
 
-            // Если оверлей активен и анимация завершена — обновляем состояние
-            if (isActive && !isAnimating && animationCompleted) {
-                overlayParticipants = JSON.parse(JSON.stringify(data.participants));
-                renderArena(null, null);
-            }
-
-            // Если есть победитель (статус winner) — показываем его и держим оверлей открытым
-            if (data.status === 'winner' && data.winnerName) {
+            if (data.status === 'winner' && data.winnerName && !isWinnerShown) {
                 showOverlay();
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
-                // Оверлей остаётся открытым, пока не будет сброс
+                showWinner(data.winnerName);
+                return;
+            }
+
+            if (isActive && !isAnimating && animationCompleted && !isWinnerShown) {
+                overlayParticipants = JSON.parse(JSON.stringify(data.participants));
+                renderArena(null, null);
             }
         }
 
