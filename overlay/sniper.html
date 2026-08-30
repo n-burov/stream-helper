@@ -326,7 +326,6 @@
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
 
         let overlayVisible = false;
-        let hideTimeout = null;
         let isAnimating = false;
         let animTimer = null;
         let lastVictimId = null;
@@ -334,6 +333,7 @@
         let animationCompleted = false;
         let isActive = false;
         let currentSpinId = null;
+        let isWaitingForReset = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -348,21 +348,14 @@
                 overlay.classList.add('active');
                 overlayVisible = true;
             }
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
         }
 
         function hideOverlay() {
             isActive = false;
+            isWaitingForReset = false;
             overlay.classList.remove('active');
             overlayVisible = false;
             victimBanner.classList.add('hidden');
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
         }
 
         function showVictim(name) {
@@ -422,6 +415,21 @@
             }).join('');
         }
 
+        function sendShotComplete(victimId) {
+            fetch('/api/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mechanic: 'sniper',
+                    data: {
+                        status: 'shot',
+                        spinId: currentSpinId,
+                        victimId: victimId,
+                    }
+                })
+            }).catch(() => {});
+        }
+
         function runAnimation(victimId, spinId) {
             if (isAnimating) return;
             if (!victimId) return;
@@ -440,8 +448,10 @@
                 isAnimating = false;
                 animationCompleted = true;
                 renderArena(null, null);
-                // Отправляем сайту команду о завершении
-                sendCompletion();
+                // Если остался 1, отправляем завершение
+                if (alive.length === 1) {
+                    sendShotComplete(victimId);
+                }
                 return;
             }
 
@@ -483,7 +493,7 @@
                     isAnimating = false;
                     animationCompleted = true;
                     renderArena(null, null);
-                    sendCompletion();
+                    sendShotComplete(victimId);
                     return;
                 }
 
@@ -500,7 +510,7 @@
                     isAnimating = false;
                     animationCompleted = true;
                     renderArena(null, null);
-                    sendCompletion();
+                    sendShotComplete(shotId);
                     return;
                 }
 
@@ -511,64 +521,51 @@
                 renderArena(null, shotId);
 
                 // Отправляем сайту команду о завершении
-                sendCompletion();
+                sendShotComplete(shotId);
 
                 animTimer = setTimeout(() => {
                     isAnimating = false;
                     animationCompleted = true;
-                    renderArena(null, null);
-
-                    if (hideTimeout) clearTimeout(hideTimeout);
-                    hideTimeout = setTimeout(() => {
-                        if (!isAnimating) {
-                            hideOverlay();
-                        }
-                    }, 3000);
+                    
+                    // Проверяем, остался ли победитель
+                    const aliveLeft = overlayParticipants.filter(p => p.alive);
+                    
+                    // Если остался 1 победитель — оверлей остаётся активным, показываем победителя
+                    if (aliveLeft.length === 1) {
+                        renderArena(null, null);
+                        // Не скрываем оверлей, он остаётся показывать победителя
+                    } else if (aliveLeft.length === 0) {
+                        renderArena(null, null);
+                    } else {
+                        // Игра продолжается, оверлей остаётся активным
+                        renderArena(null, null);
+                    }
+                    
+                    // Очищаем таймер, если был
+                    if (animTimer) {
+                        clearTimeout(animTimer);
+                        animTimer = null;
+                    }
                 }, 900);
             }
 
             animateStep();
         }
 
-        function sendCompletion() {
-            fetch('/api/webhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    mechanic: 'sniper',
-                    data: {
-                        status: 'shot',
-                        spinId: currentSpinId,
-                        victimId: lastVictimId,
-                    }
-                })
-            }).catch(() => {});
-        }
-
         function renderState(data) {
+            // Если нет данных или нет участников — скрываем
             if (!data || !data.participants || data.participants.length === 0) {
-                if (overlayVisible && !isAnimating) {
+                if (overlayVisible) {
                     hideOverlay();
                 }
                 return;
             }
 
+            // Проверяем, есть ли живые участники
             const hasAlive = data.participants.some(p => p.alive);
             if (!hasAlive) {
-                if (overlayVisible && !isAnimating) {
+                if (overlayVisible) {
                     hideOverlay();
-                }
-                return;
-            }
-
-            // Получили команду на выстрел
-            if (data.status === 'shooting' && data.victimId && data.spinId) {
-                showOverlay();
-                
-                if (data.victimId !== lastVictimId || data.spinId !== currentSpinId) {
-                    lastVictimId = data.victimId;
-                    overlayParticipants = JSON.parse(JSON.stringify(data.participants));
-                    runAnimation(data.victimId, data.spinId);
                 }
                 return;
             }
@@ -587,9 +584,31 @@
                 return;
             }
 
-            if (!isAnimating && animationCompleted) {
+            // Получили команду на выстрел
+            if (data.status === 'shooting' && data.victimId && data.spinId) {
+                showOverlay();
+                
+                // Проверяем, не тот же ли это выстрел
+                if (data.victimId !== lastVictimId || data.spinId !== currentSpinId) {
+                    lastVictimId = data.victimId;
+                    overlayParticipants = JSON.parse(JSON.stringify(data.participants));
+                    runAnimation(data.victimId, data.spinId);
+                }
+                return;
+            }
+
+            // Если оверлей активен и анимация завершена — обновляем состояние
+            if (isActive && !isAnimating && animationCompleted) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
+            }
+
+            // Если есть победитель (статус winner) — показываем его и держим оверлей открытым
+            if (data.status === 'winner' && data.winnerName) {
+                showOverlay();
+                overlayParticipants = JSON.parse(JSON.stringify(data.participants));
+                renderArena(null, null);
+                // Оверлей остаётся открытым, пока не будет сброс
             }
         }
 
@@ -608,7 +627,7 @@
 
         console.log('🎬 Оверлей "Снайпер" загружен');
         console.log('📡 Опрос состояния каждые 0.5 секунды');
-        console.log('🔄 Оверлей управляет анимацией, сайт только даёт команду');
+        console.log('🔄 Оверлей остаётся активным до сброса или победы');
     </script>
 </body>
 </html>
