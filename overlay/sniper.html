@@ -286,6 +286,7 @@
         let isWinnerShown = false;
         let isHiddenAfterWinner = false;
         let isProcessingShot = false;
+        let pollInterval = null;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -293,6 +294,21 @@
         const deadEl = document.getElementById('sniperDead');
         const totalEl = document.getElementById('sniperTotal');
         const victimBanner = document.getElementById('victimBanner');
+
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        }
+
+        function startPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            pollInterval = setInterval(pollState, 500);
+        }
 
         function fullReset() {
             if (animTimer) { clearTimeout(animTimer); animTimer = null; }
@@ -306,6 +322,24 @@
             currentSpinId = null;
             overlay.classList.remove('active');
             victimBanner.classList.add('hidden');
+            // Запускаем опрос заново
+            startPolling();
+        }
+
+        function fullResetAndStop() {
+            if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+            if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
+            isAnimating = false;
+            isActive = false;
+            isWinnerShown = false;
+            isHiddenAfterWinner = true;
+            isProcessingShot = false;
+            lastVictimId = null;
+            currentSpinId = null;
+            overlay.classList.remove('active');
+            victimBanner.classList.add('hidden');
+            // ОСТАНАВЛИВАЕМ ОПРОС
+            stopPolling();
         }
 
         function showOverlay() {
@@ -461,13 +495,17 @@
         }
 
         function renderState(data) {
+            // Сброс — полный ресет, включая опрос
             if (data && data.status === 'reset') {
                 isHiddenAfterWinner = false;
                 fullReset();
                 return;
             }
 
-            if (isHiddenAfterWinner) return;
+            // Если оверлей скрыт после победы — игнорируем всё
+            if (isHiddenAfterWinner) {
+                return;
+            }
 
             if (!data || !data.participants || data.participants.length === 0) {
                 if (isActive && !isAnimating) fullReset();
@@ -480,9 +518,8 @@
                 return;
             }
 
-            // Обработка команды на выстрел
+            // Команда на выстрел
             if (data.status === 'shooting' && data.victimId && data.spinId) {
-                // Проверяем, что это новый выстрел
                 if (data.victimId !== lastVictimId) {
                     lastVictimId = data.victimId;
                     overlayParticipants = JSON.parse(JSON.stringify(data.participants));
@@ -491,37 +528,32 @@
                         showOverlay();
                         runAnimation(data.victimId, data.spinId);
                     } else {
-                        // Если остался 1, сразу говорим что выстрел сделан
                         setShotStatus(data.victimId);
                     }
                 }
                 return;
             }
 
-            // Обработка победы — показываем и скрываем
+            // Победа — показываем и полностью вырубаем оверлей
             if (data.status === 'winner' && data.winnerName) {
                 if (!isWinnerShown) {
                     isWinnerShown = true;
                     overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                     renderArena(null, null);
                     
-                    // Показываем оверлей если он скрыт
                     if (!isActive) {
                         showOverlay();
                     }
                     
-                    // Скрываем через 2.5 секунды и блокируем дальнейшие показы
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
-                        isHiddenAfterWinner = true;
-                        fullReset();
+                        fullResetAndStop();
                         hideTimeout = null;
                     }, 2500);
                 }
                 return;
             }
 
-            // Обычное обновление
             if (isActive && !isAnimating && !isWinnerShown) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
@@ -538,8 +570,8 @@
             }
         }
 
-        setTimeout(pollState, 500);
-        setInterval(pollState, 500);
+        // Запускаем опрос
+        startPolling();
 
         console.log('🎬 Оверлей "Снайпер" загружен');
     </script>
