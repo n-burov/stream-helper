@@ -1990,10 +1990,9 @@
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
             
-                // Проверяем победу ТОЛЬКО если игра уже началась (было >1 участника)
+                // Победа ТОЛЬКО если игра началась и статус не shooting/shot
                 if (total > 0 && state.sniper.status !== 'shooting' && state.sniper.status !== 'shot') {
                     if (alive.length === 1 && hasGameStarted && state.sniper.status !== 'winner') {
-                        // ПОБЕДА!
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
@@ -2044,7 +2043,6 @@
                 const trimmed = name.trim();
                 if (!trimmed) return;
                 
-                // Сбрасываем статус winner при добавлении нового участника
                 if (state.sniper.status === 'winner') {
                     state.sniper.status = 'idle';
                     state.sniper.winnerName = null;
@@ -2056,8 +2054,8 @@
                     alive: true,
                 });
                 
-                // Если участников стало 2 и больше — игра началась
-                if (state.sniper.participants.filter(p => p.alive).length >= 2) {
+                const alive = state.sniper.participants.filter(p => p.alive);
+                if (alive.length >= 2) {
                     hasGameStarted = true;
                 }
                 
@@ -2087,6 +2085,7 @@
                 sendSniperState();
             }
             
+            // Загрузка состояния снайпера
             const sniperData = await loadState('sniper');
             if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
                 state.sniper.participants = sniperData.participants;
@@ -2095,7 +2094,6 @@
                 if (sniperData.victimId) state.sniper.victimId = sniperData.victimId;
                 if (sniperData.victimName) state.sniper.victimName = sniperData.victimName;
                 if (sniperData.winnerName) state.sniper.winnerName = sniperData.winnerName;
-                // Проверяем, было ли в игре больше 1 участника
                 if (state.sniper.participants.filter(p => p.alive).length >= 2) {
                     hasGameStarted = true;
                 }
@@ -2107,7 +2105,6 @@
             
                 const alive = state.sniper.participants.filter(p => p.alive);
                 
-                // Если игра не началась или остался 1 — проверяем
                 if (alive.length <= 1) {
                     if (alive.length === 1 && hasGameStarted && state.sniper.status !== 'winner') {
                         state.sniper.status = 'winner';
@@ -2120,13 +2117,11 @@
                         sniperShootBtn.disabled = true;
                         renderSniper();
                     } else if (alive.length === 1 && !hasGameStarted) {
-                        // Всего 1 участник, игра не началась — ничего не делаем
                         sniperShootBtn.disabled = true;
                     }
                     return;
                 }
             
-                // Если дошли до сюда — игра началась
                 hasGameStarted = true;
             
                 const victim = alive[Math.floor(Math.random() * alive.length)];
