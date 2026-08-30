@@ -330,6 +330,7 @@
         let currentSpinId = null;
         let hideTimeout = null;
         let isWinnerShown = false;
+        let isHiddenAfterWinner = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -350,6 +351,7 @@
             isAnimating = false;
             isActive = false;
             isWinnerShown = false;
+            isHiddenAfterWinner = false;
             lastVictimId = null;
             currentSpinId = null;
             overlay.classList.remove('active');
@@ -357,6 +359,9 @@
         }
 
         function showOverlay() {
+            // Если оверлей был скрыт после победы — не показываем
+            if (isHiddenAfterWinner) return;
+            
             if (!isActive) {
                 isActive = true;
                 isWinnerShown = false;
@@ -366,6 +371,11 @@
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
+        }
+
+        function hideOverlayAfterWinner() {
+            isHiddenAfterWinner = true;
+            fullReset();
         }
 
         function showVictim(name) {
@@ -545,8 +555,15 @@
         }
 
         function renderState(data) {
+            // Сброс — полный ресет, снимаем блокировку
             if (data && data.status === 'reset') {
+                isHiddenAfterWinner = false;
                 fullReset();
+                return;
+            }
+
+            // Если оверлей скрыт после победы — игнорируем все обновления
+            if (isHiddenAfterWinner) {
                 return;
             }
 
@@ -589,7 +606,7 @@
                 
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    fullReset();
+                    hideOverlayAfterWinner();
                     hideTimeout = null;
                 }, 2500);
                 return;
