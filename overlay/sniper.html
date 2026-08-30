@@ -336,7 +336,6 @@
         const MECHANIC = 'sniper';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
 
-        let overlayVisible = false;
         let isAnimating = false;
         let animTimer = null;
         let lastVictimId = null;
@@ -344,7 +343,7 @@
         let isActive = false;
         let currentSpinId = null;
         let hideTimeout = null;
-        let isWinner = false;
+        let isWinnerShown = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -353,7 +352,7 @@
         const totalEl = document.getElementById('sniperTotal');
         const victimBanner = document.getElementById('victimBanner');
 
-        function resetState() {
+        function fullReset() {
             if (animTimer) {
                 clearTimeout(animTimer);
                 animTimer = null;
@@ -364,20 +363,18 @@
             }
             isAnimating = false;
             isActive = false;
-            isWinner = false;
+            isWinnerShown = false;
             lastVictimId = null;
             currentSpinId = null;
             overlay.classList.remove('active');
-            overlayVisible = false;
             victimBanner.classList.add('hidden');
         }
 
         function showOverlay() {
             if (!isActive) {
                 isActive = true;
-                isWinner = false;
+                isWinnerShown = false;
                 overlay.classList.add('active');
-                overlayVisible = true;
             }
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -475,20 +472,12 @@
 
             currentSpinId = spinId;
             isAnimating = true;
-            let currentTargetId = null;
 
             const alive = overlayParticipants.filter(p => p.alive);
             if (alive.length <= 1) {
                 isAnimating = false;
                 renderArena(null, null);
-                if (alive.length === 1) {
-                    isWinner = true;
-                    setShotStatus(victimId);
-                    hideTimeout = setTimeout(() => {
-                        resetState();
-                        hideTimeout = null;
-                    }, 2500);
-                }
+                setShotStatus(victimId);
                 return;
             }
 
@@ -513,9 +502,8 @@
 
                 currentTargetIdx = nextIdx;
                 const target = targets[currentTargetIdx];
-                currentTargetId = target.id;
 
-                renderArena(currentTargetId, null);
+                renderArena(target.id, null);
 
                 steps++;
                 delay *= 1.09;
@@ -559,26 +547,7 @@
 
                 animTimer = setTimeout(() => {
                     isAnimating = false;
-                    
-                    const aliveLeft = overlayParticipants.filter(p => p.alive);
-                    
-                    if (aliveLeft.length === 1) {
-                        renderArena(null, null);
-                        isWinner = true;
-                        hideTimeout = setTimeout(() => {
-                            resetState();
-                            hideTimeout = null;
-                        }, 2500);
-                    } else if (aliveLeft.length === 0) {
-                        renderArena(null, null);
-                        hideTimeout = setTimeout(() => {
-                            resetState();
-                            hideTimeout = null;
-                        }, 2500);
-                    } else {
-                        renderArena(null, null);
-                    }
-                    
+                    renderArena(null, null);
                     if (animTimer) {
                         clearTimeout(animTimer);
                         animTimer = null;
@@ -590,63 +559,64 @@
         }
 
         function renderState(data) {
-            // Сброс
+            // Сброс — полный ресет
             if (data && data.status === 'reset') {
-                resetState();
+                fullReset();
                 return;
             }
 
+            // Нет данных — скрываем
             if (!data || !data.participants || data.participants.length === 0) {
-                if (overlayVisible && !isAnimating) {
-                    resetState();
+                if (isActive && !isAnimating) {
+                    fullReset();
                 }
                 return;
             }
 
+            // Нет живых — скрываем
             const hasAlive = data.participants.some(p => p.alive);
             if (!hasAlive) {
-                if (overlayVisible && !isAnimating) {
-                    resetState();
+                if (isActive && !isAnimating) {
+                    fullReset();
                 }
                 return;
             }
 
-            // Выстрел
+            // Команда на выстрел
             if (data.status === 'shooting' && data.victimId && data.spinId) {
                 if (data.victimId !== lastVictimId) {
                     lastVictimId = data.victimId;
                     overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                     
-                    // Показываем оверлей только если есть смысл (больше 1 живого)
                     const alive = overlayParticipants.filter(p => p.alive);
                     if (alive.length > 1) {
                         showOverlay();
                         runAnimation(data.victimId, data.spinId);
                     } else {
-                        // Если остался 1, сразу отправляем shot
+                        // Если остался 1, сразу говорим что выстрел сделан
                         setShotStatus(data.victimId);
-                        // И показываем победителя через winner-оверлей
                     }
                 }
                 return;
             }
 
             // Победитель
-            if (data.status === 'winner' && data.winnerName) {
+            if (data.status === 'winner' && data.winnerName && !isWinnerShown) {
+                isWinnerShown = true;
                 showOverlay();
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
-                isWinner = true;
+                
                 if (hideTimeout) clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    resetState();
+                    fullReset();
                     hideTimeout = null;
                 }, 2500);
                 return;
             }
 
             // Обычное обновление
-            if (isActive && !isAnimating && !isWinner) {
+            if (isActive && !isAnimating && !isWinnerShown) {
                 overlayParticipants = JSON.parse(JSON.stringify(data.participants));
                 renderArena(null, null);
             }
