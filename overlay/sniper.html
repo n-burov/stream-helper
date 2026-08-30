@@ -284,9 +284,7 @@
         let currentSpinId = null;
         let hideTimeout = null;
         let isWinnerShown = false;
-        let isHiddenAfterWinner = false;
-        let isProcessingShot = false;
-        let pollInterval = null;
+        let isBlocked = false;
 
         const overlay = document.getElementById('sniperOverlay');
         const arena = document.getElementById('sniperArena');
@@ -295,55 +293,21 @@
         const totalEl = document.getElementById('sniperTotal');
         const victimBanner = document.getElementById('victimBanner');
 
-        function stopPolling() {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-            }
-        }
-
-        function startPolling() {
-            if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-            }
-            pollInterval = setInterval(pollState, 500);
-        }
-
         function fullReset() {
             if (animTimer) { clearTimeout(animTimer); animTimer = null; }
             if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
             isAnimating = false;
             isActive = false;
             isWinnerShown = false;
-            isHiddenAfterWinner = false;
-            isProcessingShot = false;
+            isBlocked = false;
             lastVictimId = null;
             currentSpinId = null;
             overlay.classList.remove('active');
             victimBanner.classList.add('hidden');
-            // Запускаем опрос заново
-            startPolling();
-        }
-
-        function fullResetAndStop() {
-            if (animTimer) { clearTimeout(animTimer); animTimer = null; }
-            if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
-            isAnimating = false;
-            isActive = false;
-            isWinnerShown = false;
-            isHiddenAfterWinner = true;
-            isProcessingShot = false;
-            lastVictimId = null;
-            currentSpinId = null;
-            overlay.classList.remove('active');
-            victimBanner.classList.add('hidden');
-            // ОСТАНАВЛИВАЕМ ОПРОС
-            stopPolling();
         }
 
         function showOverlay() {
-            if (isHiddenAfterWinner) return;
+            if (isBlocked) return;
             if (!isActive) {
                 isActive = true;
                 isWinnerShown = false;
@@ -409,14 +373,13 @@
         }
 
         function runAnimation(victimId, spinId) {
-            if (isAnimating || isProcessingShot) return;
+            if (isAnimating) return;
             if (!victimId) return;
             if (!overlayParticipants || overlayParticipants.length === 0) return;
 
             const victim = overlayParticipants.find(p => p.id === victimId);
             if (!victim || !victim.alive) return;
 
-            isProcessingShot = true;
             if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
 
             currentSpinId = spinId;
@@ -425,7 +388,6 @@
             const alive = overlayParticipants.filter(p => p.alive);
             if (alive.length <= 1) {
                 isAnimating = false;
-                isProcessingShot = false;
                 renderArena(null, null);
                 setShotStatus(victimId);
                 return;
@@ -461,7 +423,6 @@
                 const victimAlive = overlayParticipants.find(p => p.id === victimId && p.alive);
                 if (!victimAlive) {
                     isAnimating = false;
-                    isProcessingShot = false;
                     renderArena(null, null);
                     setShotStatus(victimId);
                     return;
@@ -474,7 +435,6 @@
                 const victim = overlayParticipants.find(p => p.id === shotId);
                 if (!victim) {
                     isAnimating = false;
-                    isProcessingShot = false;
                     renderArena(null, null);
                     setShotStatus(shotId);
                     return;
@@ -486,7 +446,6 @@
                 setShotStatus(shotId);
                 animTimer = setTimeout(() => {
                     isAnimating = false;
-                    isProcessingShot = false;
                     renderArena(null, null);
                     if (animTimer) { clearTimeout(animTimer); animTimer = null; }
                 }, 900);
@@ -495,15 +454,15 @@
         }
 
         function renderState(data) {
-            // Сброс — полный ресет, включая опрос
+            // Сброс — разблокируем и сбрасываем всё
             if (data && data.status === 'reset') {
-                isHiddenAfterWinner = false;
+                isBlocked = false;
                 fullReset();
                 return;
             }
 
-            // Если оверлей скрыт после победы — игнорируем всё
-            if (isHiddenAfterWinner) {
+            // Если заблокированы — игнорируем все обновления
+            if (isBlocked) {
                 return;
             }
 
@@ -534,7 +493,7 @@
                 return;
             }
 
-            // Победа — показываем и полностью вырубаем оверлей
+            // Победа — блокируем оверлей и скрываем
             if (data.status === 'winner' && data.winnerName) {
                 if (!isWinnerShown) {
                     isWinnerShown = true;
@@ -547,7 +506,9 @@
                     
                     if (hideTimeout) clearTimeout(hideTimeout);
                     hideTimeout = setTimeout(() => {
-                        fullResetAndStop();
+                        // БЛОКИРУЕМ оверлей и скрываем
+                        isBlocked = true;
+                        fullReset();
                         hideTimeout = null;
                     }, 2500);
                 }
@@ -570,8 +531,8 @@
             }
         }
 
-        // Запускаем опрос
-        startPolling();
+        setTimeout(pollState, 500);
+        setInterval(pollState, 500);
 
         console.log('🎬 Оверлей "Снайпер" загружен');
     </script>
