@@ -1602,7 +1602,7 @@
             const defaultColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#1dd1a1',
                 '#f368e0', '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24'
             ];
-
+    
             function drawWheel() {
                 const sectors = state.wheel.sectors;
                 if (sectors.length === 0) {
@@ -1671,7 +1671,15 @@
                 ctx.arc(300, 35, 6, 0, Math.PI * 2);
                 ctx.fill();
             }
-
+    
+            function saveWheelState() {
+                updateMechanic('wheel', {
+                    status: 'idle',
+                    sectors: state.wheel.sectors,
+                    winner: state.wheel.winner || null,
+                });
+            }
+    
             function addSector(label, weight) {
                 if (!label.trim()) { alert('Введите название!'); return; }
                 if (weight < 1) { alert('Вес должен быть >= 1'); return; }
@@ -1682,16 +1690,16 @@
                 });
                 renderSectors();
                 drawWheel();
-                updateMechanic('wheel', { status: 'idle', sectors: state.wheel.sectors, winner: null });
+                saveWheelState();
             }
-
+    
             function removeSector(index) {
                 state.wheel.sectors.splice(index, 1);
                 renderSectors();
                 drawWheel();
-                updateMechanic('wheel', { status: 'idle', sectors: state.wheel.sectors, winner: null });
+                saveWheelState();
             }
-
+    
             function renderSectors() {
                 const container = document.getElementById('sectorList');
                 const sectors = state.wheel.sectors;
@@ -1738,7 +1746,7 @@
                         
                         renderSectors();
                         drawWheel();
-                        updateMechanic('wheel', { status: 'idle', sectors: state.wheel.sectors, winner: null });
+                        saveWheelState();
                         
                         console.log('✅ Сектор обновлён:', state.wheel.sectors[index]);
                     });
@@ -1759,7 +1767,7 @@
                     });
                 });
             }
-
+    
             document.getElementById('addSectorBtn').addEventListener('click', function() {
                 const nameInput = document.getElementById('sectorNameInput');
                 const weightInput = document.getElementById('sectorWeightInput');
@@ -1767,7 +1775,7 @@
                 nameInput.value = '';
                 weightInput.value = '1';
             });
-
+    
             resetWheelBtn.addEventListener('click', function() {
                 if (confirm('Удалить все сектора?')) {
                     state.wheel.sectors = [];
@@ -1775,10 +1783,10 @@
                     drawWheel();
                     wheelStatus.className = 'wheel-status';
                     wheelStatus.innerHTML = '⏸️ Ожидание запуска';
-                    updateMechanic('wheel', { status: 'idle', sectors: [], winner: null });
+                    saveWheelState();
                 }
             });
-
+    
             // Загрузка состояния колеса
             const wheelData = await loadState('wheel');
             if (wheelData && wheelData.sectors && wheelData.sectors.length > 0) {
@@ -1802,9 +1810,9 @@
                 state.wheel.sectors = defaultSectors;
                 renderSectors();
                 drawWheel();
-                updateMechanic('wheel', { status: 'idle', sectors: defaultSectors, winner: null });
+                saveWheelState();
             }
-
+    
             // Кнопка запуска — отправляем команду в оверлей
             spinBtn.addEventListener('click', function() {
                 if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
@@ -1854,15 +1862,10 @@
                             wheelStatus.className = 'wheel-status';
                             wheelStatus.innerHTML = `🏆 <span class="winner-text">${state.wheel.winner}</span>`;
                             
-                            // Показываем победителя в модалке
                             showWinnerOnSite(state.wheel.winner);
                             
-                            // Обновляем состояние в БД
-                            updateMechanic('wheel', {
-                                status: 'idle',
-                                sectors: state.wheel.sectors,
-                                winner: state.wheel.winner,
-                            });
+                            // СОХРАНЯЕМ СЕКТОРА И ПОБЕДИТЕЛЯ
+                            saveWheelState();
                         }
                     } catch (e) {}
                 }, 500);
