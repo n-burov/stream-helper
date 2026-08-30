@@ -1373,6 +1373,25 @@
             });
 
             // ============================================================
+            //  ЗАГРУЗКА СОСТОЯНИЙ ИЗ БД
+            // ============================================================
+
+            async function loadState(mechanic, callback) {
+                try {
+                    const response = await fetch(`/api/webhook?mechanic=${mechanic}`);
+                    const data = await response.json();
+                    if (data && data.status !== 'idle') {
+                        console.log(`📥 Загружено состояние ${mechanic}:`, data);
+                        callback(data);
+                        return true;
+                    }
+                } catch (error) {
+                    console.log(`ℹ️ Нет сохранённого состояния для ${mechanic}`);
+                }
+                return false;
+            }
+
+            // ============================================================
             //  КЛЮЧЕВОЕ СЛОВО
             // ============================================================
 
@@ -1396,6 +1415,7 @@
                     keyword: state.keyword.currentKeyword,
                     participants: state.keyword.participants,
                     winner: state.keyword.winner,
+                    history: state.history,
                 });
             }
 
@@ -1534,6 +1554,13 @@
                 if (confirm('Очистить всю историю розыгрышей?')) {
                     state.history = [];
                     renderHistory();
+                    updateMechanic('keyword', {
+                        status: state.keyword.active ? 'active' : 'idle',
+                        keyword: state.keyword.currentKeyword,
+                        participants: state.keyword.participants,
+                        winner: state.keyword.winner,
+                        history: state.history,
+                    });
                 }
             });
 
@@ -1544,6 +1571,32 @@
                 if (e.target === this) this.classList.remove('active');
             });
 
+            // Загрузка состояния ключевого слова
+            await loadState('keyword', function(data) {
+                if (data.keyword) {
+                    state.keyword.currentKeyword = data.keyword;
+                    keywordInput.value = data.keyword;
+                }
+                if (data.participants) {
+                    state.keyword.participants = data.participants;
+                }
+                if (data.winner) {
+                    state.keyword.winner = data.winner;
+                }
+                if (data.history) {
+                    state.history = data.history;
+                }
+                state.keyword.active = data.status === 'active';
+                renderParticipants();
+                renderHistory();
+                if (data.status === 'active') {
+                    startBtn.textContent = '⏹️ Стоп';
+                    startBtn.className = 'btn btn-danger';
+                    startBtn.disabled = false;
+                }
+            });
+
+            // Демо-участники для ключевого слова
             const demoUsers = ['NightWolf', 'ShadowStrike', 'MoonFury', 'ThunderBolt', 'IceQueen', 'FireMage',
                 'DarkRanger', 'LightBringer'
             ];
@@ -1556,11 +1609,8 @@
                 demoIndex++;
             }, 2000);
 
-            renderParticipants();
-            renderHistory();
-
             // ============================================================
-            //  КОЛЕСО ФОРТУНЫ — только настройка и команда запуска
+            //  КОЛЕСО ФОРТУНЫ
             // ============================================================
 
             const canvas = document.getElementById('wheelCanvas');
@@ -1748,6 +1798,20 @@
                 }
             });
 
+            // Загрузка состояния колеса
+            await loadState('wheel', function(data) {
+                if (data.sectors && data.sectors.length > 0) {
+                    state.wheel.sectors = data.sectors;
+                    renderSectors();
+                    drawWheel();
+                }
+                if (data.winner) {
+                    state.wheel.winner = data.winner;
+                    wheelStatus.className = 'wheel-status';
+                    wheelStatus.innerHTML = `🏆 <span class="winner-text">${data.winner}</span>`;
+                }
+            });
+
             // Кнопка запуска — отправляем команду в оверлей
             spinBtn.addEventListener('click', function() {
                 if (state.wheel.sectors.length === 0) { alert('Добавьте сектора!'); return; }
@@ -1793,18 +1857,18 @@
                         if (data && data.status === 'completed' && data.spinId === spinId) {
                             clearInterval(checkInterval);
                             spinBtn.disabled = false;
-                            state.wheel.winner = data.winner;
+                            state.wheel.winner = data.winner || sectors[winnerIndex].label;
                             wheelStatus.className = 'wheel-status';
-                            wheelStatus.innerHTML = `🏆 <span class="winner-text">${data.winner}</span>`;
+                            wheelStatus.innerHTML = `🏆 <span class="winner-text">${state.wheel.winner}</span>`;
                             
                             // Показываем победителя в модалке
-                            showWinnerOnSite(data.winner);
+                            showWinnerOnSite(state.wheel.winner);
                             
-                            // Сбрасываем состояние
+                            // Обновляем состояние в БД
                             updateMechanic('wheel', {
                                 status: 'idle',
                                 sectors: state.wheel.sectors,
-                                winner: null,
+                                winner: state.wheel.winner,
                             });
                         }
                     } catch (e) {}
@@ -1821,11 +1885,8 @@
                 }, 20000);
             });
 
-            renderSectors();
-            drawWheel();
-
             // ============================================================
-            //  СНАЙПЕР — только управление участниками и команда выстрела
+            //  СНАЙПЕР
             // ============================================================
 
             const sniperArena = document.getElementById('sniperArena');
@@ -1951,6 +2012,27 @@
                 sendSniperState();
             }
 
+            // Загрузка состояния снайпера
+            await loadState('sniper', function(data) {
+                if (data.participants && data.participants.length > 0) {
+                    state.sniper.participants = data.participants;
+                    state.sniper.nextId = data.participants.reduce((max, p) => Math.max(max, p.id), 0) + 1;
+                }
+                if (data.status) {
+                    state.sniper.status = data.status;
+                }
+                if (data.victimId) {
+                    state.sniper.victimId = data.victimId;
+                }
+                if (data.victimName) {
+                    state.sniper.victimName = data.victimName;
+                }
+                if (data.winnerName) {
+                    state.sniper.winnerName = data.winnerName;
+                }
+                renderSniper();
+            });
+
             // Кнопка выстрела — отправляем команду в оверлей
             function startSniperShoot() {
                 if (state.sniper.status === 'shooting' || state.sniper.status === 'shot') return;
@@ -1972,6 +2054,7 @@
                 state.sniper.victimId = victim.id;
                 state.sniper.victimName = victim.name;
                 state.sniper.status = 'shooting';
+                const spinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
                 renderSniper();
                 sendSniperState();
@@ -1979,6 +2062,15 @@
                 sniperShootBtn.disabled = true;
                 sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                 sniperTimer.textContent = '🎯 Ожидание оверлея';
+
+                // Отправляем команду в оверлей
+                updateMechanic('sniper', {
+                    participants: state.sniper.participants,
+                    status: 'shooting',
+                    victimId: state.sniper.victimId,
+                    victimName: state.sniper.victimName,
+                    spinId: spinId,
+                });
 
                 // Ждём команду от оверлея о завершении выстрела
                 const checkInterval = setInterval(async () => {
@@ -2048,23 +2140,26 @@
             sniperShootBtn.addEventListener('click', startSniperShoot);
             sniperResetBtn.addEventListener('click', resetSniper);
 
-            // Добавляем демо-участников для снайпера
-            setTimeout(() => {
-                addSniperParticipant('NightWolf');
-                addSniperParticipant('ShadowStrike');
-                addSniperParticipant('MoonFury');
-                addSniperParticipant('ThunderBolt');
-                addSniperParticipant('IceQueen');
-                addSniperParticipant('FireMage');
-                addSniperParticipant('DarkRanger');
-                addSniperParticipant('LightBringer');
-            }, 300);
+            // Добавляем демо-участников для снайпера (только если нет сохранённых)
+            if (state.sniper.participants.length === 0) {
+                setTimeout(() => {
+                    addSniperParticipant('NightWolf');
+                    addSniperParticipant('ShadowStrike');
+                    addSniperParticipant('MoonFury');
+                    addSniperParticipant('ThunderBolt');
+                    addSniperParticipant('IceQueen');
+                    addSniperParticipant('FireMage');
+                    addSniperParticipant('DarkRanger');
+                    addSniperParticipant('LightBringer');
+                }, 300);
+            }
 
             renderSniper();
 
             console.log('🎮 Стример-хаб загружен!');
             console.log('📦 Состояние:', state);
             console.log('🔄 Новая архитектура: сайт → команда → оверлей → ответ → сайт');
+            console.log('💾 Все настройки сохраняются в БД');
         }
 
         checkAuth();
