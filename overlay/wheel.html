@@ -96,6 +96,8 @@
         let spinStartRotation = 0;
         let currentSpinId = null;
         let hideScheduled = false;
+        let fixedTargetAngle = null;
+        let processedSpinIds = new Set();
 
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
@@ -118,6 +120,7 @@
             isActive = false;
             hideScheduled = false;
             currentSpinId = null;
+            fixedTargetAngle = null;
             wheelOverlay.classList.remove('active');
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
@@ -249,13 +252,29 @@
                 canvas.classList.remove('spinning');
                 animationId = null;
 
+                // Отправляем сайту команду о завершении
+                fetch('/api/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mechanic: 'wheel',
+                        data: {
+                            status: 'completed',
+                            spinId: currentSpinId,
+                            winner: window._winnerLabel || null,
+                        }
+                    })
+                }).catch(() => {});
+
                 scheduleHide(3000);
             }
         }
 
-        function startSpin(targetAngle, duration, spinId) {
+        function startSpin(targetAngle, duration, spinId, winnerLabel) {
             if (isSpinning) return;
             if (!sectors || sectors.length === 0) return;
+
+            window._winnerLabel = winnerLabel;
 
             showOverlay();
             isSpinning = true;
@@ -294,39 +313,42 @@
                 }
             }
 
-            // Если мы не крутимся и статус spinning — запускаем анимацию
-            if (data.status === 'spinning' && !isSpinning && data.targetAngle !== undefined) {
-                const spinId = data.spinId || Date.now().toString();
-                
-                // Проверяем, не тот же ли это spinId, что уже запускали
-                if (currentSpinId !== spinId) {
-                    if (hideTimeout) {
-                        clearTimeout(hideTimeout);
-                        hideTimeout = null;
+            // Получили команду на запуск
+            if (data.status === 'spinning' && data.spinId) {
+                // Проверяем, не обрабатывали ли уже этот spinId
+                if (!processedSpinIds.has(data.spinId)) {
+                    processedSpinIds.add(data.spinId);
+                    
+                    if (data.targetAngle !== undefined) {
+                        if (hideTimeout) {
+                            clearTimeout(hideTimeout);
+                            hideTimeout = null;
+                        }
+                        
+                        let baseAngle = data.targetAngle;
+                        let finalAngle = baseAngle;
+                        
+                        // Случайное смещение внутри сектора
+                        if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
+                            const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
+                            const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
+                            const maxOffset = sliceAngle * 0.4;
+                            const randomOffset = (Math.random() * 2 - 1) * maxOffset;
+                            finalAngle = baseAngle + randomOffset;
+                        }
+                        
+                        const extraSpins = 15 * Math.PI * 2;
+                        const targetWithSpins = finalAngle + extraSpins;
+                        const duration = data.duration || 15000;
+                        startSpin(targetWithSpins, duration, data.spinId, data.winnerLabel);
                     }
-                    
-                    let baseAngle = data.targetAngle;
-                    let finalAngle = baseAngle;
-                    
-                    // Добавляем случайное смещение внутри сектора
-                    if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
-                        const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
-                        const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
-                        const maxOffset = sliceAngle * 0.4;
-                        const randomOffset = (Math.random() * 2 - 1) * maxOffset;
-                        finalAngle = baseAngle + randomOffset;
-                    }
-                    
-                    const extraSpins = 15 * Math.PI * 2;
-                    const targetWithSpins = finalAngle + extraSpins;
-                    const duration = data.duration || 15000;
-                    startSpin(targetWithSpins, duration, spinId);
                 }
                 return;
             }
 
-            // Если статус completed или idle — скрываем
-            if (data.status === 'completed' || data.status === 'idle') {
+            // Если сайт просит сбросить состояние
+            if (data.status === 'reset') {
+                processedSpinIds.clear();
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
@@ -335,10 +357,8 @@
                         animationId = null;
                     }
                 }
-                if (isActive && !isSpinning) {
-                    if (!hideScheduled) {
-                        scheduleHide(3000);
-                    }
+                if (isActive) {
+                    hideOverlay();
                 }
                 return;
             }
@@ -361,6 +381,7 @@
 
         console.log('🎬 Оверлей "Колесо фортуны" загружен');
         console.log('📡 Опрос состояния каждые 1.5 секунды');
+        console.log('🔄 Оверлей управляет анимацией, сайт только даёт команду');
     </script>
 </body>
 </html>
