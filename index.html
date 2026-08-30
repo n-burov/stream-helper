@@ -1999,7 +1999,6 @@
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
             
-                // Победа ТОЛЬКО если игра началась и статус не shooting/shot
                 if (total > 0 && state.sniper.status !== 'shooting' && state.sniper.status !== 'shot') {
                     if (alive.length === 1 && hasGameStarted && state.sniper.status !== 'winner') {
                         state.sniper.status = 'winner';
@@ -2023,7 +2022,6 @@
                     }
                 }
             
-                // Обычное состояние
                 if (state.sniper.status === 'shooting') {
                     sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                     sniperTimer.textContent = '🎯 Ожидание оверлея';
@@ -2094,7 +2092,6 @@
                 sendSniperState();
             }
             
-            // Загрузка состояния снайпера
             const sniperData = await loadState('sniper');
             if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
                 state.sniper.participants = sniperData.participants;
