@@ -1892,9 +1892,9 @@
             });
 
             // ============================================================
-            //  СНАЙПЕР — ПРОСТАЯ И НАДЁЖНАЯ ВЕРСИЯ
+            //  СНАЙПЕР
             // ============================================================
-
+            
             const sniperArena = document.getElementById('sniperArena');
             const sniperAlive = document.getElementById('sniperAlive');
             const sniperDead = document.getElementById('sniperDead');
@@ -1906,9 +1906,10 @@
             const sniperStuckBtn = document.getElementById('sniperStuckBtn');
             const sniperAddBtn = document.getElementById('sniperAddBtn');
             const sniperNameInput = document.getElementById('sniperNameInput');
-
+            
             let sniperCheckInterval = null;
-
+            let hasGameStarted = false;
+            
             function sendSniperState() {
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
@@ -1917,7 +1918,7 @@
                     winnerName: state.sniper.winnerName,
                 });
             }
-
+            
             function renderSniper() {
                 const all = state.sniper.participants;
                 if (all.length === 0) {
@@ -1929,23 +1930,23 @@
                     updateSniperUI();
                     return;
                 }
-
+            
                 const sorted = [...all].sort((a, b) => {
                     if (a.alive && !b.alive) return -1;
                     if (!a.alive && b.alive) return 1;
                     return a.id - b.id;
                 });
-
+            
                 sniperArena.innerHTML = sorted.map((p) => {
                     const isEliminated = !p.alive;
                     const isSelected = state.sniper.victimId === p.id;
-
+            
                     let classes = 'sniper-participant';
                     if (isEliminated) classes += ' eliminated';
                     if (isSelected) classes += ' selected';
-
+            
                     const skullIcon = isEliminated ? ' 💀' : '';
-
+            
                     return `
                         <div class="${classes}" data-id="${p.id}">
                             <span class="id-badge">#${p.id}</span>
@@ -1953,29 +1954,28 @@
                         </div>
                     `;
                 }).join('');
-
+            
                 updateSniperUI();
             }
-
+            
             function updateSniperUI() {
                 const alive = state.sniper.participants.filter(p => p.alive);
                 const dead = state.sniper.participants.filter(p => !p.alive);
                 sniperAlive.textContent = alive.length;
                 sniperDead.textContent = dead.length;
                 sniperTotal.textContent = state.sniper.participants.length;
-
+            
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
-
-                // Показываем кнопку "Залагало" только если статус shooting
+            
                 sniperStuckBtn.style.display = (state.sniper.status === 'shooting') ? 'inline-block' : 'none';
-
-                if (alive.length === 1 && state.sniper.participants.length > 0 && state.sniper.status !== 'winner') {
+            
+                // Победа только если игра началась (было >1 участника) и остался 1
+                if (alive.length === 1 && hasGameStarted && state.sniper.participants.length > 1 && state.sniper.status !== 'winner') {
                     state.sniper.status = 'winner';
                     state.sniper.winnerName = alive[0].name;
                     sendSniperState();
                     
-                    // Отправляем в winner-оверлей
                     fetch('/api/winner', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1997,14 +1997,14 @@
                     renderSniper();
                     return;
                 }
-
+            
                 if (alive.length === 0 && state.sniper.participants.length > 0) {
                     sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
                     sniperTimer.textContent = '😵 Никто не выжил';
                     sniperShootBtn.disabled = true;
                     return;
                 }
-
+            
                 if (state.sniper.status === 'shooting') {
                     sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                     sniperTimer.textContent = '🎯 Ожидание оверлея';
@@ -2028,7 +2028,7 @@
                     sniperTimer.textContent = `👥 Живых: ${alive.length}`;
                 }
             }
-
+            
             function addSniperParticipant(name) {
                 const trimmed = name.trim();
                 if (!trimmed) return;
@@ -2038,6 +2038,13 @@
                     name: trimmed,
                     alive: true,
                 });
+                
+                // Игра началась, если стало 2+ участников
+                const alive = state.sniper.participants.filter(p => p.alive);
+                if (alive.length >= 2) {
+                    hasGameStarted = true;
+                }
+                
                 state.sniper.status = 'idle';
                 state.sniper.winnerName = null;
                 renderSniper();
@@ -2045,7 +2052,7 @@
                 sniperNameInput.value = '';
                 sniperNameInput.focus();
             }
-
+            
             function resetSniper() {
                 if (sniperCheckInterval) {
                     clearInterval(sniperCheckInterval);
@@ -2056,6 +2063,7 @@
                 state.sniper.nextId = 1;
                 state.sniper.status = 'idle';
                 state.sniper.winnerName = null;
+                hasGameStarted = false;
                 sniperStatus.innerHTML = '⏸️ Ожидание';
                 sniperTimer.textContent = '👥 Ожидание';
                 sniperStuckBtn.style.display = 'none';
@@ -2063,7 +2071,7 @@
                 updateMechanic('sniper', { status: 'reset' });
                 sendSniperState();
             }
-
+            
             function stuckReset() {
                 if (state.sniper.status === 'shooting') {
                     state.sniper.status = 'idle';
@@ -2083,7 +2091,7 @@
                     console.log('🔄 Ожидание выстрела сброшено');
                 }
             }
-
+            
             const sniperData = await loadState('sniper');
             if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
                 state.sniper.participants = sniperData.participants;
@@ -2091,15 +2099,18 @@
                 if (sniperData.status) state.sniper.status = sniperData.status;
                 if (sniperData.victimId) state.sniper.victimId = sniperData.victimId;
                 if (sniperData.winnerName) state.sniper.winnerName = sniperData.winnerName;
+                if (state.sniper.participants.filter(p => p.alive).length >= 2) {
+                    hasGameStarted = true;
+                }
                 renderSniper();
             }
-
+            
             function startSniperShoot() {
                 if (state.sniper.status === 'shooting' || state.sniper.status === 'shot') return;
-
+            
                 const alive = state.sniper.participants.filter(p => p.alive);
                 if (alive.length <= 1) {
-                    if (alive.length === 1 && state.sniper.status !== 'winner') {
+                    if (alive.length === 1 && hasGameStarted && state.sniper.status !== 'winner') {
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
@@ -2126,32 +2137,34 @@
                     }
                     return;
                 }
-
+            
+                hasGameStarted = true;
+            
                 const victim = alive[Math.floor(Math.random() * alive.length)];
                 state.sniper.victimId = victim.id;
                 state.sniper.status = 'shooting';
                 const spinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-
+            
                 renderSniper();
                 sendSniperState();
-
+            
                 sniperShootBtn.disabled = true;
                 sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                 sniperTimer.textContent = '🎯 Ожидание оверлея';
                 sniperStuckBtn.style.display = 'inline-block';
-
+            
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
                     status: 'shooting',
                     victimId: state.sniper.victimId,
                     spinId: spinId,
                 });
-
+            
                 if (sniperCheckInterval) {
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
-
+            
                 sniperCheckInterval = setInterval(async () => {
                     try {
                         const resp = await fetch('/api/webhook?mechanic=sniper');
@@ -2173,7 +2186,7 @@
                             sendSniperState();
                             
                             const aliveLeft = state.sniper.participants.filter(p => p.alive);
-                            if (aliveLeft.length === 1) {
+                            if (aliveLeft.length === 1 && hasGameStarted) {
                                 state.sniper.status = 'winner';
                                 state.sniper.winnerName = aliveLeft[0].name;
                                 sendSniperState();
@@ -2220,18 +2233,17 @@
                     }
                 }, 500);
             }
-
+            
             sniperAddBtn.addEventListener('click', () => addSniperParticipant(sniperNameInput.value));
             sniperNameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') addSniperParticipant(sniperNameInput.value);
             });
-
+            
             sniperShootBtn.addEventListener('click', startSniperShoot);
             sniperResetBtn.addEventListener('click', resetSniper);
             sniperStuckBtn.addEventListener('click', stuckReset);
-
+            
             renderSniper();
-
             console.log('🎮 Стример-хаб загружен!');
             console.log('📦 Состояние:', state);
         }
