@@ -70,6 +70,14 @@
 </head>
 <body>
 
+    <audio id="spinSound" preload="auto">
+        <source src="../sounds/wheel-spin.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="winnerSound" preload="auto">
+        <source src="../sounds/winner.mp3" type="audio/mpeg">
+    </audio>
+
     <div class="wheel-overlay" id="wheelOverlay">
         <div class="wheel-wrapper">
             <canvas id="wheelCanvas" width="600" height="600"></canvas>
@@ -99,6 +107,9 @@
         let fixedTargetAngle = null;
         let processedSpinIds = new Set();
 
+        const spinSound = document.getElementById('spinSound');
+        const winnerSound = document.getElementById('winnerSound');
+
         const defaultColors = [
             '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
             '#54a0ff', '#5f27cd', '#1dd1a1', '#f368e0',
@@ -126,6 +137,9 @@
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
             }
+            // Останавливаем звук вращения при скрытии
+            spinSound.pause();
+            spinSound.currentTime = 0;
         }
 
         function scheduleHide(delay) {
@@ -230,6 +244,8 @@
             }
             isSpinning = false;
             canvas.classList.remove('spinning');
+            spinSound.pause();
+            spinSound.currentTime = 0;
             if (hideTimeout) {
                 clearTimeout(hideTimeout);
                 hideTimeout = null;
@@ -251,6 +267,13 @@
                 isSpinning = false;
                 canvas.classList.remove('spinning');
                 animationId = null;
+
+                spinSound.pause();
+                spinSound.currentTime = 0;
+
+                // Проигрываем звук выигрыша
+                winnerSound.currentTime = 0;
+                winnerSound.play().catch(() => {});
 
                 // Отправляем сайту команду о завершении
                 fetch('/api/webhook', {
@@ -281,6 +304,11 @@
             canvas.classList.add('spinning');
             hideScheduled = false;
             currentSpinId = spinId;
+
+            // Запускаем звук вращения (зацикленный)
+            spinSound.currentTime = 0;
+            spinSound.loop = true;
+            spinSound.play().catch(() => {});
 
             spinStartTime = Date.now();
             spinDuration = duration || 15000;
@@ -313,9 +341,7 @@
                 }
             }
 
-            // Получили команду на запуск
             if (data.status === 'spinning' && data.spinId) {
-                // Проверяем, не обрабатывали ли уже этот spinId
                 if (!processedSpinIds.has(data.spinId)) {
                     processedSpinIds.add(data.spinId);
                     
@@ -328,7 +354,6 @@
                         let baseAngle = data.targetAngle;
                         let finalAngle = baseAngle;
                         
-                        // Случайное смещение внутри сектора
                         if (data.winnerIndex !== undefined && data.sectors && data.sectors[data.winnerIndex]) {
                             const totalWeight = data.sectors.reduce((sum, s) => sum + s.weight, 0);
                             const sliceAngle = (data.sectors[data.winnerIndex].weight / totalWeight) * Math.PI * 2;
@@ -346,9 +371,16 @@
                 return;
             }
 
-            // Если сайт просит сбросить состояние
             if (data.status === 'reset') {
                 processedSpinIds.clear();
+                resetOverlay();
+                hideOverlay();
+                return;
+            }
+
+            if (data.status === 'completed' || data.status === 'idle') {
+                spinSound.pause();
+                spinSound.currentTime = 0;
                 if (isSpinning) {
                     isSpinning = false;
                     canvas.classList.remove('spinning');
@@ -357,8 +389,10 @@
                         animationId = null;
                     }
                 }
-                if (isActive) {
-                    hideOverlay();
+                if (isActive && !isSpinning) {
+                    if (!hideScheduled) {
+                        scheduleHide(3000);
+                    }
                 }
                 return;
             }
