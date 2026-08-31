@@ -128,6 +128,10 @@
 </head>
 <body>
 
+    <audio id="winnerSound" preload="auto">
+        <source src="../sounds/winner.mp3" type="audio/mpeg">
+    </audio>
+
     <div class="winner-container" id="winnerContainer">
         <img class="winner-icon" id="winnerIcon" style="display:none;" />
         <div class="title" id="winnerTitle">ВЫИГРЫШ</div>
@@ -137,6 +141,7 @@
 
     <script>
         const WINNER_API_URL = '/api/winner';
+        const winnerSound = document.getElementById('winnerSound');
 
         const container = document.getElementById('winnerContainer');
         const iconEl = document.getElementById('winnerIcon');
@@ -177,7 +182,6 @@
 
             titleEl.textContent = data.title || 'ВЫИГРЫШ';
 
-            // Иконка
             if (data.icon && data.icon.startsWith('http')) {
                 iconEl.style.display = 'block';
                 iconEl.src = data.icon;
@@ -188,7 +192,6 @@
                 iconEl.style.display = 'none';
             }
 
-            // Имя с цветом
             if (data.color) {
                 nameEl.style.color = `#${data.color}`;
             } else {
@@ -200,6 +203,10 @@
 
             container.classList.add('active');
             createConfetti();
+
+            // Звук победителя
+            winnerSound.currentTime = 0;
+            winnerSound.play().catch(() => {});
 
             if (hideTimeout) clearTimeout(hideTimeout);
             hideTimeout = setTimeout(() => {
