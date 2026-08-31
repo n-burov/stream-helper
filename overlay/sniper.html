@@ -260,6 +260,10 @@
 </head>
 <body>
 
+    <audio id="shotSound" preload="auto">
+        <source src="../sounds/shot.mp3" type="audio/mpeg">
+    </audio>
+
     <div class="sniper-overlay" id="sniperOverlay">
         <div class="sniper-stats">
             <span class="alive">🟢 Живых: <strong id="sniperAlive">0</strong></span>
@@ -292,6 +296,7 @@
         const deadEl = document.getElementById('sniperDead');
         const totalEl = document.getElementById('sniperTotal');
         const victimBanner = document.getElementById('victimBanner');
+        const shotSound = document.getElementById('shotSound');
 
         function fullReset() {
             if (animTimer) { clearTimeout(animTimer); animTimer = null; }
@@ -440,6 +445,11 @@
                 }
                 createFlash();
                 showVictim(victim.name);
+
+                // Звук выстрела
+                shotSound.currentTime = 0;
+                shotSound.play().catch(() => {});
+
                 victim.alive = false;
                 renderArena(null, shotId);
                 setShotStatus(shotId);
@@ -453,14 +463,12 @@
         }
 
         function renderState(data) {
-            // Сброс — разблокируем и сбрасываем
             if (data && data.status === 'reset') {
                 isBlocked = false;
                 fullReset();
                 return;
             }
 
-            // Если заблокированы — игнорируем всё
             if (isBlocked) {
                 return;
             }
@@ -476,7 +484,6 @@
                 return;
             }
 
-            // Команда на выстрел
             if (data.status === 'shooting' && data.victimId && data.spinId) {
                 if (data.victimId !== lastVictimId) {
                     lastVictimId = data.victimId;
@@ -492,7 +499,6 @@
                 return;
             }
 
-            // Победа — блокируем и скрываем
             if (data.status === 'winner' && data.winnerName) {
                 if (!isWinnerShown) {
                     isWinnerShown = true;
