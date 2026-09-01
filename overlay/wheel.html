@@ -306,6 +306,7 @@
             currentSpinId = spinId;
 
             // Запускаем звук вращения (зацикленный)
+            spinSound.volume = 0.5;
             spinSound.currentTime = 0;
             spinSound.loop = true;
             spinSound.play().catch(() => {});
