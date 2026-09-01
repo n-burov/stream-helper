@@ -447,6 +447,7 @@
                 showVictim(victim.name);
 
                 // Звук выстрела
+                shotSound.volume = 0.5;
                 shotSound.currentTime = 0;
                 shotSound.play().catch(() => {});
 
