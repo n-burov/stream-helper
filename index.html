@@ -1437,13 +1437,12 @@
             }
 
             // ============================================================
-            //  КЛЮЧЕВОЕ СЛОВО
+            //  КЛЮЧЕВОЕ СЛОВО — ИСПРАВЛЕННАЯ ВЕРСИЯ
             // ============================================================
-
+            
             const keywordInput = document.getElementById('keywordInput');
             const startBtn = document.getElementById('startKeywordBtn');
             const drawBtn = document.getElementById('drawKeywordBtn');
-            const stopBtn = document.getElementById('stopKeywordBtn');
             const resetKeywordBtn = document.getElementById('resetKeywordBtn');
             const participantsGrid = document.getElementById('participantsGrid');
             const participantCount = document.getElementById('participantCount');
@@ -1452,17 +1451,18 @@
             const historyContainer = document.getElementById('historyContainer');
             const clearHistoryBtn = document.getElementById('clearHistoryBtn');
             const twitchStatus = document.getElementById('twitchStatus');
-
+            
             let twitchConnected = false;
             let twitchCheckInterval = null;
-
+            let raffleActive = false;
+            let winnersList = [];
+            
             // Проверка статуса Twitch
             async function checkTwitchStatus() {
                 try {
                     const response = await fetch('/api/webhook?twitch=status');
                     const data = await response.json();
                     
-                    // Обновляем статус подключения
                     if (data && data.connected) {
                         twitchConnected = true;
                         twitchStatus.textContent = '🟢 Twitch подключен';
@@ -1473,16 +1473,15 @@
                         twitchStatus.className = 'btn-twitch-status offline';
                     }
                     
-                    // ОБНОВЛЯЕМ УЧАСТНИКОВ
                     if (data && data.participants) {
                         state.keyword.participants = data.participants;
                         renderParticipants();
                     }
                     
-                    // Обновляем статус активности
                     if (data && data.active !== undefined) {
+                        raffleActive = data.active;
                         state.keyword.active = data.active;
-                        renderParticipants();
+                        updateUI();
                     }
                     
                 } catch (error) {
@@ -1491,41 +1490,31 @@
                     twitchStatus.className = 'btn-twitch-status offline';
                 }
             }
-
+            
             // Проверяем статус Twitch каждые 5 секунд
             twitchCheckInterval = setInterval(checkTwitchStatus, 5000);
             checkTwitchStatus();
-
+            
             function addParticipant(name) {
-                if (!state.keyword.active) return;
+                if (!raffleActive) return;
                 if (state.keyword.participants.includes(name)) return;
                 state.keyword.participants.push(name);
                 renderParticipants();
-                updateMechanic('keyword', {
-                    status: 'active',
-                    keyword: state.keyword.currentKeyword,
-                    participants: state.keyword.participants,
-                    winner: state.keyword.winner,
-                    history: state.history,
-                });
             }
-
+            
             function renderParticipants() {
                 const list = state.keyword.participants;
                 participantCount.textContent = list.length;
                 displayKeyword.textContent = state.keyword.currentKeyword;
-
-                if (state.keyword.active) {
-                    keywordStatus.textContent = 'Сбор...';
-                    keywordStatus.style.color = '#00d4ff';
-                } else if (state.keyword.isDrawing) {
-                    keywordStatus.textContent = 'Выбор победителя...';
-                    keywordStatus.style.color = '#f9ca24';
+            
+                if (raffleActive) {
+                    keywordStatus.textContent = '🟢 Активен';
+                    keywordStatus.style.color = '#00ff64';
                 } else {
-                    keywordStatus.textContent = 'Остановлен';
+                    keywordStatus.textContent = '⏸️ Остановлен';
                     keywordStatus.style.color = '#ff4757';
                 }
-
+            
                 if (list.length === 0) {
                     participantsGrid.innerHTML =
                         `<div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>`;
@@ -1533,258 +1522,231 @@
                 }
                 participantsGrid.innerHTML = list.map(name => `<div class="participant-chip">${name}</div>`).join('');
             }
-
+            
+            function updateUI() {
+                renderParticipants();
+                
+                if (raffleActive) {
+                    startBtn.textContent = '▶️ Сбор...';
+                    startBtn.className = 'btn btn-success';
+                    startBtn.disabled = true;
+                    drawBtn.style.display = 'inline-block';
+                    drawBtn.disabled = false;
+                    resetKeywordBtn.disabled = true;
+                } else {
+                    startBtn.textContent = '▶️ Старт';
+                    startBtn.className = 'btn btn-primary';
+                    startBtn.disabled = false;
+                    drawBtn.style.display = 'none';
+                    drawBtn.disabled = true;
+                    resetKeywordBtn.disabled = false;
+                }
+            }
+            
             function renderHistory() {
                 if (state.history.length === 0) {
                     historyContainer.innerHTML = `<div class="history-empty">История пуста</div>`;
                     return;
                 }
                 historyContainer.innerHTML = state.history.map(item => `
-                        <div class="history-item">
-                            <span class="history-keyword">🎯 <strong>${item.keyword}</strong></span>
-                            <span class="history-participants">👥 ${item.participants} участников</span>
-                            <span class="history-winner">🏆 ${item.winner || '—'}</span>
-                            <span class="history-status ${item.status}">${item.status === 'completed' ? '✅ Завершён' : '🔄 Активен'}</span>
-                            <span class="history-time">${item.time}</span>
-                        </div>
-                    `).join('');
+                    <div class="history-item">
+                        <span class="history-keyword">🎯 <strong>${item.keyword}</strong></span>
+                        <span class="history-participants">👥 ${item.participants} участников</span>
+                        <span class="history-winner">🏆 ${item.winner || '—'}</span>
+                        <span class="history-status ${item.status}">${item.status === 'completed' ? '✅ Завершён' : '🔄 Активен'}</span>
+                        <span class="history-time">${item.time}</span>
+                    </div>
+                `).join('');
             }
-
+            
             function addToHistory(keyword, participants, winner) {
                 const now = new Date();
                 const timeStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit',
                         hour: '2-digit', minute: '2-digit' });
                 state.history.unshift({ keyword, participants: participants.length, winner: winner || '—',
-                    status: winner ? 'completed' : 'active', time: timeStr });
+                    status: 'completed', time: timeStr });
                 renderHistory();
             }
-
+            
             function createConfetti() {
                 const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#f9ca24', '#ff4757', '#00d4ff'];
                 for (let i = 0; i < 50; i++) {
                     const confetti = document.createElement('div');
                     confetti.style.cssText = `
-                            position: fixed;
-                            width: ${6 + Math.random() * 8}px;
-                            height: ${6 + Math.random() * 8}px;
-                            background: ${colors[Math.floor(Math.random() * colors.length)]};
-                            left: ${Math.random() * 100}vw;
-                            top: -20px;
-                            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-                            animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
-                            animation-delay: ${Math.random() * 0.5}s;
-                            z-index: 2001;
-                            pointer-events: none;
-                            transform: rotate(${Math.random() * 360}deg);
-                        `;
+                        position: fixed;
+                        width: ${6 + Math.random() * 8}px;
+                        height: ${6 + Math.random() * 8}px;
+                        background: ${colors[Math.floor(Math.random() * colors.length)]};
+                        left: ${Math.random() * 100}vw;
+                        top: -20px;
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+                        animation: confettiFall ${2 + Math.random() * 3}s linear forwards;
+                        animation-delay: ${Math.random() * 0.5}s;
+                        z-index: 2001;
+                        pointer-events: none;
+                        transform: rotate(${Math.random() * 360}deg);
+                    `;
                     document.body.appendChild(confetti);
                     setTimeout(() => confetti.remove(), 5000);
                 }
             }
-
+            
             function showWinnerOnSite(name, sub) {
                 document.getElementById('winnerModalName').textContent = name;
                 document.getElementById('winnerModalSub').innerHTML = sub || '🎉 Поздравляем!';
                 document.getElementById('winnerModal').classList.add('active');
                 createConfetti();
             }
-
-            // Запуск розыгрыша
+            
+            // ============================================================
+            //  ОБРАБОТЧИКИ КНОПОК
+            // ============================================================
+            
+            // Старт розыгрыша
             startBtn.addEventListener('click', async function() {
+                if (raffleActive) return;
+                
                 const kw = keywordInput.value.trim();
                 if (!kw) { alert('Введите кодовое слово!'); return; }
-
-                if (state.keyword.active) {
-                    // Если активен — ничего не делаем
-                    return;
-                }
-
-                // Проверяем подключение к Twitch
+            
                 if (!twitchConnected) {
-                    alert('⚠️ Twitch не подключен! Запустите start.js');
+                    alert('⚠️ Twitch не подключен!');
                     return;
                 }
-
-                state.keyword.active = true;
-                state.keyword.currentKeyword = kw;
-                state.keyword.participants = [];
+            
+                // Сбрасываем список победителей
+                winnersList = [];
                 state.keyword.winner = null;
-                state.keyword.isDrawing = false;
-                renderParticipants();
-                
-                this.textContent = '⏳ Идёт сбор...';
-                this.className = 'btn btn-success';
-                this.disabled = true;
-                
-                stopBtn.style.display = 'inline-block';
-                drawBtn.style.display = 'none';
-                resetKeywordBtn.disabled = true;
-
-                // Отправляем команду на сервер
+                state.keyword.participants = [];
+            
                 try {
-                    await fetch('/api/webhook?twitch=start', {
+                    const response = await fetch('/api/webhook?twitch=start', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ keyword: kw })
                     });
-                    console.log('✅ Команда старт отправлена');
+                    const data = await response.json();
                     
-                    // Разблокируем кнопку через 2 секунды
-                    setTimeout(() => {
-                        if (state.keyword.active) {
-                            this.disabled = false;
-                            this.textContent = '⏹️ Остановить';
-                            this.className = 'btn btn-danger';
-                        }
-                    }, 2000);
+                    if (data.success) {
+                        raffleActive = true;
+                        state.keyword.active = true;
+                        state.keyword.currentKeyword = kw;
+                        updateUI();
+                        
+                        // Добавляем запись в историю (активная)
+                        const now = new Date();
+                        const timeStr = now.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit',
+                                hour: '2-digit', minute: '2-digit' });
+                        state.history.unshift({ 
+                            keyword: kw, 
+                            participants: 0, 
+                            winner: '—', 
+                            status: 'active', 
+                            time: timeStr,
+                            winners: []
+                        });
+                        renderHistory();
+                    }
                 } catch (error) {
                     console.error('❌ Ошибка запуска:', error);
-                    state.keyword.active = false;
-                    renderParticipants();
-                    this.disabled = false;
-                    this.textContent = '▶️ Старт';
-                    this.className = 'btn btn-primary';
-                    stopBtn.style.display = 'none';
-                    resetKeywordBtn.disabled = false;
                     alert('Ошибка запуска розыгрыша');
                 }
             });
-
-            // Остановка сбора участников
-            stopBtn.addEventListener('click', function() {
-                if (!state.keyword.active) return;
-                
-                state.keyword.active = false;
-                this.style.display = 'none';
-                drawBtn.style.display = 'inline-block';
-                startBtn.textContent = '▶️ Старт';
-                startBtn.className = 'btn btn-primary';
-                startBtn.disabled = false;
-                resetKeywordBtn.disabled = false;
-                renderParticipants();
-                
-                // Отправляем команду остановки на сервер
-                fetch('/api/webhook?twitch=stop', { method: 'POST' }).catch(() => {});
-            });
-
+            
             // Выбор победителя
             drawBtn.addEventListener('click', async function() {
-                if (state.keyword.isDrawing) return;
+                if (this.disabled) return;
                 if (state.keyword.participants.length === 0) {
                     alert('Нет участников!');
                     return;
                 }
-
-                state.keyword.isDrawing = true;
+            
                 this.disabled = true;
-                renderParticipants();
-
+                this.textContent = '🎲 Выбор...';
+            
                 try {
                     const response = await fetch('/api/webhook?twitch=draw', { method: 'POST' });
                     const data = await response.json();
                     
                     if (data.winner) {
+                        // Добавляем победителя в список
+                        winnersList.push(data.winner);
                         state.keyword.winner = data.winner;
+                        
+                        // Обновляем активную запись в истории
+                        if (state.history.length > 0 && state.history[0].status === 'active') {
+                            state.history[0].winners = winnersList;
+                            state.history[0].winner = winnersList.join(', ');
+                            state.history[0].participants = state.keyword.participants.length;
+                            renderHistory();
+                        }
+                        
                         showWinnerOnSite(data.winner);
-                        addToHistory(state.keyword.currentKeyword, state.keyword.participants, data.winner);
-                        state.keyword.active = false;
-                        state.keyword.isDrawing = false;
-                        this.style.display = 'none';
-                        stopBtn.style.display = 'none';
-                        startBtn.textContent = '▶️ Старт';
-                        startBtn.className = 'btn btn-primary';
-                        startBtn.disabled = false;
-                        resetKeywordBtn.disabled = false;
+                        
+                        // Очищаем участников, но оставляем розыгрыш активным
+                        state.keyword.participants = [];
                         renderParticipants();
+                        
+                        // Обновляем участников в Redis
+                        await fetch('/api/webhook?twitch=reset', { method: 'POST' });
+                        
+                        this.textContent = '🎲 Выбрать победителя';
+                        this.disabled = false;
                     } else {
                         alert('Ошибка выбора победителя');
-                        state.keyword.isDrawing = false;
+                        this.textContent = '🎲 Выбрать победителя';
                         this.disabled = false;
-                        renderParticipants();
                     }
                 } catch (error) {
-                    console.error('Ошибка выбора победителя:', error);
+                    console.error('❌ Ошибка:', error);
                     alert('Ошибка выбора победителя');
-                    state.keyword.isDrawing = false;
+                    this.textContent = '🎲 Выбрать победителя';
                     this.disabled = false;
-                    renderParticipants();
                 }
             });
-
-            // Сброс
+            
+            // Сброс розыгрыша
             resetKeywordBtn.addEventListener('click', function() {
-                state.keyword.participants = [];
-                state.keyword.active = false;
-                state.keyword.winner = null;
-                state.keyword.isDrawing = false;
-                renderParticipants();
-                startBtn.textContent = '▶️ Старт';
-                startBtn.className = 'btn btn-primary';
-                startBtn.disabled = false;
-                stopBtn.style.display = 'none';
-                drawBtn.style.display = 'none';
-                drawBtn.disabled = false;
-
-                // Отправляем сброс на сервер
-                fetch('/api/webhook?twitch=reset', { method: 'POST' }).catch(() => {});
+                if (state.keyword.participants.length > 0 && !raffleActive) {
+                    if (!confirm('Очистить всех участников?')) return;
+                }
                 
-                updateMechanic('keyword', {
-                    status: 'idle',
-                    keyword: state.keyword.currentKeyword,
-                    participants: [],
-                    winner: null,
-                    history: state.history,
-                });
+                // Если розыгрыш активен, завершаем его
+                if (raffleActive) {
+                    // Отмечаем активную запись как завершённую
+                    if (state.history.length > 0 && state.history[0].status === 'active') {
+                        state.history[0].status = 'completed';
+                        state.history[0].winner = winnersList.length > 0 ? winnersList.join(', ') : '—';
+                        renderHistory();
+                    }
+                }
+                
+                raffleActive = false;
+                state.keyword.active = false;
+                state.keyword.participants = [];
+                state.keyword.winner = null;
+                winnersList = [];
+                renderParticipants();
+                updateUI();
+                
+                // Очищаем Redis
+                fetch('/api/webhook?twitch=reset', { method: 'POST' }).catch(() => {});
             });
-
+            
+            // Очистка истории
             clearHistoryBtn.addEventListener('click', function() {
                 if (confirm('Очистить всю историю розыгрышей?')) {
                     state.history = [];
                     renderHistory();
-                    updateMechanic('keyword', {
-                        status: state.keyword.active ? 'active' : 'idle',
-                        keyword: state.keyword.currentKeyword,
-                        participants: state.keyword.participants,
-                        winner: state.keyword.winner,
-                        history: state.history,
-                    });
                 }
             });
-
+            
             document.getElementById('closeWinnerBtn').addEventListener('click', function() {
                 document.getElementById('winnerModal').classList.remove('active');
             });
             document.getElementById('winnerModal').addEventListener('click', function(e) {
                 if (e.target === this) this.classList.remove('active');
             });
-
-            const keywordData = await loadState('keyword');
-            if (keywordData) {
-                if (keywordData.keyword) {
-                    state.keyword.currentKeyword = keywordData.keyword;
-                    keywordInput.value = keywordData.keyword;
-                }
-                if (keywordData.participants) {
-                    state.keyword.participants = keywordData.participants;
-                }
-                if (keywordData.winner) {
-                    state.keyword.winner = keywordData.winner;
-                }
-                if (keywordData.history) {
-                    state.history = keywordData.history;
-                }
-                state.keyword.active = keywordData.status === 'active';
-                renderParticipants();
-                renderHistory();
-                if (keywordData.status === 'active') {
-                    startBtn.textContent = '⏹️ Остановить';
-                    startBtn.className = 'btn btn-danger';
-                    startBtn.disabled = false;
-                    stopBtn.style.display = 'inline-block';
-                    drawBtn.style.display = 'none';
-                    resetKeywordBtn.disabled = true;
-                }
-            }
 
             // ============================================================
             //  КОЛЕСО ФОРТУНЫ
