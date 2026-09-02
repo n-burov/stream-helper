@@ -25,7 +25,6 @@ async function syncKeywordState() {
         keyword: keyword,
         participants: participants,
         winner: winner,
-        connected: true,
     };
     
     await redis.set('keyword_state', JSON.stringify(state));
@@ -46,8 +45,7 @@ async function getTwitchStatus() {
         try { participants = JSON.parse(participants); } catch { participants = []; }
     }
     const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
-    const connected = webhookRegistered || isActive || participants.length > 0;
-    return { active: isActive, keyword, participants, connected };
+    return { active: isActive, keyword, participants, connected: webhookRegistered };
 }
 
 async function startRaffle(keyword) {
