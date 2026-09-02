@@ -194,21 +194,6 @@ async function subscribeToEvents() {
 
     const subscriptions = [
         {
-            // Для channel.chat.message используем App Access Token
-            // но в condition указываем user_id того, кто читает чат
-            type: 'channel.chat.message',
-            version: '1',
-            condition: {
-                broadcaster_user_id: config.broadcasterId,
-                user_id: config.botUserId,
-            },
-            transport: {
-                method: 'webhook',
-                callback: `${config.vercelUrl}/api/twitch-webhook`,
-                secret: config.clientSecret,
-            },
-        },
-        {
             type: 'stream.online',
             version: '1',
             condition: {
