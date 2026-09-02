@@ -16,6 +16,9 @@ export const config = {
     broadcasterId: '1525586307',
     botUserId: '1525586307',
 
+    botUsername: 'naburov',
+    channelName: 'naburov',
+
     // Настройки розыгрыша
     keyword: 'Голда',          // Ключевое слово по умолчанию
     cooldown: 5,              // Секунд между сообщениями от одного пользователя
