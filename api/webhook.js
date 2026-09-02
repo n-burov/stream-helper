@@ -72,48 +72,63 @@ export default async function handler(req, res) {
     // ============================================================
     //  TWITCH API (через query param ?twitch=action)
     // ============================================================
-
+    
     if (req.query.twitch) {
         const action = req.query.twitch;
         
         try {
             switch (action) {
                 case 'status':
-                    const status = await getTwitchStatus();
-                    return res.status(200).json(status);
-
+                    const isActive = await redis.get('twitch_raffle_active') === 'true';
+                    const keyword = await redis.get('twitch_keyword') || 'Голда';
+                    const participantsRaw = await redis.get('twitch_participants') || [];
+                    let participants = participantsRaw;
+                    if (typeof participants === 'string') {
+                        try { participants = JSON.parse(participants); } catch { participants = []; }
+                    }
+                    // Проверяем, что вебхук зарегистрирован
+                    const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
+                    return res.status(200).json({ 
+                        active: isActive, 
+                        keyword, 
+                        participants,
+                        connected: webhookRegistered
+                    });
+    
                 case 'start':
-                    const { keyword } = req.body;
-                    if (!keyword) {
+                    const { keyword: kw } = req.body;
+                    if (!kw) {
                         return res.status(400).json({ error: 'keyword is required' });
                     }
-                    await startRaffle(keyword);
+                    await redis.set('twitch_raffle_active', 'true');
+                    await redis.set('twitch_keyword', kw);
+                    await redis.del('twitch_participants');
                     return res.status(200).json({ success: true });
-
+    
                 case 'stop':
-                    await stopRaffle();
+                    await redis.set('twitch_raffle_active', 'false');
                     return res.status(200).json({ success: true });
-
+    
                 case 'reset':
-                    await resetRaffle();
+                    await redis.del('twitch_raffle_active');
+                    await redis.del('twitch_keyword');
+                    await redis.del('twitch_participants');
                     return res.status(200).json({ success: true });
-
+    
                 case 'draw':
-                    const winner = await drawWinner();
-                    if (winner) {
-                        return res.status(200).json({ winner });
-                    } else {
+                    const participantsData = await redis.get('twitch_participants') || [];
+                    let pList = participantsData;
+                    if (typeof pList === 'string') {
+                        try { pList = JSON.parse(pList); } catch { pList = []; }
+                    }
+                    if (pList.length === 0) {
                         return res.status(400).json({ error: 'No participants' });
                     }
-
-                case 'add':
-                    const { username } = req.body;
-                    if (!username) {
-                        return res.status(400).json({ error: 'username is required' });
-                    }
-                    const added = await addParticipant(username);
-                    return res.status(200).json({ success: added });
-
+                    const winner = pList[Math.floor(Math.random() * pList.length)];
+                    await redis.del('twitch_participants');
+                    await redis.set('twitch_raffle_active', 'false');
+                    return res.status(200).json({ winner });
+    
                 default:
                     return res.status(400).json({ error: 'Unknown twitch action' });
             }
