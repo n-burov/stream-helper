@@ -968,6 +968,28 @@
             transform: translateY(-2px);
         }
 
+        .btn-twitch-status {
+            background: rgba(145, 70, 255, 0.15);
+            border: 1px solid rgba(145, 70, 255, 0.25);
+            color: #9146ff;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: default;
+        }
+
+        .btn-twitch-status.online {
+            background: rgba(0, 255, 100, 0.15);
+            border-color: rgba(0, 255, 100, 0.25);
+            color: #00ff64;
+        }
+
+        .btn-twitch-status.offline {
+            background: rgba(255, 71, 87, 0.15);
+            border-color: rgba(255, 71, 87, 0.25);
+            color: #ff4757;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -1143,16 +1165,21 @@
 
         <div class="tab-content active" id="tab1">
             <div class="card">
-                <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
+                <div class="card-title">
+                    <span class="icon">🎯</span> Розыгрыш по ключевому слову
+                    <span class="btn-twitch-status offline" id="twitchStatus">🔴 Не подключен</span>
+                </div>
                 <div class="keyword-setup">
-                    <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="!лут" />
+                    <input type="text" id="keywordInput" placeholder="Введите кодовое слово..." value="Голда" />
                     <button class="btn btn-primary" id="startKeywordBtn">▶️ Старт</button>
-                    <button class="btn btn-danger" id="resetKeywordBtn" style="background:rgba(255,71,87,0.2); border:1px solid rgba(255,71,87,0.1);">🔄 Сброс</button>
+                    <button class="btn btn-gold" id="drawKeywordBtn" style="display:none;">🎲 Выбрать победителя</button>
+                    <button class="btn btn-danger" id="stopKeywordBtn" style="display:none;">⏹️ Стоп</button>
+                    <button class="btn btn-reset" id="resetKeywordBtn">🔄 Сброс</button>
                 </div>
                 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px;">
                     <span style="font-size:14px; color:rgba(255,255,255,0.5);">Участников: <strong id="participantCount">0</strong></span>
                     <span style="font-size:14px; color:rgba(255,255,255,0.5);">Статус: <span id="keywordStatus" style="color:#ff4757;">Остановлен</span></span>
-                    <span style="font-size:14px; color:rgba(255,255,255,0.3);">Слово: <strong id="displayKeyword">!лут</strong></span>
+                    <span style="font-size:14px; color:rgba(255,255,255,0.3);">Слово: <strong id="displayKeyword">Голда</strong></span>
                 </div>
                 <div class="participants-grid" id="participantsGrid">
                     <div style="grid-column:1/-1; text-align:center; color:rgba(255,255,255,0.3); padding:30px;">Пока никого нет 😴</div>
@@ -1349,7 +1376,13 @@
             }
 
             const state = {
-                keyword: { active: false, currentKeyword: '!лут', participants: [], winner: null },
+                keyword: { 
+                    active: false, 
+                    currentKeyword: 'Голда', 
+                    participants: [], 
+                    winner: null,
+                    isDrawing: false 
+                },
                 wheel: {
                     sectors: [],
                     currentRotation: 0,
@@ -1409,6 +1442,8 @@
 
             const keywordInput = document.getElementById('keywordInput');
             const startBtn = document.getElementById('startKeywordBtn');
+            const drawBtn = document.getElementById('drawKeywordBtn');
+            const stopBtn = document.getElementById('stopKeywordBtn');
             const resetKeywordBtn = document.getElementById('resetKeywordBtn');
             const participantsGrid = document.getElementById('participantsGrid');
             const participantCount = document.getElementById('participantCount');
@@ -1416,6 +1451,35 @@
             const displayKeyword = document.getElementById('displayKeyword');
             const historyContainer = document.getElementById('historyContainer');
             const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            const twitchStatus = document.getElementById('twitchStatus');
+
+            let twitchConnected = false;
+            let twitchCheckInterval = null;
+
+            // Проверка статуса Twitch
+            async function checkTwitchStatus() {
+                try {
+                    const response = await fetch('/api/twitch/status');
+                    const data = await response.json();
+                    if (data && data.connected) {
+                        twitchConnected = true;
+                        twitchStatus.textContent = '🟢 Twitch подключен';
+                        twitchStatus.className = 'btn-twitch-status online';
+                    } else {
+                        twitchConnected = false;
+                        twitchStatus.textContent = '🔴 Twitch не подключен';
+                        twitchStatus.className = 'btn-twitch-status offline';
+                    }
+                } catch (error) {
+                    twitchConnected = false;
+                    twitchStatus.textContent = '🔴 Twitch не подключен';
+                    twitchStatus.className = 'btn-twitch-status offline';
+                }
+            }
+
+            // Проверяем статус Twitch каждые 5 секунд
+            twitchCheckInterval = setInterval(checkTwitchStatus, 5000);
+            checkTwitchStatus();
 
             function addParticipant(name) {
                 if (!state.keyword.active) return;
@@ -1437,8 +1501,11 @@
                 displayKeyword.textContent = state.keyword.currentKeyword;
 
                 if (state.keyword.active) {
-                    keywordStatus.textContent = 'Активен';
-                    keywordStatus.style.color = '#00ff64';
+                    keywordStatus.textContent = 'Сбор...';
+                    keywordStatus.style.color = '#00d4ff';
+                } else if (state.keyword.isDrawing) {
+                    keywordStatus.textContent = 'Выбор победителя...';
+                    keywordStatus.style.color = '#f9ca24';
                 } else {
                     keywordStatus.textContent = 'Остановлен';
                     keywordStatus.style.color = '#ff4757';
@@ -1507,23 +1574,19 @@
                 createConfetti();
             }
 
-            startBtn.addEventListener('click', function() {
+            // Запуск розыгрыша
+            startBtn.addEventListener('click', async function() {
                 const kw = keywordInput.value.trim();
                 if (!kw) { alert('Введите кодовое слово!'); return; }
 
                 if (state.keyword.active) {
-                    state.keyword.active = false;
-                    renderParticipants();
-                    this.textContent = '▶️ Старт';
-                    this.className = 'btn btn-primary';
+                    // Если активен — ничего не делаем
+                    return;
+                }
 
-                    updateMechanic('keyword', {
-                        status: 'inactive',
-                        keyword: state.keyword.currentKeyword,
-                        participants: state.keyword.participants,
-                        winner: state.keyword.winner,
-                        history: state.history,
-                    });
+                // Проверяем подключение к Twitch
+                if (!twitchConnected) {
+                    alert('⚠️ Twitch не подключен! Запустите start.js');
                     return;
                 }
 
@@ -1531,28 +1594,125 @@
                 state.keyword.currentKeyword = kw;
                 state.keyword.participants = [];
                 state.keyword.winner = null;
+                state.keyword.isDrawing = false;
                 renderParticipants();
-                this.textContent = '⏹️ Стоп';
-                this.className = 'btn btn-danger';
+                
+                this.textContent = '⏳ Идёт сбор...';
+                this.className = 'btn btn-success';
+                this.disabled = true;
+                
+                stopBtn.style.display = 'inline-block';
+                drawBtn.style.display = 'none';
+                resetKeywordBtn.disabled = true;
 
-                addToHistory(kw, [], null);
-                updateMechanic('keyword', {
-                    status: 'active',
-                    keyword: kw,
-                    participants: [],
-                    winner: null,
-                    history: state.history,
-                });
+                // Отправляем команду на сервер
+                try {
+                    await fetch('/api/twitch/start', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ keyword: kw })
+                    });
+                    console.log('✅ Команда старт отправлена');
+                    
+                    // Разблокируем кнопку через 2 секунды
+                    setTimeout(() => {
+                        if (state.keyword.active) {
+                            this.disabled = false;
+                            this.textContent = '⏹️ Остановить';
+                            this.className = 'btn btn-danger';
+                        }
+                    }, 2000);
+                } catch (error) {
+                    console.error('❌ Ошибка запуска:', error);
+                    state.keyword.active = false;
+                    renderParticipants();
+                    this.disabled = false;
+                    this.textContent = '▶️ Старт';
+                    this.className = 'btn btn-primary';
+                    stopBtn.style.display = 'none';
+                    resetKeywordBtn.disabled = false;
+                    alert('Ошибка запуска розыгрыша');
+                }
             });
 
+            // Остановка сбора участников
+            stopBtn.addEventListener('click', function() {
+                if (!state.keyword.active) return;
+                
+                state.keyword.active = false;
+                this.style.display = 'none';
+                drawBtn.style.display = 'inline-block';
+                startBtn.textContent = '▶️ Старт';
+                startBtn.className = 'btn btn-primary';
+                startBtn.disabled = false;
+                resetKeywordBtn.disabled = false;
+                renderParticipants();
+                
+                // Отправляем команду остановки на сервер
+                fetch('/api/twitch/stop', { method: 'POST' }).catch(() => {});
+            });
+
+            // Выбор победителя
+            drawBtn.addEventListener('click', async function() {
+                if (state.keyword.isDrawing) return;
+                if (state.keyword.participants.length === 0) {
+                    alert('Нет участников!');
+                    return;
+                }
+
+                state.keyword.isDrawing = true;
+                this.disabled = true;
+                renderParticipants();
+
+                try {
+                    const response = await fetch('/api/twitch/draw', { method: 'POST' });
+                    const data = await response.json();
+                    
+                    if (data.winner) {
+                        state.keyword.winner = data.winner;
+                        showWinnerOnSite(data.winner);
+                        addToHistory(state.keyword.currentKeyword, state.keyword.participants, data.winner);
+                        state.keyword.active = false;
+                        state.keyword.isDrawing = false;
+                        this.style.display = 'none';
+                        stopBtn.style.display = 'none';
+                        startBtn.textContent = '▶️ Старт';
+                        startBtn.className = 'btn btn-primary';
+                        startBtn.disabled = false;
+                        resetKeywordBtn.disabled = false;
+                        renderParticipants();
+                    } else {
+                        alert('Ошибка выбора победителя');
+                        state.keyword.isDrawing = false;
+                        this.disabled = false;
+                        renderParticipants();
+                    }
+                } catch (error) {
+                    console.error('Ошибка выбора победителя:', error);
+                    alert('Ошибка выбора победителя');
+                    state.keyword.isDrawing = false;
+                    this.disabled = false;
+                    renderParticipants();
+                }
+            });
+
+            // Сброс
             resetKeywordBtn.addEventListener('click', function() {
                 state.keyword.participants = [];
                 state.keyword.active = false;
                 state.keyword.winner = null;
+                state.keyword.isDrawing = false;
                 renderParticipants();
                 startBtn.textContent = '▶️ Старт';
                 startBtn.className = 'btn btn-primary';
+                startBtn.disabled = false;
+                stopBtn.style.display = 'none';
+                drawBtn.style.display = 'none';
+                drawBtn.disabled = false;
 
+                // Отправляем сброс на сервер
+                fetch('/api/twitch/reset', { method: 'POST' }).catch(() => {});
+                
                 updateMechanic('keyword', {
                     status: 'idle',
                     keyword: state.keyword.currentKeyword,
@@ -1602,9 +1762,12 @@
                 renderParticipants();
                 renderHistory();
                 if (keywordData.status === 'active') {
-                    startBtn.textContent = '⏹️ Стоп';
+                    startBtn.textContent = '⏹️ Остановить';
                     startBtn.className = 'btn btn-danger';
                     startBtn.disabled = false;
+                    stopBtn.style.display = 'inline-block';
+                    drawBtn.style.display = 'none';
+                    resetKeywordBtn.disabled = true;
                 }
             }
 
@@ -1894,7 +2057,7 @@
             // ============================================================
             //  СНАЙПЕР
             // ============================================================
-            
+
             const sniperArena = document.getElementById('sniperArena');
             const sniperAlive = document.getElementById('sniperAlive');
             const sniperDead = document.getElementById('sniperDead');
@@ -1906,31 +2069,10 @@
             const sniperStuckBtn = document.getElementById('sniperStuckBtn');
             const sniperAddBtn = document.getElementById('sniperAddBtn');
             const sniperNameInput = document.getElementById('sniperNameInput');
-            
+
             let sniperCheckInterval = null;
             let hasGameStarted = false;
-            let sniperCurrentSpinId = null;
-            
-            async function sendWinnerToOverlay(name) {
-                try {
-                    await fetch('/api/winner', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: name,
-                            emoji: '🔫',
-                            title: 'Победитель!',
-                            subtitle: '🎯 Выжил в перестрелке!',
-                            tag: '🔫 Снайпер',
-                            icon: null,
-                            color: null,
-                        })
-                    });
-                } catch (error) {
-                    console.error('❌ Ошибка отправки победителя:', error);
-                }
-            }
-            
+
             function sendSniperState() {
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
@@ -1939,51 +2081,77 @@
                     winnerName: state.sniper.winnerName,
                 });
             }
-            
+
             function renderSniper() {
                 const all = state.sniper.participants;
                 if (all.length === 0) {
-                    sniperArena.innerHTML = `<div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">👥 Добавьте участников</div>`;
+                    sniperArena.innerHTML = `
+                        <div style="width:100%; text-align:center; color:rgba(255,255,255,0.15); padding:40px; font-size:14px;">
+                            👥 Добавьте участников
+                        </div>
+                    `;
                     updateSniperUI();
                     return;
                 }
-            
+
                 const sorted = [...all].sort((a, b) => {
                     if (a.alive && !b.alive) return -1;
                     if (!a.alive && b.alive) return 1;
                     return a.id - b.id;
                 });
-            
+
                 sniperArena.innerHTML = sorted.map((p) => {
                     const isEliminated = !p.alive;
                     const isSelected = state.sniper.victimId === p.id;
+
                     let classes = 'sniper-participant';
                     if (isEliminated) classes += ' eliminated';
                     if (isSelected) classes += ' selected';
+
                     const skullIcon = isEliminated ? ' 💀' : '';
-                    return `<div class="${classes}" data-id="${p.id}"><span class="id-badge">#${p.id}</span>${p.name}${skullIcon}</div>`;
+
+                    return `
+                        <div class="${classes}" data-id="${p.id}">
+                            <span class="id-badge">#${p.id}</span>
+                            ${p.name}${skullIcon}
+                        </div>
+                    `;
                 }).join('');
-            
+
                 updateSniperUI();
             }
-            
+
             function updateSniperUI() {
                 const alive = state.sniper.participants.filter(p => p.alive);
                 const dead = state.sniper.participants.filter(p => !p.alive);
                 sniperAlive.textContent = alive.length;
                 sniperDead.textContent = dead.length;
                 sniperTotal.textContent = state.sniper.participants.length;
-            
+
                 const canShoot = state.sniper.status === 'idle' && alive.length > 1;
                 sniperShootBtn.disabled = !canShoot;
+
                 sniperStuckBtn.style.display = (state.sniper.status === 'shooting') ? 'inline-block' : 'none';
-            
-                // Победа
+
                 if (alive.length === 1 && hasGameStarted && state.sniper.participants.length > 1 && state.sniper.status !== 'winner') {
                     state.sniper.status = 'winner';
                     state.sniper.winnerName = alive[0].name;
                     sendSniperState();
-                    sendWinnerToOverlay(alive[0].name);
+                    
+                    fetch('/api/winner', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: alive[0].name,
+                            emoji: '🔫',
+                            title: 'Победитель!',
+                            subtitle: '🎯 Выжил в перестрелке!',
+                            tag: '🔫 Снайпер',
+                            icon: null,
+                            color: null,
+                        })
+                    }).catch(() => {});
+                    
                     showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                     sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
                     sniperTimer.textContent = '🎉 Поздравляем!';
@@ -1991,14 +2159,14 @@
                     renderSniper();
                     return;
                 }
-            
+
                 if (alive.length === 0 && state.sniper.participants.length > 0) {
                     sniperStatus.innerHTML = '💀 <span class="danger">Все выбыли! Ничья</span>';
                     sniperTimer.textContent = '😵 Никто не выжил';
                     sniperShootBtn.disabled = true;
                     return;
                 }
-            
+
                 if (state.sniper.status === 'shooting') {
                     sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                     sniperTimer.textContent = '🎯 Ожидание оверлея';
@@ -2022,7 +2190,7 @@
                     sniperTimer.textContent = `👥 Живых: ${alive.length}`;
                 }
             }
-            
+
             function addSniperParticipant(name) {
                 const trimmed = name.trim();
                 if (!trimmed) return;
@@ -2045,7 +2213,7 @@
                 sniperNameInput.value = '';
                 sniperNameInput.focus();
             }
-            
+
             function resetSniper() {
                 if (sniperCheckInterval) {
                     clearInterval(sniperCheckInterval);
@@ -2057,7 +2225,6 @@
                 state.sniper.status = 'idle';
                 state.sniper.winnerName = null;
                 hasGameStarted = false;
-                sniperCurrentSpinId = null;
                 sniperStatus.innerHTML = '⏸️ Ожидание';
                 sniperTimer.textContent = '👥 Ожидание';
                 sniperStuckBtn.style.display = 'none';
@@ -2065,12 +2232,11 @@
                 updateMechanic('sniper', { status: 'reset' });
                 sendSniperState();
             }
-            
+
             function stuckReset() {
                 if (state.sniper.status === 'shooting') {
                     state.sniper.status = 'idle';
                     state.sniper.victimId = null;
-                    sniperCurrentSpinId = null;
                     sniperStatus.innerHTML = `⏸️ <span style="color:rgba(255,255,255,0.3);">Сброшено</span>`;
                     sniperTimer.textContent = '🔄 Готово';
                     sniperStuckBtn.style.display = 'none';
@@ -2083,9 +2249,10 @@
                             sniperTimer.textContent = `👥 Живых: ${alive.length}`;
                         }
                     }, 2000);
+                    console.log('🔄 Ожидание выстрела сброшено');
                 }
             }
-            
+
             const sniperData = await loadState('sniper');
             if (sniperData && sniperData.participants && sniperData.participants.length > 0) {
                 state.sniper.participants = sniperData.participants;
@@ -2098,17 +2265,31 @@
                 }
                 renderSniper();
             }
-            
+
             function startSniperShoot() {
                 if (state.sniper.status === 'shooting' || state.sniper.status === 'shot') return;
-            
+
                 const alive = state.sniper.participants.filter(p => p.alive);
                 if (alive.length <= 1) {
                     if (alive.length === 1 && hasGameStarted && state.sniper.status !== 'winner') {
                         state.sniper.status = 'winner';
                         state.sniper.winnerName = alive[0].name;
                         sendSniperState();
-                        sendWinnerToOverlay(alive[0].name);
+                        
+                        fetch('/api/winner', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: alive[0].name,
+                                emoji: '🔫',
+                                title: 'Победитель!',
+                                subtitle: '🎯 Выжил в снайперской дуэли!',
+                                tag: '🔫 Снайпер',
+                                icon: null,
+                                color: null,
+                            })
+                        }).catch(() => {});
+                        
                         showWinnerOnSite(alive[0].name, '🎯 Выжил в снайперской дуэли!');
                         sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${alive[0].name}!</span>`;
                         sniperTimer.textContent = '🎉 Поздравляем!';
@@ -2117,34 +2298,34 @@
                     }
                     return;
                 }
-            
+
                 hasGameStarted = true;
-            
+
                 const victim = alive[Math.floor(Math.random() * alive.length)];
                 state.sniper.victimId = victim.id;
                 state.sniper.status = 'shooting';
-                sniperCurrentSpinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-            
+                const spinId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
                 renderSniper();
                 sendSniperState();
-            
+
                 sniperShootBtn.disabled = true;
                 sniperStatus.innerHTML = `🔍 <span class="highlight">Выстрел...</span>`;
                 sniperTimer.textContent = '🎯 Ожидание оверлея';
                 sniperStuckBtn.style.display = 'inline-block';
-            
+
                 updateMechanic('sniper', {
                     participants: state.sniper.participants,
                     status: 'shooting',
                     victimId: state.sniper.victimId,
-                    spinId: sniperCurrentSpinId,
+                    spinId: spinId,
                 });
-            
+
                 if (sniperCheckInterval) {
                     clearInterval(sniperCheckInterval);
                     sniperCheckInterval = null;
                 }
-            
+
                 sniperCheckInterval = setInterval(async () => {
                     try {
                         const resp = await fetch('/api/webhook?mechanic=sniper');
@@ -2170,7 +2351,21 @@
                                 state.sniper.status = 'winner';
                                 state.sniper.winnerName = aliveLeft[0].name;
                                 sendSniperState();
-                                sendWinnerToOverlay(aliveLeft[0].name);
+                                
+                                fetch('/api/winner', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        name: aliveLeft[0].name,
+                                        emoji: '🔫',
+                                        title: 'Победитель!',
+                                        subtitle: '🎯 Выжил в снайперской дуэли!',
+                                        tag: '🔫 Снайпер',
+                                        icon: null,
+                                        color: null,
+                                    })
+                                }).catch(() => {});
+                                
                                 showWinnerOnSite(aliveLeft[0].name, '🎯 Выжил в снайперской дуэли!');
                                 sniperStatus.innerHTML = `🏆 <span class="winner-text">Победитель: ${aliveLeft[0].name}!</span>`;
                                 sniperTimer.textContent = '🎉 Поздравляем!';
@@ -2199,19 +2394,21 @@
                     }
                 }, 500);
             }
-            
+
             sniperAddBtn.addEventListener('click', () => addSniperParticipant(sniperNameInput.value));
             sniperNameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') addSniperParticipant(sniperNameInput.value);
             });
-            
+
             sniperShootBtn.addEventListener('click', startSniperShoot);
             sniperResetBtn.addEventListener('click', resetSniper);
             sniperStuckBtn.addEventListener('click', stuckReset);
-            
+
             renderSniper();
+
             console.log('🎮 Стример-хаб загружен!');
             console.log('📦 Состояние:', state);
+            console.log('🔌 Для работы розыгрыша по ключевому слову запустите: node start.js');
         }
 
         checkAuth();
