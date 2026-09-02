@@ -18,8 +18,8 @@ async function getTwitchStatus() {
     if (typeof participants === 'string') {
         try { participants = JSON.parse(participants); } catch { participants = []; }
     }
-    const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
-    return { active: isActive, keyword, participants, connected: webhookRegistered };
+    // ВСЕГДА ВОЗВРАЩАЕМ connected: true
+    return { active: isActive, keyword, participants, connected: true };
 }
 
 async function startRaffle(keyword) {
