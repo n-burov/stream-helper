@@ -1459,7 +1459,7 @@
             // Проверка статуса Twitch
             async function checkTwitchStatus() {
                 try {
-                    const response = await fetch('/api/twitch/status');
+                    const response = await fetch('/api/webhook?twitch=status');
                     const data = await response.json();
                     if (data && data.connected) {
                         twitchConnected = true;
@@ -1607,7 +1607,7 @@
 
                 // Отправляем команду на сервер
                 try {
-                    await fetch('/api/twitch/start', {
+                    await fetch('/api/webhook?twitch=start', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ keyword: kw })
@@ -1649,7 +1649,7 @@
                 renderParticipants();
                 
                 // Отправляем команду остановки на сервер
-                fetch('/api/twitch/stop', { method: 'POST' }).catch(() => {});
+                fetch(''/api/webhook?twitch=stop'', { method: 'POST' }).catch(() => {});
             });
 
             // Выбор победителя
@@ -1665,7 +1665,7 @@
                 renderParticipants();
 
                 try {
-                    const response = await fetch('/api/twitch/draw', { method: 'POST' });
+                    const response = await fetch('/api/webhook?twitch=draw', { method: 'POST' });
                     const data = await response.json();
                     
                     if (data.winner) {
@@ -1711,7 +1711,7 @@
                 drawBtn.disabled = false;
 
                 // Отправляем сброс на сервер
-                fetch('/api/twitch/reset', { method: 'POST' }).catch(() => {});
+                fetch('/api/webhook?twitch=reset', { method: 'POST' }).catch(() => {});
                 
                 updateMechanic('keyword', {
                     status: 'idle',
