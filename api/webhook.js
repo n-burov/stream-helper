@@ -23,9 +23,16 @@ async function getTwitchStatus() {
 }
 
 async function startRaffle(keyword) {
+    console.log('📝 startRaffle вызван с ключевым словом:', keyword);
+    
     await redis.set('twitch_raffle_active', 'true');
     await redis.set('twitch_keyword', keyword);
     await redis.del('twitch_participants');
+    
+    // Проверяем, что записалось
+    const check = await redis.get('twitch_raffle_active');
+    console.log('🔍 twitch_raffle_active после записи =', check);
+    
     return true;
 }
 
