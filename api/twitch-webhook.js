@@ -107,6 +107,65 @@ async function handleChallenge(req) {
 }
 
 // ============================================================
+//  ОБНОВЛЕНИЕ USER ACCESS TOKEN
+// ============================================================
+
+async function refreshAccessToken() {
+    try {
+        console.log('🔄 Обновляем User Access Token...');
+        const response = await fetch('https://id.twitch.tv/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: config.clientId,
+                client_secret: config.clientSecret,
+                refresh_token: config.refreshToken,
+                grant_type: 'refresh_token',
+            }),
+        });
+        const data = await response.json();
+        if (data.access_token) {
+            console.log('✅ User Access Token обновлён');
+            return data.access_token;
+        }
+        console.error('❌ Ошибка обновления User Access Token:', data);
+        return null;
+    } catch (error) {
+        console.error('❌ Ошибка обновления User Access Token:', error);
+        return null;
+    }
+}
+
+// ============================================================
+//  ПОЛУЧЕНИЕ APP ACCESS TOKEN (для создания подписок)
+// ============================================================
+
+async function getAppAccessToken() {
+    try {
+        console.log('🔄 Получаем App Access Token...');
+        const response = await fetch('https://id.twitch.tv/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: config.clientId,
+                client_secret: config.clientSecret,
+                grant_type: 'client_credentials',
+            }),
+        });
+        const data = await response.json();
+        if (data.access_token) {
+            console.log('✅ App Access Token получен');
+            return data.access_token;
+        }
+        console.error('❌ Ошибка получения App Access Token:', data);
+        return null;
+    } catch (error) {
+        console.error('❌ Ошибка получения App Access Token:', error);
+        return null;
+    }
+}
+
+// ============================================================
 //  ОБРАБОТКА ПОДПИСКИ НА СОБЫТИЯ
 // ============================================================
 
@@ -117,29 +176,18 @@ async function subscribeToEvents() {
     console.log(`📡 Bot User ID: ${config.botUserId}`);
     console.log(`📡 Callback URL: ${config.vercelUrl}/api/twitch-webhook`);
 
-    const token = await refreshAccessToken();
-    if (!token) {
-        console.error('❌ Не удалось получить токен для подписки');
+    // Получаем App Access Token (для создания подписок)
+    const appToken = await getAppAccessToken();
+    if (!appToken) {
+        console.error('❌ Не удалось получить App Access Token');
         return false;
     }
-    console.log('✅ Токен получен');
+    console.log('✅ App Access Token получен');
 
-    // Проверяем токен — получаем информацию о пользователе
-    try {
-        const userCheck = await fetch('https://api.twitch.tv/helix/users', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Client-Id': config.clientId,
-            }
-        });
-        const userData = await userCheck.json();
-        if (userData.data && userData.data.length > 0) {
-            console.log(`✅ Токен принадлежит пользователю: ${userData.data[0].login}`);
-        } else {
-            console.warn('⚠️ Не удалось проверить токен:', userData);
-        }
-    } catch (error) {
-        console.warn('⚠️ Ошибка проверки токена:', error);
+    // User Access Token нужен только для проверки (опционально)
+    const userToken = await refreshAccessToken();
+    if (userToken) {
+        console.log('✅ User Token получен (для проверки)');
     }
 
     const subscriptions = [
@@ -171,7 +219,6 @@ async function subscribeToEvents() {
     ];
 
     let allSuccess = true;
-    let errors = [];
 
     for (const sub of subscriptions) {
         console.log(`📝 Создаём подписку на ${sub.type}...`);
@@ -182,7 +229,7 @@ async function subscribeToEvents() {
                 `https://api.twitch.tv/helix/eventsub/subscriptions?type=${sub.type}&condition.broadcaster_user_id=${config.broadcasterId}`,
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${appToken}`,
                         'Client-Id': config.clientId,
                     }
                 }
@@ -199,7 +246,7 @@ async function subscribeToEvents() {
             const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${appToken}`,
                     'Client-Id': config.clientId,
                     'Content-Type': 'application/json',
                 },
@@ -221,12 +268,10 @@ async function subscribeToEvents() {
                 console.error(`❌ Ошибка подписки на ${sub.type}:`);
                 console.error(`   Статус: ${response.status}`);
                 console.error(`   Ответ:`, errorJson);
-                errors.push({ type: sub.type, status: response.status, error: errorJson });
                 allSuccess = false;
             }
         } catch (error) {
             console.error(`❌ Исключение при подписке на ${sub.type}:`, error);
-            errors.push({ type: sub.type, error: error.message });
             allSuccess = false;
         }
     }
@@ -235,41 +280,10 @@ async function subscribeToEvents() {
         console.log('✅ Все подписки созданы успешно!');
         await redis.set('twitch_webhook_registered', 'true');
     } else {
-        console.error('❌ Некоторые подписки не созданы:');
-        console.error(JSON.stringify(errors, null, 2));
+        console.error('❌ Некоторые подписки не созданы');
     }
 
     return allSuccess;
-}
-
-// ============================================================
-//  ОБНОВЛЕНИЕ ТОКЕНА
-// ============================================================
-
-async function refreshAccessToken() {
-    try {
-        console.log('🔄 Обновляем токен...');
-        const response = await fetch('https://id.twitch.tv/oauth2/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                client_id: config.clientId,
-                client_secret: config.clientSecret,
-                refresh_token: config.refreshToken,
-                grant_type: 'refresh_token',
-            }),
-        });
-        const data = await response.json();
-        if (data.access_token) {
-            console.log('✅ Токен обновлён');
-            return data.access_token;
-        }
-        console.error('❌ Ошибка обновления токена:', data);
-        throw new Error(`Не удалось обновить токен: ${JSON.stringify(data)}`);
-    } catch (error) {
-        console.error('❌ Ошибка обновления токена:', error);
-        return null;
-    }
 }
 
 // ============================================================
@@ -278,9 +292,9 @@ async function refreshAccessToken() {
 
 async function deleteAllSubscriptions() {
     console.log('🗑️ Удаляем все подписки...');
-    const token = await refreshAccessToken();
-    if (!token) {
-        console.error('❌ Не удалось получить токен');
+    const appToken = await getAppAccessToken();
+    if (!appToken) {
+        console.error('❌ Не удалось получить App Access Token');
         return false;
     }
 
@@ -288,7 +302,7 @@ async function deleteAllSubscriptions() {
         // Получаем список всех подписок
         const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${appToken}`,
                 'Client-Id': config.clientId,
             }
         });
@@ -309,7 +323,7 @@ async function deleteAllSubscriptions() {
                 {
                     method: 'DELETE',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${appToken}`,
                         'Client-Id': config.clientId,
                     }
                 }
