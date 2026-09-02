@@ -88,9 +88,6 @@ async function handleChatMessage(event) {
         participants.push(userName);
         await redis.set(participantsKey, JSON.stringify(participants));
         console.log(`✅ ${userName} добавлен в розыгрыш! (Всего: ${participants.length})`);
-        
-        // Отправляем уведомление в winner-канал для оверлея (опционально)
-        // Можно отправить событие "новый участник" если нужно
     } else {
         console.log(`👤 ${userName} уже участвует`);
     }
@@ -114,10 +111,35 @@ async function handleChallenge(req) {
 // ============================================================
 
 async function subscribeToEvents() {
+    console.log('🚀 Начинаем создание подписок...');
+    console.log(`📡 Client ID: ${config.clientId}`);
+    console.log(`📡 Broadcaster ID: ${config.broadcasterId}`);
+    console.log(`📡 Bot User ID: ${config.botUserId}`);
+    console.log(`📡 Callback URL: ${config.vercelUrl}/api/twitch-webhook`);
+
     const token = await refreshAccessToken();
     if (!token) {
         console.error('❌ Не удалось получить токен для подписки');
         return false;
+    }
+    console.log('✅ Токен получен');
+
+    // Проверяем токен — получаем информацию о пользователе
+    try {
+        const userCheck = await fetch('https://api.twitch.tv/helix/users', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': config.clientId,
+            }
+        });
+        const userData = await userCheck.json();
+        if (userData.data && userData.data.length > 0) {
+            console.log(`✅ Токен принадлежит пользователю: ${userData.data[0].login}`);
+        } else {
+            console.warn('⚠️ Не удалось проверить токен:', userData);
+        }
+    } catch (error) {
+        console.warn('⚠️ Ошибка проверки токена:', error);
     }
 
     const subscriptions = [
@@ -130,7 +152,7 @@ async function subscribeToEvents() {
             },
             transport: {
                 method: 'webhook',
-                callback: `${process.env.VERCEL_URL || 'https://stream-helper-psi.vercel.app'}/api/twitch-webhook`,
+                callback: `${config.vercelUrl}/api/twitch-webhook`,
                 secret: config.clientSecret,
             },
         },
@@ -142,15 +164,18 @@ async function subscribeToEvents() {
             },
             transport: {
                 method: 'webhook',
-                callback: `${process.env.VERCEL_URL || 'https://stream-helper-psi.vercel.app'}/api/twitch-webhook`,
+                callback: `${config.vercelUrl}/api/twitch-webhook`,
                 secret: config.clientSecret,
             },
         },
     ];
 
     let allSuccess = true;
+    let errors = [];
 
     for (const sub of subscriptions) {
+        console.log(`📝 Создаём подписку на ${sub.type}...`);
+
         try {
             // Проверяем, есть ли уже такая подписка
             const existing = await fetch(
@@ -165,10 +190,12 @@ async function subscribeToEvents() {
             const existingData = await existing.json();
             
             if (existingData.data && existingData.data.length > 0) {
-                console.log(`ℹ️ Подписка на ${sub.type} уже существует`);
+                console.log(`ℹ️ Подписка на ${sub.type} уже существует, пропускаем`);
                 continue;
             }
 
+            console.log(`📤 Отправляем запрос на создание подписки ${sub.type}...`);
+            
             const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
                 method: 'POST',
                 headers: {
@@ -179,17 +206,37 @@ async function subscribeToEvents() {
                 body: JSON.stringify(sub),
             });
 
+            const responseText = await response.text();
+
             if (response.status === 202) {
-                console.log(`✅ Подписка на ${sub.type} создана`);
+                console.log(`✅ Подписка на ${sub.type} создана успешно`);
+                await redis.set('twitch_webhook_registered', 'true');
             } else {
-                const error = await response.text();
-                console.warn(`⚠️ Ошибка подписки на ${sub.type}:`, error);
+                let errorJson;
+                try {
+                    errorJson = JSON.parse(responseText);
+                } catch {
+                    errorJson = { error: responseText };
+                }
+                console.error(`❌ Ошибка подписки на ${sub.type}:`);
+                console.error(`   Статус: ${response.status}`);
+                console.error(`   Ответ:`, errorJson);
+                errors.push({ type: sub.type, status: response.status, error: errorJson });
                 allSuccess = false;
             }
         } catch (error) {
-            console.error(`❌ Ошибка подписки на ${sub.type}:`, error);
+            console.error(`❌ Исключение при подписке на ${sub.type}:`, error);
+            errors.push({ type: sub.type, error: error.message });
             allSuccess = false;
         }
+    }
+
+    if (allSuccess) {
+        console.log('✅ Все подписки созданы успешно!');
+        await redis.set('twitch_webhook_registered', 'true');
+    } else {
+        console.error('❌ Некоторые подписки не созданы:');
+        console.error(JSON.stringify(errors, null, 2));
     }
 
     return allSuccess;
@@ -201,6 +248,7 @@ async function subscribeToEvents() {
 
 async function refreshAccessToken() {
     try {
+        console.log('🔄 Обновляем токен...');
         const response = await fetch('https://id.twitch.tv/oauth2/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -216,10 +264,69 @@ async function refreshAccessToken() {
             console.log('✅ Токен обновлён');
             return data.access_token;
         }
-        throw new Error('Не удалось обновить токен');
+        console.error('❌ Ошибка обновления токена:', data);
+        throw new Error(`Не удалось обновить токен: ${JSON.stringify(data)}`);
     } catch (error) {
         console.error('❌ Ошибка обновления токена:', error);
         return null;
+    }
+}
+
+// ============================================================
+//  УДАЛЕНИЕ ВСЕХ ПОДПИСОК (для сброса)
+// ============================================================
+
+async function deleteAllSubscriptions() {
+    console.log('🗑️ Удаляем все подписки...');
+    const token = await refreshAccessToken();
+    if (!token) {
+        console.error('❌ Не удалось получить токен');
+        return false;
+    }
+
+    try {
+        // Получаем список всех подписок
+        const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': config.clientId,
+            }
+        });
+        const data = await response.json();
+        
+        if (!data.data || data.data.length === 0) {
+            console.log('ℹ️ Нет активных подписок');
+            return true;
+        }
+
+        console.log(`📋 Найдено ${data.data.length} подписок`);
+
+        for (const sub of data.data) {
+            const id = sub.id;
+            console.log(`🗑️ Удаляем подписку ${id} (${sub.type})...`);
+            const deleteResponse = await fetch(
+                `https://api.twitch.tv/helix/eventsub/subscriptions?id=${id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Client-Id': config.clientId,
+                    }
+                }
+            );
+            if (deleteResponse.status === 204) {
+                console.log(`✅ Подписка ${id} удалена`);
+            } else {
+                console.warn(`⚠️ Ошибка удаления подписки ${id}: ${deleteResponse.status}`);
+            }
+        }
+
+        await redis.del('twitch_webhook_registered');
+        console.log('✅ Все подписки удалены');
+        return true;
+    } catch (error) {
+        console.error('❌ Ошибка удаления подписок:', error);
+        return false;
     }
 }
 
@@ -237,9 +344,18 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    // GET запрос — для подписки (challenge)
+    // GET запросы
     if (req.method === 'GET') {
-        // Инициализация подписок при GET запросе с параметром subscribe
+        // Удаление всех подписок
+        if (req.query.delete === 'true') {
+            const result = await deleteAllSubscriptions();
+            return res.status(200).json({ 
+                success: result,
+                message: result ? 'Все подписки удалены' : 'Ошибка при удалении подписок'
+            });
+        }
+
+        // Создание подписок
         if (req.query.subscribe === 'true') {
             const result = await subscribeToEvents();
             return res.status(200).json({ 
@@ -252,12 +368,17 @@ export default async function handler(req, res) {
         if (req.query.status === 'true') {
             const isActive = await redis.get('twitch_raffle_active') === 'true';
             const keyword = await redis.get('twitch_keyword') || 'Голда';
-            const participants = await redis.get('twitch_participants') || [];
+            const participantsRaw = await redis.get('twitch_participants') || [];
+            let participants = participantsRaw;
+            if (typeof participants === 'string') {
+                try { participants = JSON.parse(participants); } catch { participants = []; }
+            }
+            const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
             return res.status(200).json({ 
                 active: isActive, 
                 keyword, 
-                participants: typeof participants === 'string' ? JSON.parse(participants) : participants,
-                connected: true
+                participants,
+                connected: webhookRegistered
             });
         }
 
@@ -267,6 +388,7 @@ export default async function handler(req, res) {
             message: 'Twitch webhook endpoint is working',
             endpoints: {
                 subscribe: '/api/twitch-webhook?subscribe=true',
+                delete: '/api/twitch-webhook?delete=true',
                 status: '/api/twitch-webhook?status=true'
             }
         });
@@ -288,6 +410,7 @@ export default async function handler(req, res) {
             if (messageType === 'webhook_callback_verification') {
                 const challenge = body.challenge;
                 console.log('✅ Подписка подтверждена');
+                await redis.set('twitch_webhook_registered', 'true');
                 return res.status(200).send(challenge);
             }
 
@@ -305,7 +428,6 @@ export default async function handler(req, res) {
 
                     case 'stream.online':
                         console.log(`🟢 Стрим начался!`);
-                        // Можно сбросить состояние или сделать что-то ещё
                         break;
 
                     default:
@@ -318,6 +440,7 @@ export default async function handler(req, res) {
             // Revocation — подписка отозвана
             if (messageType === 'revocation') {
                 console.log('🔴 Подписка отозвана:', body);
+                await redis.del('twitch_webhook_registered');
                 return res.status(200).json({ success: true });
             }
 
