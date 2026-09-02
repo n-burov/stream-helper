@@ -22,4 +22,5 @@ export const config = {
     
     // Количество баллов канала за участие (если используете баллы)
     pointsCost: 0,
+    vercelUrl: 'https://stream-helper-psi.vercel.app',
 };
