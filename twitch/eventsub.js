@@ -1,15 +1,23 @@
-// ============================================================
-//  TWITCH EVENTSUB — ПОДКЛЮЧЕНИЕ И ОБРАБОТКА СОБЫТИЙ
-// ============================================================
-
+// twitch/eventsub.js
 import WebSocket from 'ws';
 import { config } from './config.js';
 import { handleChatMessage } from './chat-handler.js';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
+});
 
 let ws = null;
 let sessionId = null;
 let reconnectTimeout = null;
 let isConnected = false;
+
+// Обновление статуса в Redis
+async function updateStatus(connected) {
+    await redis.set('twitch_connected', connected ? 'true' : 'false');
+}
 
 // Функция обновления токена
 async function refreshAccessToken() {
@@ -55,14 +63,6 @@ async function subscribeToEvents(token) {
                 broadcaster_user_id: config.broadcasterId,
             },
         },
-        // Раскомментируйте для работы с баллами канала
-        // {
-        //     type: 'channel.channel_points_custom_reward_redemption.add',
-        //     version: '1',
-        //     condition: {
-        //         broadcaster_user_id: config.broadcasterId,
-        //     },
-        // },
     ];
 
     for (const sub of subscriptions) {
@@ -99,17 +99,14 @@ async function subscribeToEvents(token) {
 function handleMessage(data) {
     const message = JSON.parse(data.toString());
 
-    // Приветствие от сервера
     if (message.metadata?.message_type === 'session_welcome') {
         sessionId = message.payload.session.id;
         console.log(`🔌 Сессия установлена: ${sessionId}`);
-        
-        // Подписываемся на события
+        updateStatus(true);
         subscribeToEvents(config.accessToken);
         return;
     }
 
-    // Обработка уведомлений
     if (message.metadata?.message_type === 'notification') {
         const event = message.payload.event;
         const subType = message.metadata.subscription_type;
@@ -121,12 +118,6 @@ function handleMessage(data) {
             
             case 'stream.online':
                 console.log(`🟢 Стрим начался!`);
-                // Здесь можно сбросить состояние розыгрыша
-                break;
-
-            case 'channel.channel_points_custom_reward_redemption.add':
-                console.log(`🎯 Покупка за баллы: ${event.user_name}`, event);
-                // Здесь обработка баллов
                 break;
 
             default:
@@ -135,7 +126,6 @@ function handleMessage(data) {
         return;
     }
 
-    // Ошибки
     if (message.metadata?.message_type === 'session_reconnect') {
         console.log('🔄 Сервер просит переподключиться');
         reconnect();
@@ -143,7 +133,6 @@ function handleMessage(data) {
     }
 
     if (message.metadata?.message_type === 'session_keepalive') {
-        // Пинг от сервера, ничего не делаем
         return;
     }
 
@@ -162,6 +151,7 @@ function connect() {
 
     ws.on('open', () => {
         isConnected = true;
+        updateStatus(true);
         console.log('✅ WebSocket подключён');
     });
 
@@ -169,8 +159,8 @@ function connect() {
 
     ws.on('close', (code, reason) => {
         isConnected = false;
+        updateStatus(false);
         console.log(`🔌 Соединение закрыто: ${code} ${reason}`);
-        // Переподключаемся через 5 секунд
         if (reconnectTimeout) clearTimeout(reconnectTimeout);
         reconnectTimeout = setTimeout(connect, 5000);
     });
@@ -201,12 +191,12 @@ function disconnect() {
         ws = null;
     }
     isConnected = false;
+    updateStatus(false);
     console.log('🔌 Отключено');
 }
 
 // Запуск
 export function startEventSub() {
-    // Проверяем настройки
     if (!config.clientId || config.clientId === 'ВАШ_CLIENT_ID') {
         console.error('❌ Ошибка: заполните clientId в twitch/config.js');
         return;
@@ -221,6 +211,7 @@ export function startEventSub() {
     }
 
     console.log('🚀 Запуск Twitch EventSub...');
+    updateStatus(false);
     connect();
 }
 
