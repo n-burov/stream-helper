@@ -9,8 +9,8 @@ export const config = {
     clientSecret: '1nfn6kmlfla3vo8tifg1zlrrgrgbg0',
 
     // Токены (получить через twitchtokengenerator.com)
-    accessToken: 'elustporogveel2ux6014h2z99f7q1',
-    refreshToken: 'g3fc99zwxsgig4vzuco3rpl7pewybcwivl8zm0y7qy07k8t2ev',
+    accessToken: 'c76zdoi7mbma957udlr3canpz1dyn8',
+    refreshToken: 'chcaa21yl8260mcjt29h1wax463u2xmbvnni0vucmkpja0ay8p',
 
     // ID канала и бота (можно найти через https://twitchinsights.net/tools/userid)
     broadcasterId: '1525586307',
