@@ -176,7 +176,7 @@ async function subscribeToEvents() {
     console.log(`📡 Bot User ID: ${config.botUserId}`);
     console.log(`📡 Callback URL: ${config.vercelUrl}/api/twitch-webhook`);
 
-    // Получаем App Access Token (для stream.online)
+    // Получаем App Access Token (для всех подписок)
     const appToken = await getAppAccessToken();
     if (!appToken) {
         console.error('❌ Не удалось получить App Access Token');
@@ -184,38 +184,18 @@ async function subscribeToEvents() {
     }
     console.log('✅ App Access Token получен');
 
-    // Получаем User Access Token (для channel.chat.message)
+    // User Access Token нужен только для проверки, что пользователь существует
     const userToken = await refreshAccessToken();
-    if (!userToken) {
-        console.error('❌ Не удалось получить User Access Token');
-        return false;
-    }
-    console.log('✅ User Access Token получен');
-
-    // Проверяем, что пользователь имеет доступ к каналу
-    try {
-        const checkResponse = await fetch(
-            `https://api.twitch.tv/helix/channels?broadcaster_id=${config.broadcasterId}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${userToken}`,
-                    'Client-Id': config.clientId,
-                }
-            }
-        );
-        const checkData = await checkResponse.json();
-        if (checkData.data && checkData.data.length > 0) {
-            console.log(`✅ Пользователь имеет доступ к каналу ${checkData.data[0].broadcaster_name}`);
-        } else {
-            console.warn('⚠️ Не удалось проверить доступ к каналу:', checkData);
-        }
-    } catch (error) {
-        console.warn('⚠️ Ошибка проверки доступа:', error);
+    if (userToken) {
+        console.log('✅ User Access Token получен (для проверки)');
+    } else {
+        console.warn('⚠️ User Access Token не получен, но для подписок используем App Token');
     }
 
     const subscriptions = [
         {
-            // Для channel.chat.message используем User Access Token
+            // Для channel.chat.message используем App Access Token
+            // но в condition указываем user_id того, кто читает чат
             type: 'channel.chat.message',
             version: '1',
             condition: {
@@ -229,7 +209,6 @@ async function subscribeToEvents() {
             },
         },
         {
-            // Для stream.online используем App Access Token
             type: 'stream.online',
             version: '1',
             condition: {
@@ -248,21 +227,13 @@ async function subscribeToEvents() {
     for (const sub of subscriptions) {
         console.log(`📝 Создаём подписку на ${sub.type}...`);
 
-        // Выбираем правильный токен для каждого типа подписки
-        let token;
-        if (sub.type === 'channel.chat.message') {
-            token = userToken;
-        } else {
-            token = appToken;
-        }
-
         try {
-            // Проверяем, есть ли уже такая подписка
+            // Проверяем, есть ли уже такая подписка (используем App Token)
             const existing = await fetch(
                 `https://api.twitch.tv/helix/eventsub/subscriptions?type=${sub.type}&condition.broadcaster_user_id=${config.broadcasterId}`,
                 {
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${appToken}`,
                         'Client-Id': config.clientId,
                     }
                 }
@@ -279,7 +250,7 @@ async function subscribeToEvents() {
             const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${appToken}`,
                     'Client-Id': config.clientId,
                     'Content-Type': 'application/json',
                 },
