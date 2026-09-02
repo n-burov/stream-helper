@@ -1461,6 +1461,8 @@
                 try {
                     const response = await fetch('/api/webhook?twitch=status');
                     const data = await response.json();
+                    
+                    // Обновляем статус подключения
                     if (data && data.connected) {
                         twitchConnected = true;
                         twitchStatus.textContent = '🟢 Twitch подключен';
@@ -1470,6 +1472,19 @@
                         twitchStatus.textContent = '🔴 Twitch не подключен';
                         twitchStatus.className = 'btn-twitch-status offline';
                     }
+                    
+                    // ОБНОВЛЯЕМ УЧАСТНИКОВ
+                    if (data && data.participants) {
+                        state.keyword.participants = data.participants;
+                        renderParticipants();
+                    }
+                    
+                    // Обновляем статус активности
+                    if (data && data.active !== undefined) {
+                        state.keyword.active = data.active;
+                        renderParticipants();
+                    }
+                    
                 } catch (error) {
                     twitchConnected = false;
                     twitchStatus.textContent = '🔴 Twitch не подключен';
