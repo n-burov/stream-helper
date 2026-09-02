@@ -36,11 +36,99 @@
             align-items: center;
             gap: 16px;
             transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Анимированный фон */
+        .keyword-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, 
+                transparent 0deg, 
+                rgba(145, 70, 255, 0.03) 60deg, 
+                transparent 120deg,
+                rgba(0, 212, 255, 0.03) 180deg,
+                transparent 240deg,
+                rgba(145, 70, 255, 0.03) 300deg,
+                transparent 360deg
+            );
+            animation: rotateBg 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotateBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .keyword-wrapper.active::before {
+            animation-duration: 10s;
+            background: conic-gradient(from 0deg, 
+                transparent 0deg, 
+                rgba(0, 255, 100, 0.06) 60deg, 
+                transparent 120deg,
+                rgba(0, 212, 255, 0.06) 180deg,
+                transparent 240deg,
+                rgba(0, 255, 100, 0.06) 300deg,
+                transparent 360deg
+            );
+        }
+
+        .keyword-wrapper.winner::before {
+            animation-duration: 3s;
+            background: conic-gradient(from 0deg, 
+                transparent 0deg, 
+                rgba(249, 202, 36, 0.15) 60deg, 
+                transparent 120deg,
+                rgba(249, 202, 36, 0.15) 180deg,
+                transparent 240deg,
+                rgba(249, 202, 36, 0.15) 300deg,
+                transparent 360deg
+            );
+        }
+
+        .keyword-wrapper .glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300px;
+            height: 300px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(145, 70, 255, 0.04), transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 0;
+        }
+
+        .keyword-wrapper.active .glow {
+            opacity: 1;
+            background: radial-gradient(circle, rgba(0, 255, 100, 0.08), transparent 70%);
+        }
+
+        .keyword-wrapper.winner .glow {
+            opacity: 1;
+            background: radial-gradient(circle, rgba(249, 202, 36, 0.15), transparent 70%);
+            animation: glowPulse 0.8s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
         }
 
         .keyword-left {
             flex: 1;
             min-width: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .keyword-title {
@@ -52,6 +140,39 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             line-height: 1.2;
+            transition: all 0.5s;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Пульсация заголовка */
+        .keyword-wrapper.active .keyword-title {
+            animation: titlePulse 1.5s ease-in-out infinite;
+        }
+
+        .keyword-wrapper.winner .keyword-title {
+            animation: titleWinner 1s ease-in-out infinite;
+            background: linear-gradient(135deg, #f9ca24, #ff6b6b, #f9ca24);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGradient 2s ease infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @keyframes titleWinner {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes titleGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .keyword-call {
@@ -59,6 +180,7 @@
             color: rgba(255, 255, 255, 0.5);
             font-weight: 400;
             line-height: 1.3;
+            margin-top: 2px;
         }
 
         .keyword-call strong {
@@ -69,6 +191,19 @@
             border-radius: 6px;
             border: 1px solid rgba(145, 70, 255, 0.12);
             font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .keyword-wrapper.active .keyword-call strong {
+            background: rgba(0, 255, 100, 0.15);
+            border-color: rgba(0, 255, 100, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.05);
+        }
+
+        .keyword-wrapper.winner .keyword-call strong {
+            background: rgba(249, 202, 36, 0.2);
+            border-color: rgba(249, 202, 36, 0.3);
+            box-shadow: 0 0 30px rgba(249, 202, 36, 0.1);
         }
 
         .keyword-right {
@@ -77,6 +212,8 @@
             align-items: flex-end;
             gap: 2px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .status-badge {
@@ -86,6 +223,7 @@
             align-items: center;
             gap: 6px;
             line-height: 1.3;
+            transition: all 0.3s;
         }
 
         .status-badge .dot {
@@ -94,6 +232,7 @@
             border-radius: 50%;
             display: inline-block;
             flex-shrink: 0;
+            transition: all 0.3s;
         }
 
         .status-badge.active .dot {
@@ -105,12 +244,21 @@
             background: #ff4757;
         }
 
+        .status-badge.winner .dot {
+            background: #f9ca24;
+            animation: pulse-dot 0.8s infinite;
+        }
+
         .status-badge.active {
             color: #00ff64;
         }
 
         .status-badge.inactive {
             color: #ff4757;
+        }
+
+        .status-badge.winner {
+            color: #f9ca24;
         }
 
         @keyframes pulse-dot {
@@ -125,12 +273,66 @@
             align-items: center;
             gap: 4px;
             line-height: 1.3;
+            transition: all 0.3s;
         }
 
         .count-badge strong {
             color: #fff;
             font-size: 18px;
             font-weight: 700;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        /* Анимация счёта при изменении */
+        .count-badge strong.bump {
+            animation: countBump 0.3s ease;
+        }
+
+        @keyframes countBump {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); color: #00ff64; }
+            100% { transform: scale(1); }
+        }
+
+        .keyword-wrapper.winner .count-badge strong {
+            color: #f9ca24;
+        }
+
+        /* Конфетти-эффект (маленькие точки) */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 1px;
+            opacity: 0;
+        }
+
+        .keyword-wrapper.winner .confetti-piece {
+            animation: confettiFall var(--duration, 2s) ease-out forwards;
+            animation-delay: var(--delay, 0s);
+        }
+
+        @keyframes confettiFall {
+            0% {
+                opacity: 1;
+                transform: translateY(0) rotate(0deg) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(150px) rotate(720deg) scale(0.3);
+            }
         }
 
         @media (max-width: 600px) {
@@ -155,6 +357,10 @@
             .status-badge { font-size: 11px; }
             .count-badge { font-size: 11px; }
             .count-badge strong { font-size: 15px; }
+            @keyframes confettiFall {
+                0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+                100% { opacity: 0; transform: translateY(100px) rotate(360deg) scale(0.3); }
+            }
         }
 
         @media (max-width: 400px) {
@@ -171,7 +377,10 @@
 </head>
 <body>
 
-    <div class="keyword-wrapper">
+    <div class="keyword-wrapper" id="keywordWrapper">
+        <div class="glow"></div>
+        <div class="confetti-container" id="confettiContainer"></div>
+        
         <div class="keyword-left">
             <div class="keyword-title">РОЗЫГРЫШ</div>
             <div class="keyword-call">
@@ -192,15 +401,77 @@
         const MECHANIC = 'keyword';
         const API_URL = `/api/webhook?mechanic=${MECHANIC}`;
 
+        const wrapper = document.getElementById('keywordWrapper');
         const displayKeyword = document.getElementById('displayKeyword');
         const statusBadge = document.getElementById('statusBadge');
         const participantCount = document.getElementById('participantCount');
+        const confettiContainer = document.getElementById('confettiContainer');
 
-        function updateStatus(active) {
+        let prevCount = 0;
+        let isWinnerShown = false;
+        let winnerTimeout = null;
+
+        function createConfetti() {
+            confettiContainer.innerHTML = '';
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#f9ca24', '#ff4757', '#00d4ff', '#00ff64'];
+            
+            for (let i = 0; i < 30; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.cssText = `
+                    left: ${10 + Math.random() * 80}%;
+                    top: ${-10 + Math.random() * 20}%;
+                    width: ${3 + Math.random() * 6}px;
+                    height: ${3 + Math.random() * 6}px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    border-radius: ${Math.random() > 0.5 ? '50%' : '1px'};
+                    --duration: ${1.5 + Math.random() * 2}s;
+                    --delay: ${Math.random() * 0.5}s;
+                `;
+                confettiContainer.appendChild(piece);
+            }
+            
+            // Удаляем конфетти через 3 секунды
+            setTimeout(() => {
+                confettiContainer.innerHTML = '';
+            }, 3500);
+        }
+
+        function updateStatus(active, winner) {
+            // Сброс таймера
+            if (winnerTimeout) {
+                clearTimeout(winnerTimeout);
+                winnerTimeout = null;
+            }
+
+            if (winner) {
+                wrapper.className = 'keyword-wrapper winner';
+                statusBadge.className = 'status-badge winner';
+                statusBadge.innerHTML = `<span class="dot"></span> 🏆 Победитель!`;
+                createConfetti();
+                isWinnerShown = true;
+                
+                // Возврат в обычное состояние через 4 секунды
+                winnerTimeout = setTimeout(() => {
+                    wrapper.className = 'keyword-wrapper';
+                    isWinnerShown = false;
+                    if (active) {
+                        updateStatus(active, false);
+                    } else {
+                        statusBadge.className = 'status-badge inactive';
+                        statusBadge.innerHTML = `<span class="dot"></span> Остановлен`;
+                    }
+                    winnerTimeout = null;
+                }, 4000);
+                return;
+            }
+
             if (active) {
+                wrapper.className = 'keyword-wrapper active';
                 statusBadge.className = 'status-badge active';
                 statusBadge.innerHTML = `<span class="dot"></span> Активен`;
             } else {
+                wrapper.className = 'keyword-wrapper';
                 statusBadge.className = 'status-badge inactive';
                 statusBadge.innerHTML = `<span class="dot"></span> Остановлен`;
             }
@@ -210,8 +481,33 @@
             if (!data || data.status === 'idle') return;
 
             displayKeyword.textContent = data.keyword || '!лут';
-            participantCount.textContent = data.participants?.length || 0;
-            updateStatus(data.status === 'active');
+            
+            const count = data.participants?.length || 0;
+            
+            // Анимация счёта
+            if (count !== prevCount && count > prevCount) {
+                participantCount.textContent = count;
+                participantCount.classList.remove('bump');
+                // Триггер рефлоу для перезапуска анимации
+                void participantCount.offsetWidth;
+                participantCount.classList.add('bump');
+                setTimeout(() => {
+                    participantCount.classList.remove('bump');
+                }, 300);
+            } else {
+                participantCount.textContent = count;
+            }
+            prevCount = count;
+
+            // Проверяем, есть ли победитель в данных
+            if (data.winner && data.winner !== '—' && !isWinnerShown) {
+                updateStatus(true, true);
+                return;
+            }
+
+            // Обновляем статус
+            const isActive = data.status === 'active';
+            updateStatus(isActive, false);
         }
 
         async function pollState() {
@@ -224,8 +520,27 @@
             }
         }
 
+        // Дополнительно проверяем winner-канал для анонса победителя
+        async function checkWinner() {
+            try {
+                const response = await fetch('/api/winner');
+                const data = await response.json();
+                if (data && data.name && !isWinnerShown) {
+                    // Показываем победителя в оверлее
+                    displayKeyword.textContent = data.name;
+                    updateStatus(true, true);
+                }
+            } catch (error) {
+                // тихо
+            }
+        }
+
         setTimeout(pollState, 500);
         setInterval(pollState, 1500);
+        
+        // Проверяем winner-канал каждые 2 секунды
+        setTimeout(checkWinner, 1000);
+        setInterval(checkWinner, 2000);
 
         console.log('🎬 Оверлей "Ключевое слово" загружен');
         console.log(`📡 Опрос состояния ${MECHANIC} каждые 1.5 секунды`);
