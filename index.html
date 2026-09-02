@@ -1442,6 +1442,7 @@
             
             const keywordInput = document.getElementById('keywordInput');
             const startBtn = document.getElementById('startKeywordBtn');
+            const stopBtn = document.getElementById('stopKeywordBtn');
             const drawBtn = document.getElementById('drawKeywordBtn');
             const resetKeywordBtn = document.getElementById('resetKeywordBtn');
             const participantsGrid = document.getElementById('participantsGrid');
@@ -1455,6 +1456,7 @@
             let twitchConnected = false;
             let twitchCheckInterval = null;
             let raffleActive = false;
+            let raffleStopped = false; // Флаг: сбор остановлен, участники зафиксированы
             let winnersList = [];
             
             // Проверка статуса Twitch
@@ -1497,6 +1499,7 @@
             
             function addParticipant(name) {
                 if (!raffleActive) return;
+                if (raffleStopped) return; // Если сбор остановлен — новых не добавляем
                 if (state.keyword.participants.includes(name)) return;
                 state.keyword.participants.push(name);
                 renderParticipants();
@@ -1507,11 +1510,14 @@
                 participantCount.textContent = list.length;
                 displayKeyword.textContent = state.keyword.currentKeyword;
             
-                if (raffleActive) {
-                    keywordStatus.textContent = '🟢 Активен';
+                if (raffleActive && !raffleStopped) {
+                    keywordStatus.textContent = '🟢 Сбор...';
                     keywordStatus.style.color = '#00ff64';
+                } else if (raffleActive && raffleStopped) {
+                    keywordStatus.textContent = '⏸️ Остановлен (участники зафиксированы)';
+                    keywordStatus.style.color = '#f9ca24';
                 } else {
-                    keywordStatus.textContent = '⏸️ Остановлен';
+                    keywordStatus.textContent = '⏹️ Остановлен';
                     keywordStatus.style.color = '#ff4757';
                 }
             
@@ -1526,17 +1532,33 @@
             function updateUI() {
                 renderParticipants();
                 
-                if (raffleActive) {
-                    startBtn.textContent = '▶️ Сбор...';
+                if (raffleActive && !raffleStopped) {
+                    // Сбор активен
+                    startBtn.textContent = '⏳ Идёт сбор...';
                     startBtn.className = 'btn btn-success';
                     startBtn.disabled = true;
-                    drawBtn.style.display = 'inline-block';
-                    drawBtn.disabled = false;
+                    stopBtn.style.display = 'inline-block';
+                    stopBtn.disabled = false;
+                    drawBtn.style.display = 'none';
+                    drawBtn.disabled = true;
                     resetKeywordBtn.disabled = true;
+                } else if (raffleActive && raffleStopped) {
+                    // Сбор остановлен, можно выбирать победителей
+                    startBtn.textContent = '⏳ Сбор завершён';
+                    startBtn.className = 'btn btn-success';
+                    startBtn.disabled = true;
+                    stopBtn.style.display = 'none';
+                    stopBtn.disabled = true;
+                    drawBtn.style.display = 'inline-block';
+                    drawBtn.disabled = (state.keyword.participants.length === 0);
+                    resetKeywordBtn.disabled = false;
                 } else {
+                    // Розыгрыш не активен
                     startBtn.textContent = '▶️ Старт';
                     startBtn.className = 'btn btn-primary';
                     startBtn.disabled = false;
+                    stopBtn.style.display = 'none';
+                    stopBtn.disabled = true;
                     drawBtn.style.display = 'none';
                     drawBtn.disabled = true;
                     resetKeywordBtn.disabled = false;
@@ -1602,7 +1624,7 @@
             //  ОБРАБОТЧИКИ КНОПОК
             // ============================================================
             
-            // Старт розыгрыша
+            // Старт розыгрыша (начало сбора участников)
             startBtn.addEventListener('click', async function() {
                 if (raffleActive) return;
                 
@@ -1614,10 +1636,11 @@
                     return;
                 }
             
-                // Сбрасываем список победителей
+                // Сбрасываем состояние
                 winnersList = [];
                 state.keyword.winner = null;
                 state.keyword.participants = [];
+                raffleStopped = false;
             
                 try {
                     const response = await fetch('/api/webhook?twitch=start', {
@@ -1653,7 +1676,25 @@
                 }
             });
             
-            // Выбор победителя
+            // Остановка сбора участников (фиксация списка)
+            stopBtn.addEventListener('click', function() {
+                if (!raffleActive || raffleStopped) return;
+                
+                raffleStopped = true;
+                
+                // Обновляем запись в истории
+                if (state.history.length > 0 && state.history[0].status === 'active') {
+                    state.history[0].participants = state.keyword.participants.length;
+                    renderHistory();
+                }
+                
+                updateUI();
+                
+                // Отправляем команду остановки в Redis (останавливаем добавление новых участников)
+                fetch('/api/webhook?twitch=stop', { method: 'POST' }).catch(() => {});
+            });
+            
+            // Выбор победителя (несколько раз)
             drawBtn.addEventListener('click', async function() {
                 if (this.disabled) return;
                 if (state.keyword.participants.length === 0) {
@@ -1665,38 +1706,26 @@
                 this.textContent = '🎲 Выбор...';
             
                 try {
-                    const response = await fetch('/api/webhook?twitch=draw', { method: 'POST' });
-                    const data = await response.json();
+                    // Выбираем случайного участника из списка (НЕ УДАЛЯЕМ ЕГО)
+                    const participants = [...state.keyword.participants];
+                    const winner = participants[Math.floor(Math.random() * participants.length)];
                     
-                    if (data.winner) {
-                        // Добавляем победителя в список
-                        winnersList.push(data.winner);
-                        state.keyword.winner = data.winner;
-                        
-                        // Обновляем активную запись в истории
-                        if (state.history.length > 0 && state.history[0].status === 'active') {
-                            state.history[0].winners = winnersList;
-                            state.history[0].winner = winnersList.join(', ');
-                            state.history[0].participants = state.keyword.participants.length;
-                            renderHistory();
-                        }
-                        
-                        showWinnerOnSite(data.winner);
-                        
-                        // Очищаем участников, но оставляем розыгрыш активным
-                        state.keyword.participants = [];
-                        renderParticipants();
-                        
-                        // Обновляем участников в Redis
-                        await fetch('/api/webhook?twitch=reset', { method: 'POST' });
-                        
-                        this.textContent = '🎲 Выбрать победителя';
-                        this.disabled = false;
-                    } else {
-                        alert('Ошибка выбора победителя');
-                        this.textContent = '🎲 Выбрать победителя';
-                        this.disabled = false;
+                    winnersList.push(winner);
+                    state.keyword.winner = winner;
+                    
+                    // Обновляем активную запись в истории
+                    if (state.history.length > 0 && state.history[0].status === 'active') {
+                        state.history[0].winners = winnersList;
+                        state.history[0].winner = winnersList.join(', ');
+                        state.history[0].participants = state.keyword.participants.length;
+                        renderHistory();
                     }
+                    
+                    showWinnerOnSite(winner);
+                    
+                    this.textContent = '🎲 Выбрать победителя';
+                    this.disabled = false;
+                    
                 } catch (error) {
                     console.error('❌ Ошибка:', error);
                     alert('Ошибка выбора победителя');
@@ -1705,7 +1734,7 @@
                 }
             });
             
-            // Сброс розыгрыша
+            // Сброс розыгрыша (завершение)
             resetKeywordBtn.addEventListener('click', function() {
                 if (state.keyword.participants.length > 0 && !raffleActive) {
                     if (!confirm('Очистить всех участников?')) return;
@@ -1717,11 +1746,13 @@
                     if (state.history.length > 0 && state.history[0].status === 'active') {
                         state.history[0].status = 'completed';
                         state.history[0].winner = winnersList.length > 0 ? winnersList.join(', ') : '—';
+                        state.history[0].participants = state.keyword.participants.length;
                         renderHistory();
                     }
                 }
                 
                 raffleActive = false;
+                raffleStopped = false;
                 state.keyword.active = false;
                 state.keyword.participants = [];
                 state.keyword.winner = null;
