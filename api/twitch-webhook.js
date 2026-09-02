@@ -41,15 +41,11 @@ function verifyTwitchSignature(req) {
 async function handleChatMessage(event) {
     const userName = event.chatter_user_name || event.user_name;
     const messageText = event.message?.text || '';
-    const broadcasterId = event.broadcaster_user_id;
 
     console.log(`💬 [${userName}]: ${messageText}`);
 
-    const isActive = await redis.get('twitch_raffle_active');
-    const isActiveBool = isActive === 'true' || isActive === true;
-    console.log('🔍 twitch_raffle_active в handleChatMessage =', isActive, 'приведено к булю =', isActiveBool);
-    
-    if (!isActiveBool) {
+    const isActive = await redis.get('twitch_raffle_active') === 'true';
+    if (!isActive) {
         console.log('⏸️ Розыгрыш неактивен, пропускаем');
         return;
     }
@@ -254,6 +250,7 @@ async function subscribeToEvents() {
 
     if (allSuccess) {
         console.log('✅ Все подписки созданы успешно!');
+        // СОХРАНЯЕМ СТАТУС В REDIS
         await redis.set('twitch_webhook_registered', 'true');
         console.log('✅ Статус подключения установлен в Redis');
     } else {
@@ -402,12 +399,6 @@ export default async function handler(req, res) {
             }
 
             const messageType = req.headers['twitch-eventsub-message-type'];
-
-            // Проверка подписи (для безопасности)
-            // if (!verifyTwitchSignature(req)) {
-            //     console.warn('⚠️ Неверная подпись Twitch');
-            //     return res.status(401).json({ error: 'Invalid signature' });
-            // }
 
             // Обработка challenge (подтверждение подписки)
             if (messageType === 'webhook_callback_verification') {
