@@ -11,15 +11,25 @@ const redis = new Redis({
 // ============================================================
 
 async function getTwitchStatus() {
-    const isActive = await redis.get('twitch_raffle_active') === 'true';
+    const isActive = await redis.get('twitch_raffle_active');
+    const isActiveBool = isActive === 'true' || isActive === true;
+    
     const keyword = await redis.get('twitch_keyword') || 'Голда';
     const participantsRaw = await redis.get('twitch_participants') || [];
     let participants = participantsRaw;
     if (typeof participants === 'string') {
         try { participants = JSON.parse(participants); } catch { participants = []; }
     }
-    // ВРЕМЕННО: Всегда возвращаем connected: true
-    return { active: isActive, keyword, participants, connected: true };
+    
+    const webhookRegistered = await redis.get('twitch_webhook_registered');
+    const connected = webhookRegistered === 'true' || webhookRegistered === true;
+    
+    return { 
+        active: isActiveBool, 
+        keyword, 
+        participants,
+        connected: connected
+    };
 }
 
 async function startRaffle(keyword) {
