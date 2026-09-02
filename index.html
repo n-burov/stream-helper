@@ -1649,7 +1649,7 @@
                 renderParticipants();
                 
                 // Отправляем команду остановки на сервер
-                fetch(''/api/webhook?twitch=stop'', { method: 'POST' }).catch(() => {});
+                fetch('/api/webhook?twitch=stop', { method: 'POST' }).catch(() => {});
             });
 
             // Выбор победителя
