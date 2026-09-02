@@ -1459,7 +1459,7 @@
             let raffleStopped = false;
             let winnersList = [];
 
-            // Проверка статуса Twitch
+            // Проверка статуса Twitch (исправленная)
             async function checkTwitchStatus() {
                 try {
                     const response = await fetch('/api/webhook?twitch=status');
@@ -1475,12 +1475,15 @@
                         twitchStatus.className = 'btn-twitch-status offline';
                     }
                     
+                    // ОБНОВЛЯЕМ УЧАСТНИКОВ (всегда)
                     if (data && data.participants) {
                         state.keyword.participants = data.participants;
                         renderParticipants();
                     }
                     
-                    if (data && data.active !== undefined) {
+                    // НЕ ОБНОВЛЯЕМ active ИЗ REDIS, ЕСЛИ РОЗЫГРЫШ УЖЕ ЗАПУЩЕН
+                    // Это предотвращает сброс состояния кнопок
+                    if (data && data.active !== undefined && !raffleActive) {
                         raffleActive = data.active;
                         state.keyword.active = data.active;
                         updateUI();
@@ -1573,7 +1576,9 @@
                 createConfetti();
             }
 
+            // updateUI() — полная версия
             function updateUI() {
+                // Обновляем статус только если розыгрыш активен
                 if (raffleActive && !raffleStopped) {
                     keywordStatus.textContent = '🟢 Сбор...';
                     keywordStatus.style.color = '#00ff64';
@@ -1584,7 +1589,8 @@
                     keywordStatus.textContent = '⏹️ Остановлен';
                     keywordStatus.style.color = '#ff4757';
                 }
-
+            
+                // КНОПКА СТАРТ
                 if (raffleActive) {
                     startBtn.textContent = '⏳ Идёт сбор...';
                     startBtn.className = 'btn btn-success';
@@ -1594,7 +1600,8 @@
                     startBtn.className = 'btn btn-primary';
                     startBtn.disabled = false;
                 }
-
+            
+                // КНОПКА СТОП
                 if (raffleActive && !raffleStopped) {
                     stopBtn.style.display = 'inline-block';
                     stopBtn.disabled = false;
@@ -1602,7 +1609,8 @@
                     stopBtn.style.display = 'none';
                     stopBtn.disabled = true;
                 }
-
+            
+                // КНОПКА ВЫБРАТЬ ПОБЕДИТЕЛЯ
                 if (raffleActive && raffleStopped && state.keyword.participants.length > 0) {
                     drawBtn.style.display = 'inline-block';
                     drawBtn.disabled = false;
@@ -1610,7 +1618,8 @@
                     drawBtn.style.display = 'none';
                     drawBtn.disabled = true;
                 }
-
+            
+                // КНОПКА СБРОС
                 if (raffleActive && raffleStopped) {
                     resetKeywordBtn.disabled = false;
                 } else if (!raffleActive) {
@@ -1618,7 +1627,7 @@
                 } else {
                     resetKeywordBtn.disabled = true;
                 }
-
+            
                 renderParticipants();
             }
 
@@ -1628,17 +1637,17 @@
                 
                 const kw = keywordInput.value.trim();
                 if (!kw) { alert('Введите кодовое слово!'); return; }
-
+            
                 if (!twitchConnected) {
                     alert('⚠️ Twitch не подключен!');
                     return;
                 }
-
+            
                 winnersList = [];
                 state.keyword.winner = null;
                 state.keyword.participants = [];
                 raffleStopped = false;
-
+            
                 try {
                     const response = await fetch('/api/webhook?twitch=start', {
                         method: 'POST',
@@ -1651,6 +1660,13 @@
                         raffleActive = true;
                         state.keyword.active = true;
                         state.keyword.currentKeyword = kw;
+                        
+                        // Отключаем автообновление статуса из Redis пока активен розыгрыш
+                        if (twitchCheckInterval) {
+                            clearInterval(twitchCheckInterval);
+                            twitchCheckInterval = null;
+                        }
+                        
                         updateUI();
                         
                         const now = new Date();
@@ -1749,6 +1765,12 @@
                 winnersList = [];
                 renderParticipants();
                 updateUI();
+                
+                // Включаем автообновление статуса обратно
+                if (!twitchCheckInterval) {
+                    twitchCheckInterval = setInterval(checkTwitchStatus, 5000);
+                    checkTwitchStatus();
+                }
                 
                 fetch('/api/webhook?twitch=reset', { method: 'POST' }).catch(() => {});
             });
