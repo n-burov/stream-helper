@@ -1459,7 +1459,7 @@
             let raffleStopped = false;
             let winnersList = [];
 
-            // Проверка статуса Twitch (исправленная)
+            // Проверка статуса Twitch (участники обновляются всегда)
             async function checkTwitchStatus() {
                 try {
                     const response = await fetch('/api/webhook?twitch=status');
@@ -1475,18 +1475,23 @@
                         twitchStatus.className = 'btn-twitch-status offline';
                     }
                     
-                    // ОБНОВЛЯЕМ УЧАСТНИКОВ (всегда)
+                    // УЧАСТНИКИ ОБНОВЛЯЮТСЯ ВСЕГДА
                     if (data && data.participants) {
                         state.keyword.participants = data.participants;
                         renderParticipants();
                     }
                     
-                    // НЕ ОБНОВЛЯЕМ active ИЗ REDIS, ЕСЛИ РОЗЫГРЫШ УЖЕ ЗАПУЩЕН
-                    // Это предотвращает сброс состояния кнопок
-                    if (data && data.active !== undefined && !raffleActive) {
-                        raffleActive = data.active;
-                        state.keyword.active = data.active;
-                        updateUI();
+                    // Статус активности обновляем ТОЛЬКО если розыгрыш не активен
+                    // или если пришёл сигнал, что розыгрыш завершён
+                    if (data && data.active !== undefined) {
+                        // Если розыгрыш не активен на сайте, но активен в Redis — обновляем
+                        if (!raffleActive && data.active) {
+                            raffleActive = data.active;
+                            state.keyword.active = data.active;
+                            updateUI();
+                        }
+                        // Если розыгрыш активен на сайте, но в Redis стал false — ничего не делаем
+                        // (это предотвращает сброс кнопок)
                     }
                     
                 } catch (error) {
@@ -1661,12 +1666,6 @@
                         state.keyword.active = true;
                         state.keyword.currentKeyword = kw;
                         
-                        // Отключаем автообновление статуса из Redis пока активен розыгрыш
-                        if (twitchCheckInterval) {
-                            clearInterval(twitchCheckInterval);
-                            twitchCheckInterval = null;
-                        }
-                        
                         updateUI();
                         
                         const now = new Date();
@@ -1765,12 +1764,6 @@
                 winnersList = [];
                 renderParticipants();
                 updateUI();
-                
-                // Включаем автообновление статуса обратно
-                if (!twitchCheckInterval) {
-                    twitchCheckInterval = setInterval(checkTwitchStatus, 5000);
-                    checkTwitchStatus();
-                }
                 
                 fetch('/api/webhook?twitch=reset', { method: 'POST' }).catch(() => {});
             });
