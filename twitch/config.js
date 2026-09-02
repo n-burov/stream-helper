@@ -5,7 +5,7 @@
 
 export const config = {
     // Данные приложения из Twitch Developer Console
-    clientId: '6r23dqsif3hfl3tnta192qhka2cns1',
+    clientId: 'gp762nuuoqcoxypju8c569th9wz7q5',
     clientSecret: '1nfn6kmlfla3vo8tifg1zlrrgrgbg0',
 
     // Токены (получить через twitchtokengenerator.com)
