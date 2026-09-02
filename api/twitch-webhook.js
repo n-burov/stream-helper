@@ -251,7 +251,6 @@ async function subscribeToEvents() {
 
             if (response.status === 202) {
                 console.log(`✅ Подписка на ${sub.type} создана успешно`);
-                await redis.set('twitch_webhook_registered', 'true');
             } else {
                 let errorJson;
                 try {
@@ -273,8 +272,10 @@ async function subscribeToEvents() {
     if (allSuccess) {
         console.log('✅ Все подписки созданы успешно!');
         await redis.set('twitch_webhook_registered', 'true');
+        console.log('✅ Статус подключения установлен в Redis');
     } else {
         console.error('❌ Некоторые подписки не созданы');
+        await redis.set('twitch_webhook_registered', 'false');
     }
 
     return allSuccess;
