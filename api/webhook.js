@@ -7,32 +7,6 @@ const redis = new Redis({
 });
 
 // ============================================================
-//  СИНХРОНИЗАЦИЯ СОСТОЯНИЯ ДЛЯ ОВЕРЛЕЯ
-// ============================================================
-
-async function syncKeywordState() {
-    const isActive = await redis.get('twitch_raffle_active') === 'true';
-    const keyword = await redis.get('twitch_keyword') || 'Голда';
-    const participantsRaw = await redis.get('twitch_participants') || [];
-    let participants = participantsRaw;
-    if (typeof participants === 'string') {
-        try { participants = JSON.parse(participants); } catch { participants = []; }
-    }
-    const winner = await redis.get('twitch_winner') || null;
-    
-    const state = {
-        status: isActive ? 'active' : 'idle',
-        keyword: keyword,
-        participants: participants,
-        winner: winner,
-    };
-    
-    await redis.set('keyword_state', JSON.stringify(state));
-    console.log('🔄 Состояние keyword синхронизировано:', state);
-    return state;
-}
-
-// ============================================================
 //  ФУНКЦИИ ДЛЯ TWITCH
 // ============================================================
 
@@ -53,13 +27,11 @@ async function startRaffle(keyword) {
     await redis.set('twitch_keyword', keyword);
     await redis.del('twitch_participants');
     await redis.del('twitch_winner');
-    await syncKeywordState();
     return true;
 }
 
 async function stopRaffle() {
     await redis.set('twitch_raffle_active', 'false');
-    await syncKeywordState();
     return true;
 }
 
@@ -68,7 +40,6 @@ async function resetRaffle() {
     await redis.del('twitch_keyword');
     await redis.del('twitch_participants');
     await redis.del('twitch_winner');
-    await syncKeywordState();
     return true;
 }
 
@@ -83,7 +54,6 @@ async function drawWinner() {
     await redis.del('twitch_participants');
     await redis.set('twitch_raffle_active', 'false');
     await redis.set('twitch_winner', winner);
-    await syncKeywordState();
     
     await redis.set('winner', JSON.stringify({
         name: winner,
@@ -105,7 +75,6 @@ async function addParticipant(username) {
     if (!participants.includes(username)) {
         participants.push(username);
         await redis.set('twitch_participants', JSON.stringify(participants));
-        await syncKeywordState();
         return true;
     }
     return false;
