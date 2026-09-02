@@ -45,8 +45,10 @@ async function handleChatMessage(event) {
 
     console.log(`💬 [${userName}]: ${messageText}`);
 
-    const isActive = await redis.get('twitch_raffle_active') === 'true';
-    if (!isActive) {
+    const isActive = await redis.get('twitch_raffle_active');
+    console.log('🔍 twitch_raffle_active в handleChatMessage =', isActive);
+    
+    if (isActive !== 'true') {
         console.log('⏸️ Розыгрыш неактивен, пропускаем');
         return;
     }
