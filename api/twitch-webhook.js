@@ -8,10 +8,6 @@ const redis = new Redis({
     token: process.env.KV_REST_API_TOKEN,
 });
 
-// ============================================================
-//  ПРОВЕРКА ПОДПИСИ TWITCH (для безопасности)
-// ============================================================
-
 function verifyTwitchSignature(req) {
     const signature = req.headers['twitch-eventsub-message-signature'];
     const timestamp = req.headers['twitch-eventsub-message-timestamp'];
@@ -33,10 +29,6 @@ function verifyTwitchSignature(req) {
         return false;
     }
 }
-
-// ============================================================
-//  ОБРАБОТКА СООБЩЕНИЙ ИЗ ЧАТА
-// ============================================================
 
 async function handleChatMessage(event) {
     const userName = event.chatter_user_name || event.user_name;
@@ -87,10 +79,6 @@ async function handleChatMessage(event) {
     }
 }
 
-// ============================================================
-//  ОБНОВЛЕНИЕ USER ACCESS TOKEN
-// ============================================================
-
 async function refreshAccessToken() {
     try {
         console.log('🔄 Обновляем User Access Token...');
@@ -117,10 +105,6 @@ async function refreshAccessToken() {
     }
 }
 
-// ============================================================
-//  ПОЛУЧЕНИЕ APP ACCESS TOKEN (для создания подписок)
-// ============================================================
-
 async function getAppAccessToken() {
     try {
         console.log('🔄 Получаем App Access Token...');
@@ -145,10 +129,6 @@ async function getAppAccessToken() {
         return null;
     }
 }
-
-// ============================================================
-//  ОБРАБОТКА ПОДПИСКИ НА СОБЫТИЯ
-// ============================================================
 
 async function subscribeToEvents() {
     console.log('🚀 Начинаем создание подписок...');
@@ -250,20 +230,12 @@ async function subscribeToEvents() {
 
     if (allSuccess) {
         console.log('✅ Все подписки созданы успешно!');
-        // СОХРАНЯЕМ СТАТУС В REDIS
-        await redis.set('twitch_webhook_registered', 'true');
-        console.log('✅ Статус подключения установлен в Redis');
     } else {
         console.error('❌ Некоторые подписки не созданы');
-        await redis.set('twitch_webhook_registered', 'false');
     }
 
     return allSuccess;
 }
-
-// ============================================================
-//  УДАЛЕНИЕ ВСЕХ ПОДПИСОК (для сброса)
-// ============================================================
 
 async function deleteAllSubscriptions() {
     console.log('🗑️ Удаляем все подписки...');
@@ -318,10 +290,6 @@ async function deleteAllSubscriptions() {
     }
 }
 
-// ============================================================
-//  ОСНОВНОЙ ОБРАБОТЧИК
-// ============================================================
-
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -331,9 +299,7 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
-    // GET запросы
     if (req.method === 'GET') {
-        // Удаление всех подписок
         if (req.query.delete === 'true') {
             const result = await deleteAllSubscriptions();
             return res.status(200).json({ 
@@ -342,7 +308,6 @@ export default async function handler(req, res) {
             });
         }
 
-        // Создание подписок
         if (req.query.subscribe === 'true') {
             const result = await subscribeToEvents();
             return res.status(200).json({ 
@@ -351,7 +316,6 @@ export default async function handler(req, res) {
             });
         }
         
-        // Статус
         if (req.query.status === 'true') {
             const isActive = await redis.get('twitch_raffle_active') === 'true';
             const keyword = await redis.get('twitch_keyword') || 'Голда';
@@ -369,7 +333,6 @@ export default async function handler(req, res) {
             });
         }
 
-        // Ручная установка статуса
         if (req.query.set_connected === 'true') {
             await redis.set('twitch_webhook_registered', 'true');
             return res.status(200).json({ success: true, connected: true });
@@ -387,12 +350,10 @@ export default async function handler(req, res) {
         });
     }
 
-    // POST запрос — уведомления от Twitch
     if (req.method === 'POST') {
         try {
             const body = req.body;
             
-            // Ручная установка статуса
             if (body.action === 'set_connected') {
                 await redis.set('twitch_webhook_registered', 'true');
                 return res.status(200).json({ success: true, connected: true });
@@ -400,7 +361,6 @@ export default async function handler(req, res) {
 
             const messageType = req.headers['twitch-eventsub-message-type'];
 
-            // Обработка challenge (подтверждение подписки)
             if (messageType === 'webhook_callback_verification') {
                 const challenge = body.challenge;
                 console.log('✅ Подписка подтверждена');
@@ -408,7 +368,6 @@ export default async function handler(req, res) {
                 return res.status(200).send(challenge);
             }
 
-            // Обработка уведомлений
             if (messageType === 'notification') {
                 const event = body.event;
                 const subType = body.subscription?.type;
@@ -431,7 +390,6 @@ export default async function handler(req, res) {
                 return res.status(200).json({ success: true });
             }
 
-            // Revocation — подписка отозвана
             if (messageType === 'revocation') {
                 console.log('🔴 Подписка отозвана:', body);
                 await redis.del('twitch_webhook_registered');
