@@ -6,10 +6,6 @@ const redis = new Redis({
     token: process.env.KV_REST_API_TOKEN,
 });
 
-// ============================================================
-//  ФУНКЦИИ ДЛЯ TWITCH
-// ============================================================
-
 async function getTwitchStatus() {
     const isActive = await redis.get('twitch_raffle_active') === 'true';
     const keyword = await redis.get('twitch_keyword') || 'Голда';
@@ -18,15 +14,14 @@ async function getTwitchStatus() {
     if (typeof participants === 'string') {
         try { participants = JSON.parse(participants); } catch { participants = []; }
     }
-    // ВСЕГДА ВОЗВРАЩАЕМ connected: true
-    return { active: isActive, keyword, participants, connected: true };
+    const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
+    return { active: isActive, keyword, participants, connected: webhookRegistered };
 }
 
 async function startRaffle(keyword) {
     await redis.set('twitch_raffle_active', 'true');
     await redis.set('twitch_keyword', keyword);
     await redis.del('twitch_participants');
-    await redis.del('twitch_winner');
     return true;
 }
 
@@ -39,7 +34,6 @@ async function resetRaffle() {
     await redis.del('twitch_raffle_active');
     await redis.del('twitch_keyword');
     await redis.del('twitch_participants');
-    await redis.del('twitch_winner');
     return true;
 }
 
@@ -53,7 +47,6 @@ async function drawWinner() {
     const winner = participants[Math.floor(Math.random() * participants.length)];
     await redis.del('twitch_participants');
     await redis.set('twitch_raffle_active', 'false');
-    await redis.set('twitch_winner', winner);
     
     await redis.set('winner', JSON.stringify({
         name: winner,
@@ -80,10 +73,6 @@ async function addParticipant(username) {
     return false;
 }
 
-// ============================================================
-//  ОСНОВНОЙ ОБРАБОТЧИК
-// ============================================================
-
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -92,10 +81,6 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
-
-    // ============================================================
-    //  TWITCH API (через query param ?twitch=action)
-    // ============================================================
 
     if (req.query.twitch) {
         const action = req.query.twitch;
@@ -146,10 +131,6 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: error.message });
         }
     }
-
-    // ============================================================
-    //  ОСНОВНЫЕ МЕХАНИКИ (keyword, wheel, sniper, bank)
-    // ============================================================
 
     if (req.method === 'POST') {
         try {
