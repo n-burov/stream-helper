@@ -7,47 +7,59 @@ const redis = new Redis({
 });
 
 // ============================================================
-//  ФУНКЦИИ ДЛЯ TWITCH
+//  СИНХРОНИЗАЦИЯ СОСТОЯНИЯ ДЛЯ ОВЕРЛЕЯ
 // ============================================================
 
-async function getTwitchStatus() {
-    const isActive = await redis.get('twitch_raffle_active');
-    const isActiveBool = isActive === 'true' || isActive === true;
-    
+async function syncKeywordState() {
+    const isActive = await redis.get('twitch_raffle_active') === 'true';
     const keyword = await redis.get('twitch_keyword') || 'Голда';
     const participantsRaw = await redis.get('twitch_participants') || [];
     let participants = participantsRaw;
     if (typeof participants === 'string') {
         try { participants = JSON.parse(participants); } catch { participants = []; }
     }
+    const winner = await redis.get('twitch_winner') || null;
     
-    const webhookRegistered = await redis.get('twitch_webhook_registered');
-    const connected = webhookRegistered === 'true' || webhookRegistered === true;
-    
-    return { 
-        active: isActiveBool, 
-        keyword, 
-        participants,
-        connected: connected
+    const state = {
+        status: isActive ? 'active' : 'idle',
+        keyword: keyword,
+        participants: participants,
+        winner: winner,
     };
+    
+    await redis.set('keyword_state', JSON.stringify(state));
+    console.log('🔄 Состояние keyword синхронизировано:', state);
+    return state;
+}
+
+// ============================================================
+//  ФУНКЦИИ ДЛЯ TWITCH
+// ============================================================
+
+async function getTwitchStatus() {
+    const isActive = await redis.get('twitch_raffle_active') === 'true';
+    const keyword = await redis.get('twitch_keyword') || 'Голда';
+    const participantsRaw = await redis.get('twitch_participants') || [];
+    let participants = participantsRaw;
+    if (typeof participants === 'string') {
+        try { participants = JSON.parse(participants); } catch { participants = []; }
+    }
+    const webhookRegistered = await redis.get('twitch_webhook_registered') === 'true';
+    return { active: isActive, keyword, participants, connected: webhookRegistered };
 }
 
 async function startRaffle(keyword) {
-    console.log('📝 startRaffle вызван с ключевым словом:', keyword);
-    
     await redis.set('twitch_raffle_active', 'true');
     await redis.set('twitch_keyword', keyword);
     await redis.del('twitch_participants');
-    
-    // Проверяем, что записалось
-    const check = await redis.get('twitch_raffle_active');
-    console.log('🔍 twitch_raffle_active после записи =', check);
-    
+    await redis.del('twitch_winner');
+    await syncKeywordState();
     return true;
 }
 
 async function stopRaffle() {
     await redis.set('twitch_raffle_active', 'false');
+    await syncKeywordState();
     return true;
 }
 
@@ -55,6 +67,8 @@ async function resetRaffle() {
     await redis.del('twitch_raffle_active');
     await redis.del('twitch_keyword');
     await redis.del('twitch_participants');
+    await redis.del('twitch_winner');
+    await syncKeywordState();
     return true;
 }
 
@@ -68,6 +82,18 @@ async function drawWinner() {
     const winner = participants[Math.floor(Math.random() * participants.length)];
     await redis.del('twitch_participants');
     await redis.set('twitch_raffle_active', 'false');
+    await redis.set('twitch_winner', winner);
+    await syncKeywordState();
+    
+    // Отправляем в winner-канал
+    await redis.set('winner', JSON.stringify({
+        name: winner,
+        emoji: '🎯',
+        title: 'ПОБЕДИТЕЛЬ!',
+        subtitle: '🎉 Поздравляем!',
+        tag: '🎯 Ключевое слово',
+    }));
+    
     return winner;
 }
 
@@ -80,6 +106,7 @@ async function addParticipant(username) {
     if (!participants.includes(username)) {
         participants.push(username);
         await redis.set('twitch_participants', JSON.stringify(participants));
+        await syncKeywordState();
         return true;
     }
     return false;
