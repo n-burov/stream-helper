@@ -36,11 +36,23 @@ async function handleChatMessage(event) {
 
     console.log(`💬 [${userName}]: ${messageText}`);
 
-    const isActive = await redis.get('twitch_raffle_active');
-    console.log('🔍 twitch_raffle_active =', isActive);
+    // Проверяем, есть ли вообще ключ в Redis
+    const isActiveRaw = await redis.get('twitch_raffle_active');
+    const isActive = isActiveRaw === 'true';
     
-    // Redis возвращает строку "true" или "false"
-    if (isActive !== 'true') {
+    // Если ключа нет или он false, но есть участники — считаем активным
+    const participantsRaw = await redis.get('twitch_participants') || [];
+    let participants = [];
+    if (typeof participantsRaw === 'string') {
+        try { participants = JSON.parse(participantsRaw); } catch { participants = []; }
+    }
+    
+    // Розыгрыш активен если:
+    // 1. Явно установлен active=true
+    // 2. ИЛИ есть участники (значит розыгрыш точно был запущен)
+    const effectiveActive = isActive || participants.length > 0;
+    
+    if (!effectiveActive) {
         console.log('⏸️ Розыгрыш неактивен, пропускаем');
         return;
     }
@@ -63,19 +75,9 @@ async function handleChatMessage(event) {
     }
     await redis.set(cooldownKey, now.toString(), { ex: cooldownSeconds });
 
-    const participantsKey = 'twitch_participants';
-    let participants = await redis.get(participantsKey) || [];
-    if (typeof participants === 'string') {
-        try {
-            participants = JSON.parse(participants);
-        } catch {
-            participants = [];
-        }
-    }
-
     if (!participants.includes(userName)) {
         participants.push(userName);
-        await redis.set(participantsKey, JSON.stringify(participants));
+        await redis.set('twitch_participants', JSON.stringify(participants));
         console.log(`✅ ${userName} добавлен в розыгрыш! (Всего: ${participants.length})`);
     } else {
         console.log(`👤 ${userName} уже участвует`);
