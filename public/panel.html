@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Панель управления</title>
+  <style>
+    body { font-family: sans-serif; background: #18181b; color: #efeff1;
+           padding: 20px; max-width: 800px; margin: 0 auto; }
+    h1 { color: #9147ff; }
+    button { padding: 10px 20px; margin: 5px; background: #9147ff; color: white;
+             border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    button:hover { background: #772ce8; }
+    #chat { background: #0e0e10; padding: 10px; border-radius: 4px;
+            height: 400px; overflow-y: auto; margin-top: 20px; }
+    .msg { padding: 3px 0; }
+    .msg .user { font-weight: bold; }
+    .vip { color: #e005b9; }
+    .mod { color: #00ad03; }
+    .status { color: #adadb8; }
+    .ok { color: #00ad03; }
+  </style>
+</head>
+<body>
+  <h1>Управление розыгрышем</h1>
+
+  <button onclick="send('showHello')">Показать Hello World</button>
+  <button onclick="send('hideHello')">Скрыть</button>
+  <button onclick="send('testChat')">Эмулировать сообщение в чате</button>
+
+  <p class="status">Twitch IRC: <span id="irc">…</span></p>
+
+  <h2>Чат</h2>
+  <div id="chat"></div>
+
+  <script>
+    let ws;
+    const chat = document.getElementById('chat');
+    const irc = document.getElementById('irc');
+
+    function connect() {
+      ws = new WebSocket(`ws://${location.host}`);
+      ws.onmessage = (e) => {
+        const { type, payload } = JSON.parse(e.data);
+        if (type === 'state') {
+          payload.chatMessages.forEach(renderChat);
+          if (payload.chatMessages.length === 0) {
+            // оставим пустым, история подтянется по WS
+          }
+          updateIrc(payload.ircConnected);
+        } else if (type === 'chat') {
+          renderChat(payload);
+        } else if (type === 'twitchStatus') {
+          updateIrc(payload.connected);
+        }
+      };
+      ws.onclose = () => setTimeout(connect, 1000);
+    }
+
+    function updateIrc(ok) {
+      irc.textContent = ok ? 'подключён' : 'подключение…';
+      irc.className = ok ? 'ok' : 'status';
+    }
+
+    function send(action) {
+      ws.send(JSON.stringify({ action }));
+    }
+
+    function renderChat(m) {
+      const div = document.createElement('div');
+      div.className = 'msg';
+      const cls = m.isVip ? 'vip' : (m.isMod ? 'mod' : '');
+      div.innerHTML = `<span class="user ${cls}">${m.username}</span>: ${m.message}`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    connect();
+  </script>
+</body>
+</html>

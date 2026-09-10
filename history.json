@@ -1,0 +1,105 @@
+[
+  {
+    "mechanic": "wheel",
+    "sectors": [
+      "Тест",
+      "Тест2"
+    ],
+    "winners": [
+      "Тест2"
+    ],
+    "status": "finished",
+    "time": 1789069471773
+  },
+  {
+    "mechanic": "wheel",
+    "sectors": [
+      "Тест",
+      "Тест2"
+    ],
+    "winners": [
+      "Тест2"
+    ],
+    "status": "finished",
+    "time": 1789069429997
+  },
+  {
+    "mechanic": "keyword",
+    "word": "Голда",
+    "participants": 1,
+    "winners": [
+      "naburov"
+    ],
+    "status": "finished",
+    "time": 1789069401463
+  },
+  {
+    "mechanic": "keyword",
+    "word": "Голда",
+    "participants": 1,
+    "winners": [
+      "naburov"
+    ],
+    "status": "finished",
+    "time": 1789069382432
+  },
+  {
+    "mechanic": "keyword",
+    "word": "Голда",
+    "participants": 1,
+    "winners": [
+      "naburov"
+    ],
+    "status": "finished",
+    "time": 1789069221676
+  },
+  {
+    "mechanic": "wheel",
+    "sectors": [
+      "Тест",
+      "Тест2"
+    ],
+    "winners": [
+      "Тест2"
+    ],
+    "status": "finished",
+    "time": 1789069079619
+  },
+  {
+    "mechanic": "sniper",
+    "winners": [
+      "234234"
+    ],
+    "participants": [
+      "123",
+      "321",
+      "234235",
+      "645564",
+      "234234"
+    ],
+    "status": "finished",
+    "time": 1789069051717
+  },
+  {
+    "mechanic": "wheel",
+    "sectors": [
+      "Тест",
+      "Тест2"
+    ],
+    "winners": [
+      "Тест2"
+    ],
+    "status": "finished",
+    "time": 1789069002205
+  },
+  {
+    "mechanic": "keyword",
+    "word": "Голда",
+    "participants": 1,
+    "winners": [
+      "naburov"
+    ],
+    "status": "finished",
+    "time": 1789068943046
+  }
+]

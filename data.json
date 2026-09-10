@@ -1,0 +1,124 @@
+{
+  "tokens": {
+    "access_token": "h7nm9a15unclcf0p1kxvkjapnrrpkv",
+    "refresh_token": "ngoo6cqbqk2cgzq7xhjf5rmq7lp9jcm2kuzv1t4ykepssyqhh9",
+    "expires_at": 1789080587221,
+    "user_id": "1525586307",
+    "login": "naburov"
+  },
+  "settings": {
+    "channel": "naburov",
+    "donatePayToken": null,
+    "ticketRewardId": null
+  },
+  "follows": [],
+  "redemptions": [],
+  "tickets": {
+    "participants": [
+      {
+        "userId": "manual_1789071819075",
+        "username": "ник",
+        "count": 2,
+        "redeemedAt": 1789071819075
+      },
+      {
+        "userId": "manual_1789071828926",
+        "username": "ник2",
+        "count": 1,
+        "redeemedAt": 1789071828926
+      },
+      {
+        "userId": "manual_1789071831358",
+        "username": "ник3",
+        "count": 1,
+        "redeemedAt": 1789071831358
+      }
+    ]
+  },
+  "donors": {
+    "participants": []
+  },
+  "keyword": {
+    "status": "idle",
+    "word": "Голда",
+    "participants": [],
+    "winners": []
+  },
+  "wheel": {
+    "sectors": [
+      {
+        "label": "333 голды",
+        "weight": 250,
+        "color": null
+      },
+      {
+        "label": "555 голды",
+        "weight": 150,
+        "color": null
+      },
+      {
+        "label": "777 голды",
+        "weight": 100,
+        "color": null
+      },
+      {
+        "label": "1 111 голды",
+        "weight": 50,
+        "color": null
+      },
+      {
+        "label": "3 333 голды",
+        "weight": 25,
+        "color": null
+      },
+      {
+        "label": "5 555 голды",
+        "weight": 15,
+        "color": null
+      },
+      {
+        "label": "Билет",
+        "weight": 10,
+        "color": null
+      },
+      {
+        "label": "Лотус",
+        "weight": 15,
+        "color": null
+      },
+      {
+        "label": "Кубик",
+        "weight": 20,
+        "color": null
+      },
+      {
+        "label": "Банк",
+        "weight": 120,
+        "color": null
+      },
+      {
+        "label": "Сова",
+        "weight": 40,
+        "color": null
+      },
+      {
+        "label": "Мешочки",
+        "weight": 40,
+        "color": null
+      }
+    ],
+    "currentRotation": 0.5588195036346661,
+    "isSpinning": false,
+    "lastSpinId": "1789069453262_jo7gpo",
+    "winner": "Тест2"
+  },
+  "sniper": {
+    "status": "idle",
+    "participants": [],
+    "victimId": null,
+    "winnerName": null,
+    "nextId": 1
+  },
+  "participants": [],
+  "chatLog": []
+}

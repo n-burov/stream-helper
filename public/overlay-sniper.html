@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Снайпер</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: transparent !important;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow: hidden;
+  }
+  .overlay {
+    display: none; max-width: 900px; width: 100%;
+    padding: 20px; background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px); border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.04);
+    position: relative;
+  }
+  .overlay.active { display: block; }
+
+  .stats { display: flex; justify-content: center; gap: 30px; margin-bottom: 16px;
+           font-size: 14px; color: rgba(255,255,255,0.5); }
+  .stats strong { color: #fff; }
+  .stats .alive strong { color: #00ff64; }
+  .stats .dead strong { color: #ff4757; }
+
+  .arena { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px;
+           min-height: 80px; max-height: 60vh; overflow-y: auto;
+           background: rgba(255,255,255,0.02); border-radius: 12px;
+           border: 1px solid rgba(255,255,255,0.04); justify-content: center; }
+  .chip {
+    display: inline-flex; align-items: center; padding: 4px 12px;
+    border-radius: 16px; background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.06);
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap; height: 32px; position: relative;
+  }
+  .chip.eliminated { opacity: 0.4; transform: scale(0.9); text-decoration: line-through; color: rgba(255,255,255,0.3); }
+  .chip.targeted {
+    border-color: #ffd700; background: rgba(255,215,0,0.15); color: #fff;
+    box-shadow: 0 0 30px rgba(255,215,0,0.3); transform: scale(1.08); z-index: 2;
+  }
+  .chip.shot { animation: shotEffect 0.9s ease-out forwards; }
+  @keyframes shotEffect {
+    0% { border-color:#ffd700; box-shadow:0 0 60px rgba(255,215,0,0.5); transform: scale(1.2); }
+    35% { border-color:#ff4757; box-shadow:0 0 120px rgba(255,71,87,0.8); transform: scale(1.5) rotate(10deg); }
+    100% { opacity:0.4; transform: scale(0.9); }
+  }
+
+  .flash {
+    position: fixed; inset: 0; pointer-events: none; z-index: 999;
+    background: radial-gradient(circle at center, rgba(255,215,0,0.4), transparent 70%);
+    animation: flashBang 0.35s ease-out forwards;
+  }
+  @keyframes flashBang {
+    0% { opacity: 1; transform: scale(0.5); }
+    100% { opacity: 0; transform: scale(2.5); }
+  }
+
+  .victim-banner {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, rgba(180,20,30,0.85), rgba(120,10,20,0.9));
+    border: 1px solid rgba(255,71,87,0.3); border-radius: 12px;
+    padding: 12px 30px; font-size: 24px; font-weight: 700; color: #fff;
+    animation: victimAppear 0.3s ease-out; z-index: 5; white-space: nowrap;
+  }
+  .victim-banner.hidden { display: none; }
+  @keyframes victimAppear {
+    0% { transform: translateX(-50%) scale(0.5) translateY(20px); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<audio id="shotSound" preload="auto"><source src="/sounds/shot.mp3" type="audio/mpeg"></audio>
+
+<div class="overlay" id="ov">
+  <div class="stats">
+    <span class="alive">🟢 Живых: <strong id="alive">0</strong></span>
+    <span class="dead">💀 Выбыло: <strong id="dead">0</strong></span>
+    <span>👥 Всего: <strong id="total">0</strong></span>
+  </div>
+  <div class="arena" id="arena"></div>
+  <div class="victim-banner hidden" id="banner">💀 Жертва</div>
+</div>
+
+<script>
+const ov = document.getElementById('ov');
+const arena = document.getElementById('arena');
+const aliveEl = document.getElementById('alive');
+const deadEl = document.getElementById('dead');
+const totalEl = document.getElementById('total');
+const banner = document.getElementById('banner');
+const shotSound = document.getElementById('shotSound');
+
+let participants = [];
+let targetingId = null;
+let animTimer = null;
+let hideTimer = null;
+
+function render() {
+  const alive = participants.filter(p => p.alive).length;
+  const dead = participants.length - alive;
+  aliveEl.textContent = alive;
+  deadEl.textContent = dead;
+  totalEl.textContent = participants.length;
+
+  if (participants.length === 0) {
+    arena.innerHTML = `<div style="width:100%;text-align:center;color:rgba(255,255,255,0.15);padding:30px;font-size:14px;">Ожидание участников...</div>`;
+    return;
+  }
+
+  const sorted = [...participants].sort((a, b) => {
+    if (a.alive && !b.alive) return -1;
+    if (!a.alive && b.alive) return 1;
+    return a.id - b.id;
+  });
+
+  arena.innerHTML = sorted.map(p => {
+    const targeted = targetingId === p.id && p.alive;
+    const cls = `chip ${p.alive ? '' : 'eliminated'} ${targeted ? 'targeted' : ''}`;
+    return `<div class="${cls}">#${p.id} ${escapeHtml(p.name)}${p.alive ? '' : ' 💀'}</div>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showBanner(name) {
+  banner.textContent = `💀 ${name}`;
+  banner.classList.remove('hidden');
+  setTimeout(() => banner.classList.add('hidden'), 2500);
+}
+
+function flash() {
+  const el = document.createElement('div');
+  el.className = 'flash';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 400);
+}
+
+function runAim(victimId, aimDuration) {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+
+  const alive = participants.filter(p => p.alive);
+  if (alive.length <= 1) return;
+
+  let steps = 0;
+  const maxSteps = 14 + Math.floor(Math.random() * 8);
+  let delay = 80;
+  let lastIdx = -1;
+
+  function step() {
+    if (steps >= maxSteps) {
+      targetingId = victimId;
+      render();
+      return;
+    }
+    let idx;
+    let attempts = 0;
+    do {
+      idx = Math.floor(Math.random() * alive.length);
+      attempts++;
+    } while (idx === lastIdx && attempts < 20 && alive.length > 1);
+    lastIdx = idx;
+    targetingId = alive[idx].id;
+    render();
+    steps++;
+    delay *= 1.15;
+    animTimer = setTimeout(step, Math.min(delay, 300));
+  }
+  step();
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = e => {
+    const { type, payload } = JSON.parse(e.data);
+
+    if (type === 'state') {
+      participants = payload.sniper.participants;
+      if (participants.length > 0) ov.classList.add('active');
+      render();
+    }
+
+    if (type === 'sniper:state') {
+      participants = payload.participants;
+      targetingId = payload.victimId;
+      if (participants.length > 0 && payload.status !== 'idle') {
+        ov.classList.add('active');
+      }
+      if (participants.length > 0) ov.classList.add('active');
+      render();
+    }
+
+    if (type === 'sniper:shooting') {
+      participants = payload.participants;
+      ov.classList.add('active');
+      runAim(payload.victimId, payload.aimDuration);
+    }
+
+    if (type === 'sniper:shot') {
+      participants = payload.participants;
+      targetingId = null;
+      flash();
+      showBanner(payload.victimName);
+      shotSound.volume = 0.2;
+      shotSound.currentTime = 0;
+      shotSound.play().catch(() => {});
+      render();
+    }
+
+    if (type === 'winner:show' && payload.tag?.includes('Снайпер')) {
+      targetingId = null;
+      render();
+      setTimeout(() => {
+        ov.classList.remove('active');
+      }, 3000);
+    }
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>

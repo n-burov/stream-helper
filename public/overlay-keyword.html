@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Ключевое слово</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: transparent !important;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 12px; color: #fff;
+  }
+  .wrapper {
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 22px; min-width: 200px; max-width: 520px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .left { flex: 1; min-width: 0; }
+  .title {
+    font-size: 26px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(135deg, #f9ca24, #f0932b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .call { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .call strong {
+    color: #fff; font-weight: 700; background: rgba(145,70,255,0.2);
+    padding: 1px 10px; border-radius: 6px; font-size: 15px;
+  }
+  .right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .badge { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge.active { color: #00ff64; } .badge.active .dot { background: #00ff64; animation: pulse 1.5s infinite; }
+  .badge.inactive { color: #ff4757; } .badge.inactive .dot { background: #ff4757; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .count { font-size: 13px; color: rgba(255,255,255,0.5); }
+  .count strong { color: #fff; font-size: 18px; display: inline-block; transition: transform 0.2s, color 0.2s; }
+</style>
+</head>
+<body>
+
+<div class="wrapper" id="w">
+  <div class="left">
+    <div class="title">РОЗЫГРЫШ</div>
+    <div class="call">Отправь в чат <strong id="word">...</strong></div>
+  </div>
+  <div class="right">
+    <span class="badge inactive" id="badge"><span class="dot"></span> Ожидание</span>
+    <span class="count">👥 <strong id="cnt">0</strong></span>
+  </div>
+</div>
+
+<script>
+const wordEl = document.getElementById('word');
+const badge = document.getElementById('badge');
+const cnt = document.getElementById('cnt');
+let ws;
+
+function render(k) {
+  if (!k) return;
+  wordEl.textContent = k.word || '...';
+  cnt.textContent = k.participants.length;
+
+  if (k.status === 'collecting') {
+    badge.className = 'badge active';
+    badge.innerHTML = `<span class="dot"></span> Сбор идёт`;
+  } else if (k.status === 'locked') {
+    badge.className = 'badge active';
+    badge.innerHTML = `<span class="dot"></span> Зафиксирован`;
+  } else if (k.status === 'finished') {
+    badge.className = 'badge inactive';
+    badge.innerHTML = `<span class="dot"></span> 🏆 Завершён`;
+  } else {
+    badge.className = 'badge inactive';
+    badge.innerHTML = `<span class="dot"></span> Ожидание`;
+  }
+}
+
+function bumpCounter() {
+  cnt.style.transform = 'scale(1.4)';
+  cnt.style.color = '#00ff64';
+  setTimeout(() => {
+    cnt.style.transform = 'scale(1)';
+    cnt.style.color = '#fff';
+  }, 300);
+}
+
+function connect() {
+  ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = e => {
+    const { type, payload } = JSON.parse(e.data);
+
+    if (type === 'state') {
+      render(payload.keyword);
+    }
+
+    if (type === 'keyword:state') {
+      render(payload);
+    }
+
+    if (type === 'keyword:participant') {
+      // Мгновенный инкремент счётчика, не дожидаясь keyword:state
+      cnt.textContent = parseInt(cnt.textContent || '0', 10) + 1;
+      bumpCounter();
+    }
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>

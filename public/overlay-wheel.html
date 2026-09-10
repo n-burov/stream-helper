@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Колесо фортуны</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: transparent !important;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow: hidden;
+  }
+  .wrap {
+    display: none; width: 420px; height: 420px;
+    align-items: center; justify-content: center;
+  }
+  .wrap.active { display: flex; }
+  .inner { width: 350px; height: 350px; position: relative; }
+  #c { width: 100%; height: 100%; border-radius: 50%;
+       box-shadow: 0 0 60px rgba(145,70,255,0.15), 0 0 120px rgba(145,70,255,0.08); }
+</style>
+</head>
+<body>
+
+<audio id="spinSound" preload="auto"><source src="/sounds/wheel-spin.mp3" type="audio/mpeg"></audio>
+
+<div class="wrap" id="wrap">
+  <div class="inner"><canvas id="c" width="600" height="600"></canvas></div>
+</div>
+
+<script>
+const wrap = document.getElementById('wrap');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const spinSound = document.getElementById('spinSound');
+
+const defaultColors = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#1dd1a1','#f368e0','#00d2d3','#ff9f43','#10ac84','#ee5a24'];
+
+let sectors = [];
+let rotation = 0;
+let isSpinning = false;
+let currentSpinId = null;
+
+function show() { wrap.classList.add('active'); }
+function hide() {
+  wrap.classList.remove('active');
+  spinSound.pause(); spinSound.currentTime = 0;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 600, 600);
+  if (!sectors || sectors.length === 0) return;
+
+  const totalWeight = sectors.reduce((s, x) => s + x.weight, 0);
+  let start = rotation;
+
+  sectors.forEach((sec, i) => {
+    const slice = (sec.weight / totalWeight) * Math.PI * 2;
+    const end = start + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(300, 300);
+    ctx.arc(300, 300, 280, start, end);
+    ctx.closePath();
+    ctx.fillStyle = sec.color || defaultColors[i % defaultColors.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const mid = start + slice / 2;
+    const x = 300 + Math.cos(mid) * 195;
+    const y = 300 + Math.sin(mid) * 195;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(mid + (mid > Math.PI / 2 ? Math.PI : 0));
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+    ctx.fillText(sec.label.slice(0, 10), 0, 0);
+    ctx.restore();
+
+    start = end;
+  });
+
+  ctx.beginPath();
+  ctx.arc(300, 300, 280, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.fillStyle = '#ff4757';
+  ctx.shadowColor = 'rgba(255,71,87,0.3)'; ctx.shadowBlur = 15;
+  ctx.beginPath();
+  ctx.moveTo(300, 6); ctx.lineTo(285, 28); ctx.lineTo(315, 28);
+  ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function spinTo({ targetAngle, duration, spinId }) {
+  if (isSpinning) return;
+  currentSpinId = spinId;
+  isSpinning = true;
+  show();
+
+  spinSound.loop = true;
+  spinSound.volume = 0.2;
+  spinSound.currentTime = 0;
+  spinSound.play().catch(() => {});
+
+  const startRot = rotation;
+  const startTs = performance.now();
+
+  function step(now) {
+    const t = Math.min((now - startTs) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 5);
+    rotation = startRot + (targetAngle - startRot) * eased;
+    draw();
+    if (t < 1) requestAnimationFrame(step);
+    else {
+      rotation = targetAngle % (Math.PI * 2);
+      draw();
+      isSpinning = false;
+      spinSound.pause(); spinSound.currentTime = 0;
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = e => {
+    const { type, payload } = JSON.parse(e.data);
+
+    if (type === 'state') {
+      sectors = payload.wheel.sectors;
+      rotation = payload.wheel.currentRotation || 0;
+      if (sectors.length > 0) { show(); draw(); }
+    }
+    if (type === 'wheel:state') {
+      sectors = payload.sectors;
+      rotation = payload.currentRotation || 0;
+      if (sectors.length > 0) { show(); draw(); }
+    }
+    if (type === 'wheel:spin') {
+      sectors = payload.sectors;
+      spinTo(payload);
+    }
+    if (type === 'wheel:completed') {
+      setTimeout(() => { if (!isSpinning) hide(); }, 3000);
+    }
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>

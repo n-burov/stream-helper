@@ -1,0 +1,29 @@
+{
+  "name": "twitch-overlay",
+  "version": "1.0.0",
+  "description": "Local Twitch overlay + control panel",
+  "main": "server.js",
+  "bin": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ТВОЙ_ЛОГИН/twitch-overlay.git"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build": "pkg . --target node20-win-x64 --output dist/TwitchOverlay.exe"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0",
+    "tmi.js": "^1.8.5",
+    "open": "^8.4.2"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^5.16.1"
+  },
+  "pkg": {
+    "assets": ["public/**/*"],
+    "targets": ["node20-win-x64"],
+    "outputPath": "dist"
+  }
+}

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Стример-хаб | Управление</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
+    min-height: 100vh; color: #fff; padding: 20px;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 40px; background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px); border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08); margin-bottom: 30px;
+    flex-wrap: wrap; gap: 15px;
+  }
+  .logo {
+    font-size: 24px; font-weight: 700;
+    background: linear-gradient(135deg, #9146ff, #00d4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .status-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; background: rgba(0,255,100,0.15);
+    border-radius: 20px; border: 1px solid rgba(0,255,100,0.3); font-size: 14px;
+  }
+  .status-badge.offline { background: rgba(255,71,87,0.15); border-color: rgba(255,71,87,0.3); }
+  .status-badge.donat { background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.3); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff64; animation: pulse 2s infinite; }
+  .status-dot.red { background: #ff4757; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .logout-btn {
+    padding: 8px 20px; background: rgba(255,71,87,0.15);
+    border: 1px solid rgba(255,71,87,0.2); border-radius: 10px;
+    color: #ff4757; cursor: pointer; font-size: 14px; text-decoration: none;
+  }
+  .tabs { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 12px 24px; border: none; border-radius: 12px;
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+    border: 1px solid transparent;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, rgba(145,70,255,0.3), rgba(0,212,255,0.3));
+    border-color: rgba(145,70,255,0.5); color: #fff;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .card {
+    background: rgba(255,255,255,0.04); backdrop-filter: blur(10px);
+    border-radius: 20px; border: 1px solid rgba(255,255,255,0.06);
+    padding: 30px; margin-bottom: 25px;
+  }
+  .card-title {
+    font-size: 20px; font-weight: 600; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .card-title .icon { font-size: 28px; }
+  .btn {
+    padding: 12px 28px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; color: #fff;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, #9146ff, #7a3bcb); }
+  .btn-gold    { background: linear-gradient(135deg, #f9ca24, #f0932b); color: #1a1f35; }
+  .btn-danger  { background: linear-gradient(135deg, #ff4757, #c0392b); }
+  .btn-success { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+  .btn-reset   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  input[type="text"], input[type="number"], input[type="password"], select {
+    padding: 12px 18px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05); color: #fff; font-size: 16px;
+  }
+  input:focus, select:focus { outline: none; border-color: #9146ff; box-shadow: 0 0 20px rgba(145,70,255,0.15); }
+  select { cursor: pointer; }
+  select option { background: #1a1f35; color: #fff; }
+
+  /* === Списки (participants, tickets, donors) === */
+  .list-grid {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;
+    max-height: 400px; overflow-y: auto; padding: 5px;
+  }
+  .list-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; background: rgba(145,70,255,0.15);
+    border: 1px solid rgba(145,70,255,0.25); border-radius: 20px;
+    font-size: 13px; transition: all 0.2s;
+  }
+  .list-chip .chip-x {
+    cursor: pointer; color: rgba(255,71,87,0.7); font-weight: bold;
+    font-size: 14px; padding: 0 2px;
+  }
+  .list-chip .chip-x:hover { color: #ff4757; }
+  .list-chip.ticket {
+    background: rgba(249,202,36,0.12); border-color: rgba(249,202,36,0.25);
+  }
+  .list-chip.donor {
+    background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.25);
+  }
+  .list-chip .amount { color: #00d4ff; font-weight: 600; font-size: 12px; }
+  .list-empty {
+    text-align: center; color: rgba(255,255,255,0.3); padding: 30px;
+    width: 100%; font-size: 14px;
+  }
+
+  .counter-bar { display: flex; gap: 20px; font-size: 14px;
+    color: rgba(255,255,255,0.5); margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+  .counter-bar strong { color: #fff; font-size: 18px; }
+
+  .wheel-wrapper { position: relative; width: 400px; height: 400px; margin: 0 auto; }
+  #wheelCanvas { width: 100%; height: 100%; border-radius: 50%; box-shadow: 0 0 60px rgba(145,70,255,0.2); }
+  .sector-list { display: flex; flex-direction: column; gap: 8px; max-width: 600px; }
+  .sector-item {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.04); padding: 8px 12px;
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+  }
+  .sector-item .color-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; }
+  .sector-item input[type="text"] { flex: 1; padding: 6px 10px; font-size: 14px; }
+  .sector-item input[type="number"] { width: 70px; padding: 6px 8px; font-size: 13px; text-align: center; }
+  .sector-item .remove-btn {
+    background: none; border: none; color: rgba(255,71,87,0.7);
+    font-size: 18px; cursor: pointer; padding: 4px 8px;
+  }
+
+  .sniper-arena {
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 12px;
+    min-height: 100px; background: rgba(255,255,255,0.02);
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.04);
+  }
+  .sniper-chip {
+    padding: 6px 14px; border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.06);
+    font-size: 13px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .sniper-chip.dead { opacity: 0.35; text-decoration: line-through; }
+  .sniper-chip .remove-x { color: rgba(255,71,87,0.5); cursor: pointer; font-weight: bold; }
+
+  .sniper-stats { display: flex; gap: 20px; font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 12px; flex-wrap: wrap; }
+  .sniper-stats strong { color: #fff; }
+  .sniper-stats .alive strong { color: #00ff64; }
+  .sniper-stats .dead strong { color: #ff4757; }
+
+  .history-container { max-height: 300px; overflow-y: auto; margin-top: 15px; }
+  .history-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: rgba(255,255,255,0.03);
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);
+    margin-bottom: 6px; font-size: 13px; flex-wrap: wrap; gap: 8px;
+  }
+  .history-empty { text-align: center; color: rgba(255,255,255,0.2); padding: 30px; font-size: 14px; }
+
+  #winnerModal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+    z-index: 2000; justify-content: center; align-items: center;
+  }
+  #winnerModal.active { display: flex; }
+  .winner-box {
+    text-align: center; padding: 60px 80px;
+    background: radial-gradient(circle at center, rgba(145,70,255,0.2) 0%, transparent 70%);
+    border-radius: 40px; border: 2px solid rgba(249,202,36,0.3);
+    position: relative;
+  }
+  .winner-box .emoji { font-size: 80px; }
+  .winner-box .title {
+    font-size: 42px; font-weight: 900;
+    background: linear-gradient(135deg, #f9ca24, #f0932b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 12px 0;
+  }
+  .winner-box .name { font-size: 52px; font-weight: 700; margin: 16px 0; }
+  .winner-box .close {
+    position: absolute; top: 20px; right: 30px;
+    background: none; border: none; color: rgba(255,255,255,0.3);
+    font-size: 28px; cursor: pointer;
+  }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,71,87,0.9); color: #fff; padding: 12px 24px;
+    border-radius: 10px; font-size: 14px; z-index: 5000;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: rgba(0,180,80,0.9); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">🎮 Стример-хаб</div>
+  <div style="display:flex; gap:12px; flex-wrap:wrap;">
+    <div class="status-badge" id="twitchBadge">
+      <span class="status-dot red" id="twitchDot"></span>
+      <span id="twitchText">Twitch...</span>
+    </div>
+    <div class="status-badge donat" id="donatBadge">
+      <span class="status-dot red" id="donatDot"></span>
+      <span id="donatText">DonatePay...</span>
+    </div>
+  </div>
+  <a class="logout-btn" href="/api/logout">🚪 Выйти</a>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="tab-keyword">🎯 Ключевое слово</button>
+  <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
+  <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
+  <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
+  <button class="tab-btn" data-tab="tab-donors">💸 Донатеры</button>
+  <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
+</nav>
+
+<!-- ============ KEYWORD ============ -->
+<div class="tab-content active" id="tab-keyword">
+  <div class="card">
+    <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
+    <div class="row">
+      <input type="text" id="kwWord" placeholder="Кодовое слово..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="kwStart">▶️ Старт</button>
+      <button class="btn btn-danger" id="kwStop" disabled>⏹️ Стоп</button>
+      <button class="btn btn-gold" id="kwDraw" disabled>🎲 Победитель</button>
+      <button class="btn btn-reset" id="kwReset">🔄 Сброс</button>
+    </div>
+    <div class="counter-bar">
+      <span>Участников: <strong id="kwCount">0</strong></span>
+      <span>Статус: <span id="kwStatus" style="color:#ff4757;">Остановлен</span></span>
+      <span>Слово: <strong id="kwWordDisplay">—</strong></span>
+    </div>
+    <div class="list-grid" id="kwList"><div class="list-empty">Пока никого нет 😴</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">📜</span> История
+      <button class="btn btn-sm btn-danger" id="histClear" style="margin-left:auto;">Очистить</button>
+    </div>
+    <div class="history-container" id="histList"><div class="history-empty">История пуста</div></div>
+  </div>
+</div>
+
+<!-- ============ WHEEL ============ -->
+<div class="tab-content" id="tab-wheel">
+  <div class="card">
+    <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
+    <div class="wheel-wrapper">
+      <canvas id="wheelCanvas" width="600" height="600"></canvas>
+    </div>
+    <div class="row" style="justify-content:center; margin-top:20px;">
+      <button class="btn btn-gold" id="wheelSpin">🎡 Запустить</button>
+      <button class="btn btn-danger" id="wheelReset">🗑️ Сбросить всё</button>
+    </div>
+    <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5);">
+      <span id="wheelStatus">⏸️ Ожидание</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="icon">⚙️</span> Сектора</div>
+    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+      <input type="text" id="secLabel" placeholder="Название сектора..." />
+      <input type="number" id="secWeight" placeholder="Вес" value="1" min="1" />
+      <button class="btn btn-success" id="secAdd">➕ Добавить сектор</button>
+    </div>
+    <div class="sector-list" id="secList"><div class="list-empty">Нет секторов</div></div>
+  </div>
+</div>
+
+<!-- ============ SNIPER ============ -->
+<div class="tab-content" id="tab-sniper">
+  <div class="card">
+    <div class="card-title"><span class="icon">🔫</span> Снайпер</div>
+    <div class="sniper-stats">
+      <span class="alive">🟢 Живых: <strong id="snAlive">0</strong></span>
+      <span class="dead">💀 Выбыло: <strong id="snDead">0</strong></span>
+      <span>👥 Всего: <strong id="snTotal">0</strong></span>
+    </div>
+    <div class="sniper-arena" id="snArena"><div class="list-empty">Добавьте участников</div></div>
+    <div class="row" style="margin-top:16px;">
+      <input type="text" id="snName" placeholder="Имя участника..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="snAdd">➕</button>
+      <button class="btn btn-success" id="snImportTickets">🎟️ Импорт из билетов</button>
+      <button class="btn btn-success" id="snImportDonors">💸 Импорт из донатеров</button>
+      <button class="btn btn-danger" id="snShoot" disabled>🔫 Выстрел!</button>
+      <button class="btn btn-reset" id="snReset">🔄 Сброс</button>
+    </div>
+    <div class="row" style="font-size:14px; color:rgba(255,255,255,0.5);">
+      <span id="snStatus">⏸️ Ожидание</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TICKETS ============ -->
+<div class="tab-content" id="tab-tickets">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">🎟️</span> Билеты на розыгрыш
+      <button class="btn btn-sm btn-danger" id="ticketsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Список пополняется автоматически, когда зритель покупает награду за баллы канала.
+      У одного человека на неделю — один билет. Если нужно передать билет другому — нажмите на число рядом с ником и введите новое значение (0 — удалит).
+    </p>
+    <div class="row">
+      <input type="text" id="ticketsName" placeholder="Ник вручную..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="ticketsAdd">➕ Добавить</button>
+    </div>
+    <div class="counter-bar">
+      <span>Всего билетов: <strong id="ticketsCount">0</strong></span>
+      <span>Участников: <strong id="ticketsUnique">0</strong></span>
+    </div>
+    <div class="list-grid" id="ticketsList"><div class="list-empty">Пусто</div></div>
+  </div>
+</div>
+
+<!-- ============ DONORS ============ -->
+<div class="tab-content" id="tab-donors">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">💸</span> Донатеры
+      <button class="btn btn-sm btn-danger" id="donorsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Один человек — одна плашка, независимо от количества донатов. Рядом с ником показывается суммарная сумма за неделю.
+    </p>
+    <div class="row">
+      <input type="text" id="donorsName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="donorsAdd">➕ Добавить</button>
+    </div>
+    <div class="counter-bar">
+      <span>Всего донатеров: <strong id="donorsCount">0</strong></span>
+    </div>
+    <div class="list-grid" id="donorsList"><div class="list-empty">Пусто</div></div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div class="tab-content" id="tab-settings">
+  <div class="card">
+    <div class="card-title"><span class="icon">⚙️</span> Настройки интеграций</div>
+
+    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награда «Билет на розыгрыш»</label>
+      <div class="row" style="margin-bottom:0;">
+        <select id="setRewardSelect" style="flex:1; min-width:220px;">
+          <option value="">— Не выбрано —</option>
+        </select>
+        <button class="btn btn-sm btn-success" id="setLoadRewards">🔄 Обновить список</button>
+      </div>
+      <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
+        Нажми «Обновить список», затем выбери награду из выпадающего меню.
+      </div>
+
+      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">Access token DonatePay</label>
+      <input type="password" id="setDonateToken" placeholder="Вставь токен из ЛК DonatePay" />
+
+      <button class="btn btn-success" id="setSave" style="margin-top:16px;">💾 Сохранить</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">📺</span> URL оверлеев для OBS</div>
+    <div class="row" style="flex-direction:column; align-items:stretch;">
+      <label style="font-size:13px; color:rgba(255,255,255,0.5);">🎯 Ключевое слово</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-keyword.html" onclick="this.select()" />
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎡 Колесо</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-wheel.html" onclick="this.select()" />
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🔫 Снайпер</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
+    </div>
+  </div>
+</div>
+
+<div id="winnerModal">
+  <div class="winner-box">
+    <button class="close" id="winnerClose">✕</button>
+    <div class="emoji">🏆</div>
+    <div class="title">ПОБЕДИТЕЛЬ</div>
+    <div class="name" id="winnerName">—</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  WebSocket
+// ============================================================
+let ws;
+const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null };
+
+function connect() {
+  ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = (e) => {
+    const { type, payload } = JSON.parse(e.data);
+    handleMessage(type, payload);
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+function sendAction(action, data) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ action, data }));
+}
+function handleMessage(type, payload) {
+  switch (type) {
+    case 'state':
+      state.keyword = payload.keyword;
+      state.wheel = payload.wheel;
+      state.sniper = payload.sniper;
+      state.tickets = payload.tickets;
+      state.donors = payload.donors;
+      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors();
+      break;
+
+    case 'keyword:state':  state.keyword = payload; renderKeyword(); break;
+    case 'keyword:participant':
+      if (state.keyword) { state.keyword.participants.push(payload); renderKeyword(); }
+      break;
+
+    case 'wheel:state':    state.wheel = payload; renderWheel(); break;
+    case 'wheel:spin':
+      if (state.wheel) state.wheel.isSpinning = true;
+      renderWheel(); animateLocalWheel(payload);
+      break;
+    case 'wheel:completed':
+      if (state.wheel) { state.wheel.isSpinning = false; state.wheel.winner = payload.winnerLabel; }
+      renderWheel(); break;
+
+    case 'sniper:state':   state.sniper = payload; renderSniper(); break;
+    case 'sniper:shooting':
+      if (state.sniper) { state.sniper.status = 'shooting'; state.sniper.victimId = payload.victimId; }
+      renderSniper(); break;
+    case 'sniper:shot':
+      if (state.sniper) { state.sniper.participants = payload.participants; state.sniper.status = 'shot'; }
+      renderSniper(); break;
+
+    case 'tickets:state':  state.tickets = payload; renderTickets(); break;
+    case 'donors:state':   state.donors = payload; renderDonors(); break;
+
+    case 'winner:show':    showWinnerModal(payload.name); break;
+
+    case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
+    case 'donatePayStatus':updateDonatePayStatus(payload.connected); break;
+
+    case 'error': showToast(payload.message); break;
+  }
+}
+function showToast(text, type) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = 'toast show' + (type === 'success' ? ' success' : '');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function updateTwitchStatus(online) {
+  document.getElementById('twitchBadge').classList.toggle('offline', !online);
+  document.getElementById('twitchDot').classList.toggle('red', !online);
+  document.getElementById('twitchText').textContent = online ? 'Twitch OK' : 'Twitch offline';
+}
+function updateDonatePayStatus(online) {
+  document.getElementById('donatBadge').classList.toggle('offline', !online);
+  document.getElementById('donatDot').classList.toggle('red', !online);
+  document.getElementById('donatText').textContent = online ? 'DonatePay OK' : 'DonatePay offline';
+}
+function showWinnerModal(name) {
+  document.getElementById('winnerName').textContent = name;
+  document.getElementById('winnerModal').classList.add('active');
+}
+document.getElementById('winnerClose').addEventListener('click', () => {
+  document.getElementById('winnerModal').classList.remove('active');
+});
+
+// ============================================================
+//  Табы
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById(this.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================================================
+//  KEYWORD
+// ============================================================
+const kwWord = document.getElementById('kwWord');
+const kwStart = document.getElementById('kwStart');
+const kwStop = document.getElementById('kwStop');
+const kwDraw = document.getElementById('kwDraw');
+const kwReset = document.getElementById('kwReset');
+const kwList = document.getElementById('kwList');
+const kwCount = document.getElementById('kwCount');
+const kwStatus = document.getElementById('kwStatus');
+const kwWordDisplay = document.getElementById('kwWordDisplay');
+
+kwStart.addEventListener('click', () => sendAction('keyword:start', { word: kwWord.value }));
+kwStop.addEventListener('click', () => sendAction('keyword:stop'));
+kwDraw.addEventListener('click', () => sendAction('keyword:draw'));
+kwReset.addEventListener('click', () => sendAction('keyword:reset'));
+
+function renderKeyword() {
+  const k = state.keyword;
+  if (!k) return;
+  kwWordDisplay.textContent = k.word || '—';
+  kwCount.textContent = k.participants.length;
+
+  if (k.status === 'collecting') { kwStatus.textContent = '🟢 Сбор...'; kwStatus.style.color = '#00ff64'; }
+  else if (k.status === 'locked') { kwStatus.textContent = '⏸️ Зафиксирован'; kwStatus.style.color = '#f9ca24'; }
+  else if (k.status === 'finished') { kwStatus.textContent = '🏆 Завершён'; kwStatus.style.color = '#00d4ff'; }
+  else { kwStatus.textContent = '⏹️ Остановлен'; kwStatus.style.color = '#ff4757'; }
+
+  kwStart.disabled = k.status === 'collecting';
+  kwStop.disabled = k.status !== 'collecting';
+  kwDraw.disabled = !(k.status === 'locked' && k.participants.length > 0);
+
+  if (k.participants.length === 0) {
+    kwList.innerHTML = `<div class="list-empty">Пока никого нет 😴</div>`;
+  } else {
+    kwList.innerHTML = k.participants.map(p => `<div class="list-chip">${escapeHtml(p.username)}</div>`).join('');
+  }
+  if (!kwWord.value) kwWord.value = k.word || '';
+}
+
+// ============================================================
+//  WHEEL
+// ============================================================
+const wCanvas = document.getElementById('wheelCanvas');
+const wCtx = wCanvas.getContext('2d');
+const wheelSpin = document.getElementById('wheelSpin');
+const wheelReset = document.getElementById('wheelReset');
+const wheelStatus = document.getElementById('wheelStatus');
+const secList = document.getElementById('secList');
+const defaultColors = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#1dd1a1','#f368e0','#00d2d3','#ff9f43','#10ac84','#ee5a24'];
+
+let localRotation = 0, animating = false;
+
+wheelSpin.addEventListener('click', () => sendAction('wheel:spin'));
+wheelReset.addEventListener('click', () => {
+  if (confirm('Удалить все сектора?')) sendAction('wheel:reset');
+});
+document.getElementById('secAdd').addEventListener('click', () => {
+  const label = document.getElementById('secLabel').value.trim();
+  const weight = parseInt(document.getElementById('secWeight').value) || 1;
+  if (!label) { showToast('Введите название'); return; }
+  const sectors = [...(state.wheel?.sectors || []), { label, weight }];
+  sendAction('wheel:setSectors', { sectors });
+  document.getElementById('secLabel').value = '';
+  document.getElementById('secWeight').value = '1';
+});
+
+function renderWheel() {
+  const w = state.wheel;
+  if (!w) return;
+  wheelSpin.disabled = w.isSpinning || w.sectors.length === 0;
+  wheelStatus.textContent = w.isSpinning ? '🔄 Вращение...' : (w.winner ? '🏆 ' + w.winner : '⏸️ Ожидание');
+
+  if (!animating) { localRotation = w.currentRotation || 0; drawLocalWheel(); }
+
+  if (w.sectors.length === 0) {
+    secList.innerHTML = `<div class="list-empty">Нет секторов</div>`;
+  } else {
+    secList.innerHTML = w.sectors.map((s, i) => `
+      <div class="sector-item">
+        <span class="color-dot" style="background:${s.color || defaultColors[i % defaultColors.length]}"></span>
+        <input type="text" value="${escapeAttr(s.label)}" data-idx="${i}" data-field="label" />
+        <input type="number" value="${s.weight}" data-idx="${i}" data-field="weight" min="1" />
+        <button class="remove-btn" data-rm="${i}">✕</button>
+      </div>
+    `).join('');
+
+    secList.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const idx = +inp.dataset.idx;
+        const sectors = state.wheel.sectors.map((s, i) => i !== idx ? s : {
+          ...s, [inp.dataset.field]: inp.dataset.field === 'weight' ? Math.max(1, parseInt(inp.value) || 1) : inp.value
+        });
+        sendAction('wheel:setSectors', { sectors });
+      });
+    });
+    secList.querySelectorAll('[data-rm]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sectors = state.wheel.sectors.filter((_, i) => i !== +btn.dataset.rm);
+        sendAction('wheel:setSectors', { sectors });
+      });
+    });
+  }
+}
+
+function drawLocalWheel() {
+  const sectors = state.wheel?.sectors || [];
+  wCtx.clearRect(0, 0, 600, 600);
+  if (sectors.length === 0) {
+    wCtx.fillStyle = 'rgba(255,255,255,0.05)';
+    wCtx.beginPath(); wCtx.arc(300,300,250,0,Math.PI*2); wCtx.fill();
+    wCtx.fillStyle = 'rgba(255,255,255,0.2)';
+    wCtx.font = '24px sans-serif'; wCtx.textAlign = 'center'; wCtx.textBaseline = 'middle';
+    wCtx.fillText('Добавьте сектора', 300, 300);
+    return;
+  }
+  const totalWeight = sectors.reduce((s, x) => s + x.weight, 0);
+  let startAngle = localRotation;
+  sectors.forEach((sec, i) => {
+    const slice = (sec.weight / totalWeight) * Math.PI * 2;
+    const end = startAngle + slice;
+    wCtx.beginPath(); wCtx.moveTo(300,300); wCtx.arc(300,300,280,startAngle,end); wCtx.closePath();
+    wCtx.fillStyle = sec.color || defaultColors[i % defaultColors.length]; wCtx.fill();
+    wCtx.strokeStyle = 'rgba(255,255,255,0.1)'; wCtx.lineWidth = 2; wCtx.stroke();
+
+    const mid = startAngle + slice / 2;
+    const x = 300 + Math.cos(mid) * 200;
+    const y = 300 + Math.sin(mid) * 200;
+    wCtx.save(); wCtx.translate(x,y);
+    wCtx.rotate(mid + (mid > Math.PI/2 ? Math.PI : 0));
+    wCtx.fillStyle = '#fff'; wCtx.font = 'bold 18px sans-serif';
+    wCtx.textAlign = 'center'; wCtx.textBaseline = 'middle';
+    wCtx.fillText(sec.label.slice(0,12), 0, 0); wCtx.restore();
+
+    startAngle = end;
+  });
+  wCtx.fillStyle = '#ff4757';
+  wCtx.beginPath(); wCtx.moveTo(300,10); wCtx.lineTo(280,40); wCtx.lineTo(320,40); wCtx.closePath(); wCtx.fill();
+}
+
+function animateLocalWheel({ targetAngle, duration }) {
+  if (animating) return;
+  animating = true;
+  const startRot = localRotation;
+  const startTs = performance.now();
+  function step(now) {
+    const t = Math.min((now - startTs) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 5);
+    localRotation = startRot + (targetAngle - startRot) * eased;
+    drawLocalWheel();
+    if (t < 1) requestAnimationFrame(step);
+    else { localRotation = targetAngle % (Math.PI * 2); drawLocalWheel(); animating = false; }
+  }
+  requestAnimationFrame(step);
+}
+
+// ============================================================
+//  SNIPER
+// ============================================================
+const snName = document.getElementById('snName');
+const snAdd = document.getElementById('snAdd');
+const snShoot = document.getElementById('snShoot');
+const snReset = document.getElementById('snReset');
+const snArena = document.getElementById('snArena');
+const snAlive = document.getElementById('snAlive');
+const snDead = document.getElementById('snDead');
+const snTotal = document.getElementById('snTotal');
+const snStatus = document.getElementById('snStatus');
+
+snAdd.addEventListener('click', () => {
+  if (snName.value.trim()) { sendAction('sniper:add', { name: snName.value }); snName.value = ''; }
+});
+snName.addEventListener('keydown', e => { if (e.key === 'Enter') snAdd.click(); });
+snShoot.addEventListener('click', () => sendAction('sniper:shoot'));
+snReset.addEventListener('click', () => { if (confirm('Сбросить снайпера?')) sendAction('sniper:reset'); });
+
+document.getElementById('snImportTickets').addEventListener('click', () => {
+  if (!state.tickets || state.tickets.participants.length === 0) {
+    showToast('Список билетов пуст'); return;
+  }
+  if (state.sniper && state.sniper.participants.length > 0) {
+    if (!confirm('Импорт заменит текущий список снайпера. Продолжить?')) return;
+  }
+  const names = state.tickets.participants.map(p => p.username);
+  sendAction('sniper:import', { names });
+});
+
+document.getElementById('snImportDonors').addEventListener('click', () => {
+  if (!state.donors || state.donors.participants.length === 0) {
+    showToast('Список донатеров пуст'); return;
+  }
+  if (state.sniper && state.sniper.participants.length > 0) {
+    if (!confirm('Импорт заменит текущий список снайпера. Продолжить?')) return;
+  }
+  const names = state.donors.participants.map(p => p.name);
+  sendAction('sniper:import', { names });
+});
+
+function renderSniper() {
+  const s = state.sniper;
+  if (!s) return;
+  const alive = s.participants.filter(p => p.alive).length;
+  const dead = s.participants.length - alive;
+  snAlive.textContent = alive;
+  snDead.textContent = dead;
+  snTotal.textContent = s.participants.length;
+  snShoot.disabled = s.status === 'shooting' || alive <= 1;
+
+  if (s.status === 'shooting') snStatus.textContent = '🎯 Прицеливание...';
+  else if (s.status === 'shot') snStatus.textContent = '💥 Попадание!';
+  else if (s.status === 'winner') snStatus.textContent = '🏆 Победитель: ' + s.winnerName;
+  else snStatus.textContent = '⏸️ Ожидание';
+
+  if (s.participants.length === 0) {
+    snArena.innerHTML = `<div class="list-empty">Добавьте участников</div>`;
+    return;
+  }
+  const sorted = [...s.participants].sort((a, b) => {
+    if (a.alive && !b.alive) return -1;
+    if (!a.alive && b.alive) return 1;
+    return a.id - b.id;
+  });
+  snArena.innerHTML = sorted.map(p => {
+    const targeted = s.victimId === p.id;
+    return `<div class="sniper-chip ${p.alive ? '' : 'dead'}" style="${targeted ? 'border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.4);' : ''}">
+      #${p.id} ${escapeHtml(p.name)}${p.alive ? '' : ' 💀'}
+      <span class="remove-x" data-rm="${p.id}">✕</span>
+    </div>`;
+  }).join('');
+  snArena.querySelectorAll('[data-rm]').forEach(el => {
+    el.addEventListener('click', () => sendAction('sniper:remove', { id: +el.dataset.rm }));
+  });
+}
+
+// ============================================================
+//  TICKETS
+// ============================================================
+const ticketsList = document.getElementById('ticketsList');
+const ticketsCount = document.getElementById('ticketsCount');
+const ticketsUnique = document.getElementById('ticketsUnique');
+const ticketsName = document.getElementById('ticketsName');
+
+document.getElementById('ticketsAdd').addEventListener('click', () => {
+  if (ticketsName.value.trim()) { sendAction('tickets:add', { name: ticketsName.value }); ticketsName.value = ''; }
+});
+ticketsName.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('ticketsAdd').click(); });
+document.getElementById('ticketsReset').addEventListener('click', () => {
+  if (confirm('Очистить список билетов?')) sendAction('tickets:reset');
+});
+
+function renderTickets() {
+  const t = state.tickets;
+  if (!t) return;
+
+  const total = t.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+  ticketsCount.textContent = total;
+  ticketsUnique.textContent = t.participants.length;
+
+  if (t.participants.length === 0) {
+    ticketsList.innerHTML = `<div class="list-empty">Пока никто не купил билет 🎟️</div>`;
+    return;
+  }
+
+  ticketsList.innerHTML = t.participants.map(p => {
+    const count = p.count || 1;
+    return `
+      <div class="list-chip ticket">
+        🎟️ ${escapeHtml(p.username)}
+        <span class="ticket-count" data-name="${escapeAttr(p.username)}"
+              style="background:rgba(0,0,0,0.25); padding:1px 8px; border-radius:10px; cursor:pointer; font-weight:700; color:#f9ca24;">
+          ×${count}
+        </span>
+        <span class="chip-x" data-name="${escapeAttr(p.username)}">✕</span>
+      </div>
+    `;
+  }).join('');
+
+  ticketsList.querySelectorAll('.chip-x').forEach(el => {
+    el.addEventListener('click', () => sendAction('tickets:remove', { name: el.dataset.name }));
+  });
+
+  ticketsList.querySelectorAll('.ticket-count').forEach(el => {
+    el.addEventListener('click', () => {
+      const name = el.dataset.name;
+      const current = parseInt(el.textContent.replace('×', '')) || 1;
+      const input = prompt(`Сколько билетов у "${name}"? (0 — удалит)`, current);
+      if (input === null) return;
+      const n = parseInt(input);
+      if (!Number.isInteger(n) || n < 0) { showToast('Некорректное число'); return; }
+      sendAction('tickets:setCount', { name, count: n });
+    });
+  });
+}
+
+// ============================================================
+//  DONORS
+// ============================================================
+const donorsList = document.getElementById('donorsList');
+const donorsCount = document.getElementById('donorsCount');
+const donorsName = document.getElementById('donorsName');
+
+document.getElementById('donorsAdd').addEventListener('click', () => {
+  if (donorsName.value.trim()) { sendAction('donors:add', { name: donorsName.value }); donorsName.value = ''; }
+});
+donorsName.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('donorsAdd').click(); });
+document.getElementById('donorsReset').addEventListener('click', () => {
+  if (confirm('Очистить список донатеров?')) sendAction('donors:reset');
+});
+
+function renderDonors() {
+  const d = state.donors;
+  if (!d) return;
+  donorsCount.textContent = d.participants.length;
+
+  if (d.participants.length === 0) {
+    donorsList.innerHTML = `<div class="list-empty">Пока нет донатов 💸</div>`;
+    return;
+  }
+  donorsList.innerHTML = d.participants.map((p, i) => `
+    <div class="list-chip donor">
+      💸 ${escapeHtml(p.name)}
+      <span class="amount">${p.totalAmount || 0} ${p.currency || ''}</span>
+      <span class="chip-x" data-idx="${i}">✕</span>
+    </div>
+  `).join('');
+
+  donorsList.querySelectorAll('[data-idx]').forEach(el => {
+    el.addEventListener('click', () => sendAction('donors:remove', { index: +el.dataset.idx }));
+  });
+}
+
+// ============================================================
+//  HISTORY
+// ============================================================
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/history');
+    renderHistory(await r.json());
+  } catch {}
+}
+function renderHistory(list) {
+  const el = document.getElementById('histList');
+  if (!list || list.length === 0) { el.innerHTML = `<div class="history-empty">История пуста</div>`; return; }
+  el.innerHTML = list.map(item => {
+    const date = new Date(item.time).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const label = item.mechanic === 'keyword' ? '🎯 ' + item.word
+      : item.mechanic === 'wheel' ? '🎡 Колесо' : '🔫 Снайпер';
+    const winners = (item.winners || []).join(', ') || '—';
+    return `<div class="history-item">
+      <span>${label}</span><span>👥 ${item.participants || 0}</span>
+      <span style="color:#00ff64;">🏆 ${escapeHtml(winners)}</span>
+      <span style="color:rgba(255,255,255,0.3); font-size:11px;">${date}</span>
+    </div>`;
+  }).join('');
+}
+document.getElementById('histClear').addEventListener('click', async () => {
+  if (!confirm('Очистить всю историю?')) return;
+  await fetch('/api/history', { method: 'DELETE' });
+  loadHistory();
+});
+
+// ============================================================
+//  SETTINGS
+// ============================================================
+let currentRewards = [];
+
+async function loadSettings() {
+  try {
+    const r = await fetch('/api/settings');
+    const s = await r.json();
+
+    // Запоминаем сохранённый ID, чтобы выбрать его после загрузки списка
+    window._savedRewardId = s.ticketRewardId || '';
+
+    if (s.hasDonatePayToken) {
+      document.getElementById('setDonateToken').placeholder = '✅ Токен сохранён (введи новый, чтобы заменить)';
+    }
+
+    // Автоматически подгружаем список награда, чтобы попытаться выбрать сохранённый
+    await loadRewards({ silent: true });
+  } catch {}
+}
+
+async function loadRewards({ silent } = {}) {
+  const select = document.getElementById('setRewardSelect');
+  const hint = document.getElementById('rewardsHint');
+
+  if (!silent) {
+    select.disabled = true;
+    hint.textContent = 'Загрузка списка наград...';
+  }
+
+  try {
+    const r = await fetch('/api/rewards');
+    const data = await r.json();
+
+    if (data.error) {
+      if (!silent) hint.textContent = '⚠️ ' + data.error;
+      return;
+    }
+
+    currentRewards = data.rewards || [];
+    select.innerHTML = '<option value="">— Не выбрано —</option>' +
+      currentRewards.map(r =>
+        `<option value="${escapeAttr(r.id)}">${escapeHtml(r.title)} — ${r.cost} баллов</option>`
+      ).join('');
+
+    // Пытаемся выбрать сохранённый ID
+    if (window._savedRewardId) {
+      const opt = currentRewards.find(x => x.id === window._savedRewardId);
+      if (opt) {
+        select.value = window._savedRewardId;
+        hint.textContent = `✅ Активна: ${opt.title} (${opt.cost} баллов)`;
+      } else {
+        hint.textContent = `⚠️ Сохранённая награда не найдена среди текущих. Выбери заново.`;
+      }
+    } else if (currentRewards.length === 0) {
+      hint.textContent = 'На канале пока нет кастомных награда.';
+    } else {
+      hint.textContent = `Найдено наград: ${currentRewards.length}. Выбери нужную.`;
+    }
+  } catch (e) {
+    if (!silent) hint.textContent = '⚠️ Ошибка: ' + e.message;
+  } finally {
+    select.disabled = false;
+  }
+}
+
+document.getElementById('setLoadRewards').addEventListener('click', () => loadRewards());
+
+document.getElementById('setSave').addEventListener('click', async () => {
+  const select = document.getElementById('setRewardSelect');
+  const ticketRewardId = select.value || '';
+  const selected = currentRewards.find(x => x.id === ticketRewardId);
+  const ticketRewardTitle = selected ? selected.title : '';
+
+  const donatePayToken = document.getElementById('setDonateToken').value.trim();
+
+  const body = { ticketRewardId, ticketRewardTitle };
+  if (donatePayToken) body.donatePayToken = donatePayToken;
+
+  try {
+    const r = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (data.error) {
+      showToast('❌ ' + data.error);
+      return;
+    }
+    showToast('✅ Настройки сохранены', 'success');
+    document.getElementById('setDonateToken').value = '';
+    window._savedRewardId = ticketRewardId;
+    await loadSettings();
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  }
+});
+
+// ============================================================
+//  Утилиты
+// ============================================================
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+// ============================================================
+//  Старт
+// ============================================================
+connect();
+loadHistory();
+loadSettings();
+setInterval(loadHistory, 10000);
+</script>
+</body>
+</html>

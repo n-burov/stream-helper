@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Анонс победителя</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: transparent !important;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow: hidden;
+  }
+  .box {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.8);
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(24px);
+    border: 2px solid rgba(249,202,36,0.25); border-radius: 28px;
+    padding: 40px 64px; text-align: center; z-index: 1000;
+    min-width: 280px; opacity: 0;
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .box.active { display: block; opacity: 1; transform: translate(-50%,-50%) scale(1); }
+  .title {
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, #f9ca24, #f0932b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .name { font-size: 40px; font-weight: 700; margin-top: 4px; color: #fff; }
+  .sub { font-size: 16px; color: rgba(255,255,255,0.5); margin-top: 8px; }
+  .tag {
+    display: inline-block; font-size: 12px; padding: 3px 14px; border-radius: 20px;
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); margin-top: 10px;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<audio id="winSound" preload="auto"><source src="/sounds/winner.mp3" type="audio/mpeg"></audio>
+
+<div class="box" id="box">
+  <div class="title" id="title">ВЫИГРЫШ</div>
+  <div class="name" id="name">Игрок</div>
+  <div class="sub" id="sub">🎉 Поздравляем!</div>
+  <div class="tag" id="tag">🎯 Розыгрыш</div>
+</div>
+
+<script>
+const box = document.getElementById('box');
+const title = document.getElementById('title');
+const name = document.getElementById('name');
+const sub = document.getElementById('sub');
+const tag = document.getElementById('tag');
+const winSound = document.getElementById('winSound');
+
+let hideTimer = null;
+let lastShown = null;
+
+function confetti() {
+  const colors = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#f9ca24','#ff4757','#00d4ff'];
+  for (let i = 0; i < 50; i++) {
+    const c = document.createElement('div');
+    c.style.cssText = `
+      position: fixed; width: ${5 + Math.random()*8}px; height: ${5 + Math.random()*8}px;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      left: ${Math.random()*100}vw; top: -20px;
+      border-radius: ${Math.random()>0.5?'50%':'2px'};
+      animation: confettiFall ${2 + Math.random()*3}s linear forwards;
+      animation-delay: ${Math.random()*0.5}s;
+      z-index: 1001; pointer-events: none;
+      transform: rotate(${Math.random()*360}deg);
+    `;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+function showWinner(p) {
+  const key = p.name + '_' + p.at;
+  if (lastShown === key) return;
+  lastShown = key;
+
+  title.textContent = p.title || 'ВЫИГРЫШ';
+  name.textContent = p.name;
+  sub.textContent = p.subtitle || '🎉 Поздравляем!';
+  tag.textContent = p.tag || '🎯 Розыгрыш';
+
+  box.classList.add('active');
+  confetti();
+
+  winSound.volume = 0.2;
+  winSound.currentTime = 0;
+  winSound.play().catch(() => {});
+
+  if (hideTimer) clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    box.classList.remove('active');
+  }, 6000);
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = e => {
+    const { type, payload } = JSON.parse(e.data);
+    if (type === 'winner:show') showWinner(payload);
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>
