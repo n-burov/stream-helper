@@ -4,7 +4,7 @@ const path = require('path');
 const https = require('https');
 
 const CURRENT_VERSION = require('./package.json').version;
-const REPO = 'gepardman/twitch-overlay';
+const REPO = 'n-burov/stream-helper';
 const isPkg = typeof process.pkg !== 'undefined';
 const EXE_PATH = process.execPath;
 const EXE_DIR = path.dirname(EXE_PATH);
