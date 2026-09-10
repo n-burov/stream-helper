@@ -207,7 +207,10 @@
       <span id="donatText">DonatePay...</span>
     </div>
   </div>
-  <a class="logout-btn" href="/api/logout">🚪 Выйти</a>
+    <div style="display:flex; gap:8px;">
+      <a class="logout-btn" id="loginBtn" href="/auth/login" style="display:none; background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
+      <a class="logout-btn" id="logoutBtn" href="/api/logout">🚪 Выйти</a>
+    </div>
 </header>
 
 <nav class="tabs">
@@ -446,7 +449,10 @@ function handleMessage(type, payload) {
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
-    case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
+    case 'twitchStatus':
+      updateTwitchStatus(payload.connected);
+      if (!payload.connected && payload.reason) refreshAuthButtons();
+      break;
     case 'donatePayStatus':updateDonatePayStatus(payload.connected); break;
 
     case 'error': showToast(payload.message); break;
@@ -961,10 +967,31 @@ function escapeAttr(s) { return escapeHtml(s); }
 // ============================================================
 //  Старт
 // ============================================================
+// ============================================================
+//  Кнопки авторизации
+// ============================================================
+async function refreshAuthButtons() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (s.authorized) {
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
+    } else {
+      loginBtn.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+    }
+  } catch {}
+}
 connect();
 loadHistory();
 loadSettings();
+refreshAuthButtons();
 setInterval(loadHistory, 10000);
+setInterval(refreshAuthButtons, 15000);
 </script>
 </body>
 </html>
