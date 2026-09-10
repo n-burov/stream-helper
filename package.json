@@ -1,6 +1,6 @@
 {
   "name": "twitch-overlay",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Local Twitch overlay + control panel",
   "main": "server.js",
   "bin": "server.js",
