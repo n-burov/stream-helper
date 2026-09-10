@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch: # ручной запуск для теста
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build exe
+        run: npm run build
+
+      - name: Generate version.json
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $json = @{
+            version = $version
+            releasedAt = (Get-Date).ToUniversalTime().ToString("o")
+            url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/TwitchOverlay.exe"
+          } | ConvertTo-Json
+          $json | Out-File -FilePath dist/version.json -Encoding utf8
+
+      - name: Compute SHA256
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist/*.exe | Select-Object -First 1
+          $hash = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash.ToLower()
+          "$hash  $($exe.Name)" | Out-File -FilePath dist/SHA256SUMS.txt -Encoding ascii
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/TwitchOverlay.exe
+            dist/version.json
+            dist/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
