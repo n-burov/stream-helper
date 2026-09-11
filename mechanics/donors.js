@@ -6,39 +6,50 @@ function init(ctx) { ctxRef = ctx; }
 
 function getState() {
   const d = db.loadData();
-  return {
-    participants: d.donors?.participants || [],
-    resetAt: d.donors?.resetAt || null,
-  };
+  const participants = (d.donors?.participants || []).map(p => ({
+    name: p.name,
+    totalAmount: typeof p.totalAmount === 'number' ? p.totalAmount : (Number(p.amount) || 0),
+    currency: p.currency || 'RUB',
+    count: typeof p.count === 'number' ? p.count : 1,
+    lastAt: p.lastAt || p.at || Date.now(),
+  }));
+  return { participants };
 }
 
-// Полная замена списка (вызывается из donatepay.js)
-function replaceAll(participants) {
-  db.update(d => {
-    d.donors.participants = Array.isArray(participants) ? participants : [];
-  });
-  ctxRef.broadcast('donors:state', getState());
-  return { ok: true };
+// Ищем донатера без учёта регистра
+function findDonor(list, name) {
+  const lower = String(name).trim().toLowerCase();
+  return list.find(p => String(p.name).trim().toLowerCase() === lower);
 }
 
-function addManual(name) {
-  const trimmed = String(name || '').trim();
-  if (!trimmed) return { error: 'Пустое имя' };
+function addDonor({ name, amount, currency, message, at }) {
+  const trimmed = String(name || '').trim() || 'Аноним';
+  const sum = Number(amount) || 0;
 
-  const lower = trimmed.toLowerCase();
   const d = db.loadData();
+  const existing = findDonor(d.donors.participants, trimmed);
 
-  if (d.donors.participants.some(p => p.name.toLowerCase() === lower)) {
-    return { error: 'Уже в списке' };
+  if (existing) {
+    // Уже в списке — увеличиваем сумму и счётчик, но НЕ добавляем вторую запись
+    db.update(dd => {
+      const p = findDonor(dd.donors.participants, trimmed);
+      if (p) {
+        p.totalAmount = (p.totalAmount || 0) + sum;
+        p.count = (p.count || 1) + 1;
+        p.lastAt = at || Date.now();
+      }
+    });
+    ctxRef.broadcast('donors:state', getState());
+    return { ok: true, updated: true };
   }
 
   const entry = {
     name: trimmed,
-    totalAmount: 0,
-    currency: 'RUB',
-    count: 0,
-    lastAt: Date.now(),
-    manual: true,
+    totalAmount: sum,
+    currency: currency || 'RUB',
+    count: 1,
+    lastAt: at || Date.now(),
+    message: message || '',
   };
 
   db.update(dd => { dd.donors.participants.push(entry); });
@@ -46,27 +57,26 @@ function addManual(name) {
   return { ok: true, entry };
 }
 
+function addManual(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) return { error: 'Пустое имя' };
+  return addDonor({ name: trimmed, amount: 0 });
+}
+
 function removeAt(index) {
   const idx = Number(index);
   if (!Number.isInteger(idx) || idx < 0) return { error: 'Некорректный индекс' };
-
   db.update(d => {
     if (idx < d.donors.participants.length) d.donors.participants.splice(idx, 1);
   });
-
   ctxRef.broadcast('donors:state', getState());
   return { ok: true };
 }
 
-// Сброс: очищаем список И ставим resetAt — с этого момента все донаты "до" игнорируются
 function reset() {
-  const now = Date.now();
-  db.update(d => {
-    d.donors.participants = [];
-    d.donors.resetAt = now;
-  });
+  db.update(d => { d.donors.participants = []; });
   ctxRef.broadcast('donors:state', getState());
-  return { ok: true, resetAt: now };
+  return { ok: true };
 }
 
 function getUsernames() {
@@ -74,4 +84,4 @@ function getUsernames() {
   return (d.donors?.participants || []).map(p => p.name);
 }
 
-module.exports = { init, getState, replaceAll, addManual, removeAt, reset, getUsernames };
+module.exports = { init, getState, addDonor, addManual, removeAt, reset, getUsernames };
