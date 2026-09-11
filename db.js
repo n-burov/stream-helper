@@ -14,7 +14,6 @@ const DEFAULT_DATA = {
     channel: null,
     donatePayToken: null,
     ticketRewardId: null,        // ID награды «Билет на розыгрыш» (если null — ловим все награды)
-	ticketRewardTitle: null,
   },
   follows: [],
   redemptions: [],
@@ -26,8 +25,7 @@ const DEFAULT_DATA = {
 
   // === Донатеры (розыгрыш среди тех, кто задонатил за неделю) ===
   donors: {
-    participants: [],
-    resetAt: null,     // timestamp последнего ручного сброса
+    participants: [],            // [{ name, amount, currency, message, at }]
   },
 
   // === Механики ===
