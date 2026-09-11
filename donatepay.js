@@ -1,138 +1,155 @@
 // donatepay.js
-const WebSocket = require('ws');
 const EventEmitter = require('events');
+const db = require('./db');
 
 const API_BASE = 'https://donatepay.ru/api/v1';
-const WS_URL = 'wss://centrifugo.donatepay.ru:443/connection/websocket';
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
+
+// Возвращает timestamp начала текущей недели (понедельник 00:00 локального времени)
+function startOfWeek(now = new Date()) {
+  const d = new Date(now);
+  const day = d.getDay();           // 0 = воскресенье, 1 = понедельник
+  const diff = (day === 0 ? 6 : day - 1); // сколько дней назад был понедельник
+  d.setDate(d.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
 
 class DonatePayService extends EventEmitter {
   constructor({ token }) {
     super();
+
     this.token = token;
-    this.ws = null;
-    this.userId = null;
-    this.channelToken = null;
-    this.pingInterval = null;
-    this.reconnectTimeout = null;
-    this.shouldReconnect = true;
-    this.msgId = 0;
+    this.refreshTimer = null;
+    this.shouldRefresh = false;
+    this.rateLimitedUntil = 0;
+    this.consecutiveRateLimits = 0;
+
+    console.log('[donatepay] using token:',
+      this.token.slice(0, 10) + '...' + this.token.slice(-6));
   }
 
-  async connect() {
-    this.shouldReconnect = true;
+  async start() {
+    this.shouldRefresh = true;
+    this.emit('connected');
+    await this.refreshDonors();
+    this.scheduleNext();
+  }
+
+  stop() {
+    this.shouldRefresh = false;
+    if (this.refreshTimer) { clearTimeout(this.refreshTimer); this.refreshTimer = null; }
+  }
+
+  async connect() { return this.start(); }
+  disconnect() { this.stop(); }
+
+  scheduleNext() {
+    if (!this.shouldRefresh) return;
+    const now = Date.now();
+    const delay = Math.max(REFRESH_INTERVAL_MS, this.rateLimitedUntil - now);
+    this.refreshTimer = setTimeout(() => {
+      this.refreshDonors().then(() => this.scheduleNext());
+    }, delay);
+  }
+
+  async refreshDonors() {
+    if (!this.shouldRefresh) return;
+    if (Date.now() < this.rateLimitedUntil) return;
 
     try {
-      // 1. Получаем userId через API
-      const userRes = await fetch(`${API_BASE}/user?access_token=${encodeURIComponent(this.token)}`);
-      const userData = await userRes.json();
-      if (userData?.data?.id) {
-        this.userId = userData.data.id;
-      } else if (userData?.id) {
-        this.userId = userData.id;
-      } else {
-        throw new Error('Не удалось получить userId');
-      }
+      const url = `${API_BASE}/transactions` +
+        `?access_token=${encodeURIComponent(this.token)}` +
+        `&type=donation&limit=100&order=DESC`;
 
-      // 2. Получаем socket-токен
-      const tokenRes = await fetch(`https://donatepay.ru/api/v2/socket/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: this.token }),
-      });
-      const tokenData = await tokenRes.json();
-      this.channelToken = tokenData?.token || tokenData?.data?.token;
-      if (!this.channelToken) throw new Error('Не удалось получить socket-токен');
-
-      // 3. Открываем WS
-      this.openSocket();
-    } catch (e) {
-      this.emit('error', e.message);
-      this.scheduleReconnect();
-    }
-  }
-
-  openSocket() {
-    this.ws = new WebSocket(WS_URL, { perMessageDeflate: false });
-
-    this.ws.on('open', () => this.onOpen());
-    this.ws.on('message', (data) => this.onMessage(data));
-    this.ws.on('close', () => this.onClose());
-    this.ws.on('error', (err) => this.emit('error', err.message));
-  }
-
-  send(obj) {
-    if (this.ws && this.ws.readyState === 1) {
-      this.msgId++;
-      this.ws.send(JSON.stringify({ id: this.msgId, ...obj }));
-    }
-  }
-
-  onOpen() {
-    // Centrifugo handshake — шлём connect с нашим токеном
-    this.send({ connect: { token: this.channelToken } });
-  }
-
-  onMessage(raw) {
-    let msg;
-    try { msg = JSON.parse(raw.toString()); } catch { return; }
-
-    // Ответ на connect
-    if (msg.connect || (msg.id === 1 && msg.result)) {
-      this.emit('connected');
-
-      // Подписываемся на публичный канал пользователя
-      this.send({
-        subscribe: {
-          channel: `$public:${this.userId}`,
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'TwitchOverlay/1.0',
         },
       });
 
-      // Пинг каждые 25 сек, чтобы не отвалилось
-      if (this.pingInterval) clearInterval(this.pingInterval);
-      this.pingInterval = setInterval(() => {
-        this.send({ ping: {} });
-      }, 25000);
-      return;
-    }
-
-    // Событие push с донатом
-    if (msg.push && msg.push.pub && msg.push.pub.data) {
-      const payload = msg.push.pub.data;
-      const notification = payload?.data?.notification || payload?.notification;
-
-      if (notification && notification.vars) {
-        this.emit('donation', {
-          id: notification.id,
-          name: notification.vars.name || 'Аноним',
-          amount: Number(notification.vars.sum) || 0,
-          currency: notification.vars.currency || 'RUB',
-          message: notification.vars.comment || '',
-          at: Date.now(),
-        });
+      if (res.status === 429) {
+        this.consecutiveRateLimits++;
+        const waitMs = Math.min(60_000 * Math.pow(2, this.consecutiveRateLimits - 1), 600_000);
+        this.rateLimitedUntil = Date.now() + waitMs;
+        this.emit('error',
+          `DonatePay: rate limit #${this.consecutiveRateLimits}, повтор через ${waitMs / 1000}с.`);
+        return;
       }
+
+      const text = await res.text();
+      if (text.trim().startsWith('<')) throw new Error('HTML вместо JSON');
+
+      let data;
+      try { data = JSON.parse(text); }
+      catch { throw new Error('Невалидный JSON: ' + text.slice(0, 200)); }
+
+      if (data?.status === 'error') {
+        throw new Error('DonatePay: ' + (data.message || 'неизвестная ошибка'));
+      }
+
+      this.consecutiveRateLimits = 0;
+
+      const transactions = data?.data || [];
+      if (!Array.isArray(transactions)) throw new Error('Неожиданный формат data');
+
+      // ==== ГЛАВНОЕ: определяем нижнюю границу ====
+      const d = db.loadData();
+      const weekStart = startOfWeek();
+      const resetAt = d.donors?.resetAt || 0;
+      const cutoff = Math.max(weekStart, resetAt);
+
+      console.log('[donatepay] cutoff:', new Date(cutoff).toISOString(),
+                  '(weekStart:', new Date(weekStart).toISOString(),
+                  ', resetAt:', resetAt ? new Date(resetAt).toISOString() : 'null)');
+
+      // Фильтруем: только транзакции после cutoff
+      const recent = transactions.filter(t => {
+        const ts = new Date(t.created_at).getTime();
+        return ts >= cutoff;
+      });
+
+      // Группируем по имени
+      const donorsMap = new Map();
+      for (const t of recent) {
+        const name = String(t.what || t.vars?.name || 'Аноним').trim();
+        if (!name) continue;
+
+        const key = name.toLowerCase();
+        const amount = parseFloat(t.sum) || 0;
+        const currency = t.currency || 'RUB';
+        const ts = new Date(t.created_at).getTime();
+
+        if (donorsMap.has(key)) {
+          const existing = donorsMap.get(key);
+          existing.totalAmount += amount;
+          existing.count += 1;
+          if (ts > existing.lastAt) existing.lastAt = ts;
+        } else {
+          donorsMap.set(key, {
+            name, totalAmount: amount, currency, count: 1, lastAt: ts,
+          });
+        }
+      }
+
+      const donors = Array.from(donorsMap.values());
+
+      db.update(dd => {
+        dd.donors.participants = donors;
+      });
+
+      console.log(`[donatepay] донатеров за период: ${donors.length} (из ${recent.length} транзакций)`);
+      this.emit('donorsUpdated', { participants: donors });
+    } catch (e) {
+      this.emit('error', e.message);
     }
   }
 
-  onClose() {
-    this.emit('disconnected');
-    if (this.pingInterval) { clearInterval(this.pingInterval); this.pingInterval = null; }
-    if (this.shouldReconnect) this.scheduleReconnect();
-  }
-
-  scheduleReconnect() {
-    if (this.reconnectTimeout) return;
-    this.reconnectTimeout = setTimeout(() => {
-      this.reconnectTimeout = null;
-      if (this.shouldReconnect) this.connect();
-    }, 5000);
-  }
-
-  disconnect() {
-    this.shouldReconnect = false;
-    if (this.pingInterval) clearInterval(this.pingInterval);
-    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
-    if (this.ws) { try { this.ws.close(); } catch {} }
-    this.ws = null;
+  async forceRefresh() {
+    this.rateLimitedUntil = 0;
+    await this.refreshDonors();
   }
 }
 
