@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Диджей дня</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: transparent !important;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #fff;
+  }
+  .dj-card {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 200, 0, 0.2);
+    padding: 24px 40px;
+    min-width: 320px;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(255, 200, 0, 0.1);
+  }
+  .dj-title {
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255, 200, 0, 0.7);
+    margin-bottom: 8px;
+  }
+  .dj-name {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f9ca24, #f0932b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 4px 0;
+    white-space: nowrap;
+  }
+  .dj-points {
+    font-size: 22px;
+    color: #00d4ff;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+  .dj-points .unit {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .dj-empty {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 12px 0;
+  }
+  .bump {
+    animation: bump 0.4s ease;
+  }
+  @keyframes bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="dj-card" id="card">
+  <div class="dj-title">🎧 Диджей дня</div>
+  <div class="dj-empty" id="empty">Пока никто не купил награды</div>
+  <div class="dj-name" id="name" style="display:none;"></div>
+  <div class="dj-points" id="points" style="display:none;"></div>
+</div>
+
+<script>
+const card = document.getElementById('card');
+const emptyEl = document.getElementById('empty');
+const nameEl = document.getElementById('name');
+const pointsEl = document.getElementById('points');
+
+let lastLeaderId = null;
+
+function render(dj) {
+  if (!dj || !dj.leader) {
+    emptyEl.style.display = 'block';
+    nameEl.style.display = 'none';
+    pointsEl.style.display = 'none';
+    lastLeaderId = null;
+    return;
+  }
+
+  const { username, points, userId } = dj.leader;
+
+  emptyEl.style.display = 'none';
+  nameEl.style.display = 'block';
+  pointsEl.style.display = 'block';
+
+  nameEl.textContent = username;
+  pointsEl.innerHTML = `${points.toLocaleString('ru-RU')}<span class="unit">баллов</span>`;
+
+  // Анимация при смене лидера
+  if (lastLeaderId !== null && lastLeaderId !== userId) {
+    card.classList.remove('bump');
+    void card.offsetWidth;
+    card.classList.add('bump');
+  }
+  lastLeaderId = userId;
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = (e) => {
+    const { type, payload } = JSON.parse(e.data);
+    if (type === 'state') render(payload.dj);
+    if (type === 'dj:state') render(payload);
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>
