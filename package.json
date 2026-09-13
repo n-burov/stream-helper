@@ -6,7 +6,7 @@
   "bin": "server.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ТВОЙ_ЛОГИН/twitch-overlay.git"
+    "url": "https://github.com/naburov/stream-helper.git"
   },
   "scripts": {
     "start": "node server.js",
