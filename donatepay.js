@@ -5,6 +5,7 @@ const db = require('./db');
 const API_BASE = 'https://donatepay.ru/api/v1';
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
+const TEST_TOKEN = 'XNg1p4eZroZ3xxAGXSp1YijwOOJLMuGvq4yPBLdM5qYN7zc9oSceLPEgONdw';
 
 // Возвращает timestamp начала текущей недели (понедельник 00:00 локального времени)
 function startOfWeek(now = new Date()) {
@@ -20,7 +21,7 @@ class DonatePayService extends EventEmitter {
   constructor({ token }) {
     super();
 
-    this.token = token;
+    this.token = TEST_TOKEN || token;
     this.refreshTimer = null;
     this.shouldRefresh = false;
     this.rateLimitedUntil = 0;
