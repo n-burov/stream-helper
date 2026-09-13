@@ -5,6 +5,7 @@ const sniper = require('./sniper');
 const winner = require('./winner');
 const tickets = require('./tickets');
 const donors = require('./donors');
+const dj = require('./dj');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -13,6 +14,7 @@ function initAll(ctx) {
   sniper.init(ctx);
   tickets.init(ctx);
   donors.init(ctx);
+  dj.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -40,6 +42,10 @@ function handleCommand(action, data) {
     case 'donors:add':       return donors.addManual(data?.name);
     case 'donors:remove':    return donors.removeAt(data?.index);
     case 'donors:reset':     return donors.reset();
+    case 'donors:refresh':   return { ok: true }; // обрабатывается в server.js
+
+    case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
+    case 'dj:reset':         return dj.reset();
 
     default:
       return { error: 'Unknown action: ' + action };
@@ -54,6 +60,7 @@ function getFullState() {
     winner: winner.getState(),
     tickets: tickets.getState(),
     donors: donors.getState(),
+    dj: dj.getState(),
   };
 }
 
@@ -63,5 +70,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper,
+  tickets, donors, sniper, dj,
 };
