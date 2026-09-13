@@ -45,7 +45,6 @@ class TwitchEventSub extends EventEmitter {
       this.sessionId = msg.payload.session.id;
       this.emit('session', this.sessionId);
       this.resetKeepalive(msg.payload.session.keepalive_timeout_seconds || 30);
-      // Подписываемся на нужные события
       await this.subscribeDefaults();
       return;
     }
@@ -56,7 +55,6 @@ class TwitchEventSub extends EventEmitter {
     }
 
     if (type === 'session_reconnect') {
-      // Twitch просит переподключиться на новый URL
       const newUrl = msg.payload.session.reconnect_url;
       if (newUrl) {
         this.ws.close();
@@ -81,14 +79,23 @@ class TwitchEventSub extends EventEmitter {
   resetKeepalive(seconds) {
     if (this.keepaliveTimeout) clearTimeout(this.keepaliveTimeout);
     this.keepaliveTimeout = setTimeout(() => {
-      // Не получили keepalive — переподключаемся
       try { this.ws.close(); } catch {}
     }, (seconds + 10) * 1000);
   }
 
   async subscribeDefaults() {
-    // Подписка на покупку наград за баллы
+    // Покупка наград за баллы (для билетов и Диджея дня)
     await this.subscribe('channel.channel_points_custom_reward_redemption.add', '1', {
+      broadcaster_user_id: this.userId,
+    });
+
+    // Стрим завершён — для сброса Диджея дня
+    await this.subscribe('stream.offline', '1', {
+      broadcaster_user_id: this.userId,
+    });
+
+    // Стрим начался — подстраховка на случай пропущенного offline
+    await this.subscribe('stream.online', '1', {
       broadcaster_user_id: this.userId,
     });
   }
