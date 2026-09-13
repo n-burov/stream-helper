@@ -5,13 +5,11 @@ const db = require('./db');
 const API_BASE = 'https://donatepay.ru/api/v1';
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
-const TEST_TOKEN = 'XNg1p4eZroZ3xxAGXSp1YijwOOJLMuGvq4yPBLdM5qYN7zc9oSceLPEgONdw';
-
 // Возвращает timestamp начала текущей недели (понедельник 00:00 локального времени)
 function startOfWeek(now = new Date()) {
   const d = new Date(now);
-  const day = d.getDay();           // 0 = воскресенье, 1 = понедельник
-  const diff = (day === 0 ? 6 : day - 1); // сколько дней назад был понедельник
+  const day = d.getDay();
+  const diff = (day === 0 ? 6 : day - 1);
   d.setDate(d.getDate() - diff);
   d.setHours(0, 0, 0, 0);
   return d.getTime();
@@ -21,7 +19,7 @@ class DonatePayService extends EventEmitter {
   constructor({ token }) {
     super();
 
-    this.token = TEST_TOKEN || token;
+    this.token = token;
     this.refreshTimer = null;
     this.shouldRefresh = false;
     this.rateLimitedUntil = 0;
@@ -96,7 +94,6 @@ class DonatePayService extends EventEmitter {
       const transactions = data?.data || [];
       if (!Array.isArray(transactions)) throw new Error('Неожиданный формат data');
 
-      // ==== ГЛАВНОЕ: определяем нижнюю границу ====
       const d = db.loadData();
       const weekStart = startOfWeek();
       const resetAt = d.donors?.resetAt || 0;
@@ -106,13 +103,11 @@ class DonatePayService extends EventEmitter {
                   '(weekStart:', new Date(weekStart).toISOString(),
                   ', resetAt:', resetAt ? new Date(resetAt).toISOString() : 'null)');
 
-      // Фильтруем: только транзакции после cutoff
       const recent = transactions.filter(t => {
         const ts = new Date(t.created_at).getTime();
         return ts >= cutoff;
       });
 
-      // Группируем по имени
       const donorsMap = new Map();
       for (const t of recent) {
         const name = String(t.what || t.vars?.name || 'Аноним').trim();
