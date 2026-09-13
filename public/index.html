@@ -83,7 +83,6 @@
   select { cursor: pointer; }
   select option { background: #1a1f35; color: #fff; }
 
-  /* === Списки (participants, tickets, donors) === */
   .list-grid {
     display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;
     max-height: 400px; overflow-y: auto; padding: 5px;
@@ -207,10 +206,10 @@
       <span id="donatText">DonatePay...</span>
     </div>
   </div>
-    <div style="display:flex; gap:8px;">
-      <a class="logout-btn" id="loginBtn" href="/auth/login" style="display:none; background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
-      <a class="logout-btn" id="logoutBtn" href="/api/logout">🚪 Выйти</a>
-    </div>
+  <div style="display:flex; gap:8px;">
+    <a class="logout-btn" id="loginBtn" href="/auth/login" style="display:none; background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
+    <a class="logout-btn" id="logoutBtn" href="/api/logout">🚪 Выйти</a>
+  </div>
 </header>
 
 <nav class="tabs">
@@ -219,6 +218,7 @@
   <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
   <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
   <button class="tab-btn" data-tab="tab-donors">💸 Донатеры</button>
+  <button class="tab-btn" data-tab="tab-dj">🎧 Диджей дня</button>
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
 </nav>
 
@@ -327,10 +327,14 @@
   <div class="card">
     <div class="card-title">
       <span class="icon">💸</span> Донатеры
-      <button class="btn btn-sm btn-danger" id="donorsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button class="btn btn-sm btn-success" id="donorsRefresh">🔄 Обновить</button>
+        <button class="btn btn-sm btn-danger" id="donorsReset">🗑️ Сбросить всё</button>
+      </div>
     </div>
     <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Один человек — одна плашка, независимо от количества донатов. Рядом с ником показывается суммарная сумма за неделю.
+      Один человек — одна плашка. Список пересобирается из DonatePay автоматически каждые 5 минут.
+      Учитываются донаты за текущую неделю с момента последнего сброса.
     </p>
     <div class="row">
       <input type="text" id="donorsName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
@@ -343,6 +347,31 @@
   </div>
 </div>
 
+<!-- ============ DJ ============ -->
+<div class="tab-content" id="tab-dj">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">🎧</span> Диджей дня
+      <button class="btn btn-sm btn-danger" id="djReset" style="margin-left:auto;">🔄 Сбросить вручную</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
+    </p>
+
+    <div style="max-width:600px;">
+      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
+      <div id="djRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <div class="list-empty">Загрузка наград...</div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
+      <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
+      <div id="djLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ SETTINGS ============ -->
 <div class="tab-content" id="tab-settings">
   <div class="card">
@@ -350,15 +379,24 @@
 
     <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
       <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награда «Билет на розыгрыш»</label>
-      <div class="row" style="margin-bottom:0;">
-        <select id="setRewardSelect" style="flex:1; min-width:220px;">
-          <option value="">— Не выбрано —</option>
-        </select>
-        <button class="btn btn-sm btn-success" id="setLoadRewards">🔄 Обновить список</button>
+
+      <div id="rewardSelectWrap" style="display:none;">
+        <div class="row" style="margin-bottom:0;">
+          <select id="setRewardSelect" style="flex:1; min-width:220px;">
+            <option value="">— Не выбрано —</option>
+          </select>
+          <button class="btn btn-sm btn-success" id="setLoadRewards">🔄 Обновить</button>
+        </div>
       </div>
-      <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
-        Нажми «Обновить список», затем выбери награду из выпадающего меню.
+
+      <div id="rewardManualWrap" style="display:none;">
+        <input type="text" id="setRewardIdManual" placeholder="Вставь ID награды (GUID)" />
+        <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
+          Награда создаётся в панели Twitch, ID можно посмотреть через DevTools → Network → фильтр <code>gql</code> на странице канала.
+        </div>
       </div>
+
+      <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
 
       <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">Access token DonatePay</label>
       <input type="password" id="setDonateToken" placeholder="Вставь токен из ЛК DonatePay" />
@@ -378,6 +416,8 @@
       <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
       <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
       <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎧 Диджей дня</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-dj.html" onclick="this.select()" />
     </div>
   </div>
 </div>
@@ -398,7 +438,7 @@
 //  WebSocket
 // ============================================================
 let ws;
-const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null };
+const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null };
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -419,7 +459,8 @@ function handleMessage(type, payload) {
       state.sniper = payload.sniper;
       state.tickets = payload.tickets;
       state.donors = payload.donors;
-      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors();
+      state.dj = payload.dj;
+      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors(); renderDj();
       break;
 
     case 'keyword:state':  state.keyword = payload; renderKeyword(); break;
@@ -446,13 +487,11 @@ function handleMessage(type, payload) {
 
     case 'tickets:state':  state.tickets = payload; renderTickets(); break;
     case 'donors:state':   state.donors = payload; renderDonors(); break;
+    case 'dj:state':       state.dj = payload; renderDj(); break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
-    case 'twitchStatus':
-      updateTwitchStatus(payload.connected);
-      if (!payload.connected && payload.reason) refreshAuthButtons();
-      break;
+    case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
     case 'donatePayStatus':updateDonatePayStatus(payload.connected); break;
 
     case 'error': showToast(payload.message); break;
@@ -481,6 +520,23 @@ function showWinnerModal(name) {
 document.getElementById('winnerClose').addEventListener('click', () => {
   document.getElementById('winnerModal').classList.remove('active');
 });
+
+// Кнопки авторизации
+async function refreshAuthButtons() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (s.authorized) {
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
+    } else {
+      loginBtn.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+    }
+  } catch {}
+}
 
 // ============================================================
 //  Табы
@@ -803,6 +859,10 @@ donorsName.addEventListener('keydown', e => { if (e.key === 'Enter') document.ge
 document.getElementById('donorsReset').addEventListener('click', () => {
   if (confirm('Очистить список донатеров?')) sendAction('donors:reset');
 });
+document.getElementById('donorsRefresh').addEventListener('click', () => {
+  sendAction('donors:refresh');
+  showToast('🔄 Запрос на обновление отправлен', 'success');
+});
 
 function renderDonors() {
   const d = state.donors;
@@ -825,6 +885,81 @@ function renderDonors() {
     el.addEventListener('click', () => sendAction('donors:remove', { index: +el.dataset.idx }));
   });
 }
+
+// ============================================================
+//  DJ (Диджей дня)
+// ============================================================
+const djRewardsList = document.getElementById('djRewardsList');
+const djLeader = document.getElementById('djLeader');
+
+let djCurrentRewards = [];
+let djRewardsLoaded = false;
+
+async function loadDjRewards() {
+  if (djRewardsLoaded) return;
+  try {
+    const r = await fetch('/api/rewards');
+    const data = await r.json();
+    if (data.available && data.rewards) {
+      djCurrentRewards = data.rewards;
+      renderDjRewards();
+      djRewardsLoaded = true;
+    } else {
+      djRewardsList.innerHTML = `<div class="list-empty">Не удалось загрузить награды</div>`;
+    }
+  } catch (e) {
+    djRewardsList.innerHTML = `<div class="list-empty">Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderDjRewards() {
+  const selected = state.dj?.rewardIds || [];
+
+  if (djCurrentRewards.length === 0) {
+    djRewardsList.innerHTML = `<div class="list-empty">Нет наград</div>`;
+    return;
+  }
+
+  djRewardsList.innerHTML = djCurrentRewards.map(r => {
+    const checked = selected.includes(r.id) ? 'checked' : '';
+    return `
+      <label style="display:flex; align-items:center; gap:10px; padding:8px 12px;
+                    background:rgba(255,255,255,0.03); border-radius:8px; cursor:pointer;">
+        <input type="checkbox" ${checked} data-reward-id="${escapeAttr(r.id)}"
+               style="width:18px; height:18px; accent-color:#9146ff;" />
+        <span>${escapeHtml(r.title)}</span>
+        <span style="color:rgba(255,255,255,0.3); font-size:12px;">${r.cost} баллов</span>
+      </label>
+    `;
+  }).join('');
+
+  djRewardsList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const ids = Array.from(djRewardsList.querySelectorAll('input:checked'))
+        .map(x => x.dataset.rewardId);
+      sendAction('dj:setRewards', { rewardIds: ids });
+    });
+  });
+}
+
+function renderDj() {
+  const dj = state.dj;
+  if (!dj) return;
+
+  if (dj.leader) {
+    djLeader.textContent = `${dj.leader.username} — ${dj.leader.points.toLocaleString('ru-RU')} баллов`;
+  } else {
+    djLeader.textContent = '—';
+  }
+
+  if (djRewardsLoaded) renderDjRewards();
+}
+
+document.getElementById('djReset').addEventListener('click', () => {
+  if (confirm('Обнулить счётчик Диджея дня?')) sendAction('dj:reset');
+});
+
+document.querySelector('[data-tab="tab-dj"]').addEventListener('click', loadDjRewards);
 
 // ============================================================
 //  HISTORY
@@ -860,79 +995,87 @@ document.getElementById('histClear').addEventListener('click', async () => {
 //  SETTINGS
 // ============================================================
 let currentRewards = [];
+let rewardsApiAvailable = false;
 
 async function loadSettings() {
   try {
     const r = await fetch('/api/settings');
     const s = await r.json();
-
-    // Запоминаем сохранённый ID, чтобы выбрать его после загрузки списка
     window._savedRewardId = s.ticketRewardId || '';
 
     if (s.hasDonatePayToken) {
-      document.getElementById('setDonateToken').placeholder = '✅ Токен сохранён (введи новый, чтобы заменить)';
+      document.getElementById('setDonateToken').placeholder =
+        '✅ Токен сохранён (введи новый, чтобы заменить)';
     }
 
-    // Автоматически подгружаем список награда, чтобы попытаться выбрать сохранённый
     await loadRewards({ silent: true });
   } catch {}
 }
 
 async function loadRewards({ silent } = {}) {
-  const select = document.getElementById('setRewardSelect');
   const hint = document.getElementById('rewardsHint');
+  const selectWrap = document.getElementById('rewardSelectWrap');
+  const manualWrap = document.getElementById('rewardManualWrap');
+  const select = document.getElementById('setRewardSelect');
+  const manualInput = document.getElementById('setRewardIdManual');
 
-  if (!silent) {
-    select.disabled = true;
-    hint.textContent = 'Загрузка списка наград...';
-  }
+  if (!silent) hint.textContent = 'Загрузка списка наград...';
 
   try {
     const r = await fetch('/api/rewards');
     const data = await r.json();
 
-    if (data.error) {
-      if (!silent) hint.textContent = '⚠️ ' + data.error;
-      return;
-    }
+    if (data.available) {
+      rewardsApiAvailable = true;
+      currentRewards = data.rewards || [];
+      select.innerHTML = '<option value="">— Не выбрано —</option>' +
+        currentRewards.map(x =>
+          `<option value="${escapeAttr(x.id)}">${escapeHtml(x.title)} — ${x.cost} баллов</option>`
+        ).join('');
 
-    currentRewards = data.rewards || [];
-    select.innerHTML = '<option value="">— Не выбрано —</option>' +
-      currentRewards.map(r =>
-        `<option value="${escapeAttr(r.id)}">${escapeHtml(r.title)} — ${r.cost} баллов</option>`
-      ).join('');
+      selectWrap.style.display = 'block';
+      manualWrap.style.display = 'none';
 
-    // Пытаемся выбрать сохранённый ID
-    if (window._savedRewardId) {
-      const opt = currentRewards.find(x => x.id === window._savedRewardId);
-      if (opt) {
-        select.value = window._savedRewardId;
-        hint.textContent = `✅ Активна: ${opt.title} (${opt.cost} баллов)`;
+      if (window._savedRewardId) {
+        const opt = currentRewards.find(x => x.id === window._savedRewardId);
+        if (opt) {
+          select.value = window._savedRewardId;
+          hint.textContent = `✅ Активна: ${opt.title} (${opt.cost} баллов)`;
+        } else {
+          hint.textContent = '⚠️ Сохранённая награда не найдена. Выбери заново.';
+        }
+      } else if (currentRewards.length === 0) {
+        hint.textContent = 'На канале пока нет кастомных награда.';
       } else {
-        hint.textContent = `⚠️ Сохранённая награда не найдена среди текущих. Выбери заново.`;
+        hint.textContent = `Найдено наград: ${currentRewards.length}. Выбери нужную.`;
       }
-    } else if (currentRewards.length === 0) {
-      hint.textContent = 'На канале пока нет кастомных награда.';
     } else {
-      hint.textContent = `Найдено наград: ${currentRewards.length}. Выбери нужную.`;
+      rewardsApiAvailable = false;
+      selectWrap.style.display = 'none';
+      manualWrap.style.display = 'block';
+      if (window._savedRewardId) manualInput.value = window._savedRewardId;
+      hint.textContent = '⚠️ ' + (data.reason || 'Список недоступен. Введи ID вручную.');
     }
   } catch (e) {
     if (!silent) hint.textContent = '⚠️ Ошибка: ' + e.message;
-  } finally {
-    select.disabled = false;
   }
 }
 
-document.getElementById('setLoadRewards').addEventListener('click', () => loadRewards());
+document.getElementById('setLoadRewards')?.addEventListener('click', () => loadRewards());
 
 document.getElementById('setSave').addEventListener('click', async () => {
-  const select = document.getElementById('setRewardSelect');
-  const ticketRewardId = select.value || '';
-  const selected = currentRewards.find(x => x.id === ticketRewardId);
-  const ticketRewardTitle = selected ? selected.title : '';
+  let ticketRewardId = '';
+  let ticketRewardTitle = '';
+
+  if (rewardsApiAvailable) {
+    ticketRewardId = document.getElementById('setRewardSelect').value || '';
+    const selected = currentRewards.find(x => x.id === ticketRewardId);
+    ticketRewardTitle = selected ? selected.title : '';
+  } else {
+    ticketRewardId = document.getElementById('setRewardIdManual').value.trim();
+  }
 
   const donatePayToken = document.getElementById('setDonateToken').value.trim();
-
   const body = { ticketRewardId, ticketRewardTitle };
   if (donatePayToken) body.donatePayToken = donatePayToken;
 
@@ -943,10 +1086,7 @@ document.getElementById('setSave').addEventListener('click', async () => {
       body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (data.error) {
-      showToast('❌ ' + data.error);
-      return;
-    }
+    if (data.error) { showToast('❌ ' + data.error); return; }
     showToast('✅ Настройки сохранены', 'success');
     document.getElementById('setDonateToken').value = '';
     window._savedRewardId = ticketRewardId;
@@ -967,25 +1107,6 @@ function escapeAttr(s) { return escapeHtml(s); }
 // ============================================================
 //  Старт
 // ============================================================
-// ============================================================
-//  Кнопки авторизации
-// ============================================================
-async function refreshAuthButtons() {
-  try {
-    const r = await fetch('/api/status');
-    const s = await r.json();
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    if (s.authorized) {
-      loginBtn.style.display = 'none';
-      logoutBtn.style.display = 'inline-block';
-    } else {
-      loginBtn.style.display = 'inline-block';
-      logoutBtn.style.display = 'none';
-    }
-  } catch {}
-}
 connect();
 loadHistory();
 loadSettings();
