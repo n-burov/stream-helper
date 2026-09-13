@@ -12,58 +12,72 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 10px;
     color: #fff;
   }
   .dj-card {
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(16px);
-    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
+    border-radius: 12px;
     border: 1px solid rgba(255, 200, 0, 0.2);
-    padding: 24px 40px;
-    min-width: 320px;
-    text-align: center;
-    box-shadow: 0 8px 40px rgba(255, 200, 0, 0.1);
+    padding: 8px 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(255, 200, 0, 0.08);
+  }
+  .dj-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .dj-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
   .dj-title {
-    font-size: 14px;
-    letter-spacing: 3px;
+    font-size: 9px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    color: rgba(255, 200, 0, 0.7);
-    margin-bottom: 8px;
+    color: rgba(255, 200, 0, 0.6);
+    line-height: 1;
+  }
+  .dj-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
   }
   .dj-name {
-    font-size: 36px;
-    font-weight: 900;
+    font-size: 18px;
+    font-weight: 800;
     background: linear-gradient(135deg, #f9ca24, #f0932b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin: 4px 0;
     white-space: nowrap;
+    line-height: 1.1;
   }
   .dj-points {
-    font-size: 22px;
+    font-size: 14px;
     color: #00d4ff;
     font-weight: 700;
-    margin-top: 8px;
+    white-space: nowrap;
   }
   .dj-points .unit {
-    font-size: 14px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.4);
     font-weight: 400;
-    margin-left: 4px;
+    margin-left: 3px;
   }
   .dj-empty {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.3);
-    padding: 12px 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.35);
   }
   .bump {
     animation: bump 0.4s ease;
   }
   @keyframes bump {
     0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    50% { transform: scale(1.04); }
     100% { transform: scale(1); }
   }
 </style>
@@ -71,15 +85,23 @@
 <body>
 
 <div class="dj-card" id="card">
-  <div class="dj-title">🎧 Диджей дня</div>
-  <div class="dj-empty" id="empty">Пока никто не купил награды</div>
-  <div class="dj-name" id="name" style="display:none;"></div>
-  <div class="dj-points" id="points" style="display:none;"></div>
+  <div class="dj-icon">🎧</div>
+  <div class="dj-info">
+    <div class="dj-title">Диджей дня</div>
+    <div id="content">
+      <div class="dj-empty" id="empty">Пока никто не купил награды</div>
+      <div class="dj-row" id="leaderRow" style="display:none;">
+        <span class="dj-name" id="name"></span>
+        <span class="dj-points" id="points"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 const card = document.getElementById('card');
 const emptyEl = document.getElementById('empty');
+const leaderRow = document.getElementById('leaderRow');
 const nameEl = document.getElementById('name');
 const pointsEl = document.getElementById('points');
 
@@ -88,8 +110,7 @@ let lastLeaderId = null;
 function render(dj) {
   if (!dj || !dj.leader) {
     emptyEl.style.display = 'block';
-    nameEl.style.display = 'none';
-    pointsEl.style.display = 'none';
+    leaderRow.style.display = 'none';
     lastLeaderId = null;
     return;
   }
@@ -97,13 +118,11 @@ function render(dj) {
   const { username, points, userId } = dj.leader;
 
   emptyEl.style.display = 'none';
-  nameEl.style.display = 'block';
-  pointsEl.style.display = 'block';
+  leaderRow.style.display = 'flex';
 
   nameEl.textContent = username;
   pointsEl.innerHTML = `${points.toLocaleString('ru-RU')}<span class="unit">баллов</span>`;
 
-  // Анимация при смене лидера
   if (lastLeaderId !== null && lastLeaderId !== userId) {
     card.classList.remove('bump');
     void card.offsetWidth;
