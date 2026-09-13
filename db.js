@@ -29,6 +29,11 @@ const DEFAULT_DATA = {
     participants: [],
     resetAt: null,     // timestamp последнего ручного сброса
   },
+  dj: {
+    rewardIds: [],          // ID наград, которые считаем
+    scores: {},             // { userId: { username, points, avatar? } }
+    leader: null,           // { userId, username, points }
+  },
 
   // === Механики ===
   keyword: {
