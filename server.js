@@ -13,6 +13,7 @@ const { TwitchService } = require('./twitch');
 const { TwitchEventSub } = require('./twitch-eventsub');
 const { DonatePayService } = require('./donatepay');
 const { getCustomRewards } = require('./twitch-api');
+const { checkForUpdate, CURRENT_VERSION } = require('./updater');
 
 const app = express();
 app.use(express.json());
@@ -38,22 +39,6 @@ const ctx = {
   db,
 };
 
-const { checkForUpdate, CURRENT_VERSION } = require('./updater');
-
-// === Автообновление (запускается параллельно, не блокирует старт) ===
-(async () => {
-  try {
-    const result = await checkForUpdate({ silent: false });
-    if (result.restartRequired) {
-      console.log('🔄 Доступно обновление! Перезапусти приложение для применения.');
-    }
-  } catch (e) {
-    console.warn('⚠️ updater:', e.message);
-  }
-})();
-
-console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
-
 mechanics.initAll(ctx);
 
 // === WebSocket ===
@@ -66,6 +51,12 @@ wss.on('connection', (ws) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     if (!msg || !msg.action) return;
+
+    // Особые команды, которым нужен доступ к donatePay
+    if (msg.action === 'donors:refresh') {
+      if (donatePay) donatePay.forceRefresh();
+      return;
+    }
 
     const result = mechanics.handleCommand(msg.action, msg.data);
     if (result?.error) {
@@ -101,10 +92,18 @@ app.get('/api/rewards', async (req, res) => {
       broadcasterId: d.tokens.user_id,
     });
     res.json({
+      available: true,
       rewards: rewards.map(r => ({ id: r.id, title: r.title, cost: r.cost })),
     });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    const isAffiliateError = e.message.includes('partner or affiliate status');
+    res.json({
+      available: false,
+      reason: isAffiliateError
+        ? 'Канал не имеет статуса Affiliate или Partner.'
+        : e.message,
+      rewards: [],
+    });
   }
 });
 
@@ -116,9 +115,12 @@ app.post('/api/settings', (req, res) => {
   if (typeof ticketRewardTitle === 'string') patch.ticketRewardTitle = ticketRewardTitle.trim() || null;
   if (typeof donatePayToken === 'string') patch.donatePayToken = donatePayToken.trim() || null;
 
+  const oldToken = db.loadData().settings.donatePayToken;
   db.update(d => { Object.assign(d.settings, patch); });
 
-  if (patch.donatePayToken !== undefined) startDonatePay();
+  if (patch.donatePayToken !== undefined && oldToken !== patch.donatePayToken) {
+    startDonatePay();
+  }
 
   res.json({ ok: true, ticketRewardId: patch.ticketRewardId || undefined });
 });
@@ -174,6 +176,7 @@ app.get('/api/logout', (req, res) => {
   if (twitch) { twitch.disconnect(); twitch = null; }
   if (eventSub) { eventSub.disconnect(); eventSub = null; }
   ircState.connected = false;
+  ctx.broadcast('twitchStatus', ircState);
   res.redirect('/');
 });
 
@@ -206,7 +209,7 @@ async function restartTwitch() {
   catch (e) { console.error('IRC connect error:', e.message); }
 }
 
-// === EventSub (билеты) ===
+// === EventSub (билеты + Диджей дня + stream events) ===
 async function restartEventSub() {
   if (eventSub) { eventSub.disconnect(); eventSub = null; }
   const data = db.loadData();
@@ -224,7 +227,9 @@ async function restartEventSub() {
   eventSub.on('disconnected', () => console.log('⚠️ EventSub отключён, реконнект...'));
 
   eventSub.on('event', ({ type, event }) => {
+    // === Покупка награды за баллы ===
     if (type === 'channel.channel_points_custom_reward_redemption.add') {
+      // Билеты
       const result = mechanics.tickets.addFromRedemption({
         userId: event.user_id,
         username: event.user_name || event.user_login,
@@ -232,6 +237,26 @@ async function restartEventSub() {
         redeemedAt: new Date(event.redeemed_at).getTime(),
       });
       console.log('🎟️ Билет:', event.user_name, result);
+
+      // Диджей дня
+      mechanics.dj.addRedemption({
+        userId: event.user_id,
+        username: event.user_name || event.user_login,
+        rewardId: event.reward?.id,
+        cost: event.reward?.cost,
+      });
+    }
+
+    // === Стрим завершён — сбрасываем Диджея ===
+    if (type === 'stream.offline') {
+      console.log('📴 Стрим завершён — сбрасываю Диджея дня');
+      mechanics.dj.reset();
+    }
+
+    // === Стрим начался — подстраховка ===
+    if (type === 'stream.online') {
+      console.log('📺 Стрим начался — сбрасываю Диджея дня');
+      mechanics.dj.reset();
     }
   });
 
@@ -264,13 +289,32 @@ function startDonatePay() {
 
   donatePay.on('error', (msg) => console.warn('⚠️ DonatePay:', msg));
 
-  donatePay.on('donation', (donation) => {
-    console.log('💸 Донат:', donation);
-    mechanics.donors.addDonor(donation);
+  donatePay.on('donorsUpdated', ({ participants }) => {
+    mechanics.donors.replaceAll(participants);
   });
 
-  donatePay.connect();
+  donatePay.start();
 }
+
+// === Автообновление ===
+let updateAvailable = null;
+(async () => {
+  try {
+    const result = await checkForUpdate({
+      onUpdateReady: (info) => {
+        updateAvailable = info;
+        ctx.broadcast('updateAvailable', info);
+      },
+    });
+    if (result.restartRequired) {
+      console.log('🔄 Доступно обновление! Перезапусти приложение для применения.');
+    }
+  } catch (e) {
+    console.warn('⚠️ updater:', e.message);
+  }
+})();
+
+console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
 
 // === Старт ===
 (async () => {
@@ -291,6 +335,7 @@ function startDonatePay() {
     console.log('   Оверлей wheel:     http://localhost:3000/overlay-wheel.html');
     console.log('   Оверлей sniper:    http://localhost:3000/overlay-sniper.html');
     console.log('   Оверлей winner:    http://localhost:3000/overlay-winner.html');
+    console.log('   Оверлей DJ:        http://localhost:3000/overlay-dj.html');
     await open('http://localhost:3000');
   });
 })();
