@@ -12,13 +12,21 @@
     padding: 20px; overflow: hidden;
   }
   .overlay {
-    display: none; max-width: 900px; width: 100%;
+    max-width: 900px; width: 100%;
     padding: 20px; background: rgba(0,0,0,0.85);
     backdrop-filter: blur(12px); border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.04);
     position: relative;
+    transition: opacity 0.3s ease;
   }
-  .overlay.active { display: block; }
+  .overlay:not(.active) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   .stats { display: flex; justify-content: center; gap: 30px; margin-bottom: 16px;
            font-size: 14px; color: rgba(255,255,255,0.5); }
@@ -70,7 +78,6 @@
     }
   }
 
-  /* === ПРИЦЕЛ === */
   .crosshair {
     position: fixed;
     top: 0; left: 0;
@@ -79,7 +86,6 @@
     pointer-events: none;
     z-index: 100;
     transform: translate(-50%, -50%);
-    transition: transform 0.12s cubic-bezier(0.4, 0, 0.6, 1);
     will-change: transform;
     display: none;
   }
@@ -102,7 +108,6 @@
     transform: translate(-50%, -50%);
   }
 
-  /* Пульсация при финальной наводке */
   .crosshair.locked::after {
     animation: lockPulse 0.5s ease-in-out infinite;
   }
@@ -149,7 +154,6 @@
   <div class="victim-banner hidden" id="banner">💀 Жертва</div>
 </div>
 
-<!-- Прицел -->
 <div class="crosshair" id="crosshair">
   <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
     <circle cx="16" cy="16" r="12" fill="none" stroke="#ff4757" stroke-width="1.5" opacity="0.85"/>
@@ -172,34 +176,24 @@ const crosshair = document.getElementById('crosshair');
 
 let participants = [];
 let targetingId = null;
-let aimTimer = null;
+let aimFrame = null;
 let hideTimer = null;
 let isShooting = false;
+let _loggedLock = false;
+let _serverAimDuration = 2500;
 
-// === Скрыть прицел ===
 function hideCrosshair() {
   crosshair.classList.remove('active', 'locked');
 }
 
-// === Переместить прицел в координаты (в пикселях от левого верхнего края окна) ===
 function moveCrosshair(x, y) {
   crosshair.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
 }
 
-// === Получить случайную точку внутри элемента ===
-function randomPointIn(el) {
-  const rect = el.getBoundingClientRect();
-  return {
-    x: rect.left + Math.random() * rect.width,
-    y: rect.top + Math.random() * rect.height,
-  };
-}
-
-// === Остановить анимацию ===
 function stopAiming() {
-  if (aimTimer) {
-    clearTimeout(aimTimer);
-    aimTimer = null;
+  if (aimFrame) {
+    cancelAnimationFrame(aimFrame);
+    aimFrame = null;
   }
   isShooting = false;
   crosshair.classList.remove('locked');
@@ -247,87 +241,208 @@ function flash() {
   setTimeout(() => el.remove(), 400);
 }
 
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return {
+    x: 0.5 * (
+      (2 * p1.x) +
+      (-p0.x + p2.x) * t +
+      (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+      (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+    ),
+    y: 0.5 * (
+      (2 * p1.y) +
+      (-p0.y + p2.y) * t +
+      (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+      (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+    ),
+  };
+}
+
 // === Анимация прицеливания ===
 function runAim(victimId) {
   stopAiming();
   hideCrosshair();
+  _loggedLock = false;
+
+  console.log('[sniper] ========== runAim START ==========');
+  console.log('[sniper] victimId =', victimId, 'aimDuration =', _serverAimDuration);
 
   const alive = participants.filter(p => p.alive);
-  if (alive.length <= 1) return;
+  if (alive.length <= 1) {
+    console.warn('[sniper] runAim: недостаточно живых');
+    return;
+  }
 
-  // Проверяем, что arena отрисована и у нас есть DOM-элементы
-  const chips = [...arena.querySelectorAll('.chip:not(.eliminated)')];
-  if (chips.length === 0) return;
+  const victimChip = arena.querySelector(`.chip[data-id="${victimId}"]`);
+  if (!victimChip) {
+    console.warn('[sniper] runAim: плашка жертвы не найдена');
+    return;
+  }
 
   isShooting = true;
   crosshair.classList.add('active');
 
-  // Случайные точки по всей арене
-  const arenaRect = arena.getBoundingClientRect();
+  const liveChips = [...arena.querySelectorAll('.chip:not(.eliminated)')];
 
-  const steps = 12 + Math.floor(Math.random() * 6);
-  let currentStep = 0;
-  let lastX = arenaRect.left + arenaRect.width / 2;
-  let lastY = arenaRect.top + arenaRect.height / 2;
-
-  function step() {
-    if (!isShooting) return;
-
-    currentStep++;
-
-    if (currentStep >= steps) {
-      // Финальная наводка — целимся в жертву, в случайную точку внутри её плашки
-      const victimChip = arena.querySelector(`.chip[data-id="${victimId}"]`);
-      if (victimChip) {
-        const p = randomPointIn(victimChip);
-        // Отмечаем жертву в стейте для подсветки
-        targetingId = victimId;
-        render();
-        moveCrosshair(p.x, p.y);
-        crosshair.classList.add('locked');
-      }
-      return;
-    }
-
-    // Случайная точка: иногда — общая по арене, иногда — рядом с одной из плашек
-    let x, y;
-    if (Math.random() < 0.65) {
-      // Летим к случайной живой плашке
-      const targetChip = chips[Math.floor(Math.random() * chips.length)];
-      const p = randomPointIn(targetChip);
-      x = p.x;
-      y = p.y;
-    } else {
-      // Летим в случайную точку внутри арены
-      x = arenaRect.left + Math.random() * arenaRect.width;
-      y = arenaRect.top + Math.random() * arenaRect.height;
-    }
-
-    // Не даём двигаться слишком монотонно
-    if (Math.abs(x - lastX) < 40 && Math.abs(y - lastY) < 40) {
-      x = arenaRect.left + Math.random() * arenaRect.width;
-      y = arenaRect.top + Math.random() * arenaRect.height;
-    }
-
-    lastX = x;
-    lastY = y;
-    moveCrosshair(x, y);
-
-    // Ускорение к концу: сначала медленно, потом быстро, потом тормозим
-    const progress = currentStep / steps;
-    let delay;
-    if (progress < 0.5) {
-      delay = 360 - progress * 200; // 360 → 260 мс
-    } else if (progress < 0.85) {
-      delay = 260 - (progress - 0.5) * 500; // 260 → 80 мс
-    } else {
-      delay = 80 + (progress - 0.85) * 1200; // 80 → 260 мс (замедление)
-    }
-
-    aimTimer = setTimeout(step, delay);
+  // Точка внутри плашки — случайная, но чуть ближе к центру
+  function pointIn(chip) {
+    const rect = chip.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width * (0.2 + Math.random() * 0.6),
+      y: rect.top + rect.height * (0.2 + Math.random() * 0.6),
+    };
   }
 
-  step();
+  // === Строим точки траектории ===
+  // Начинаем со случайной точки внутри случайной плашки (не жертвы).
+  // Дальше — перемешиваем все живые плашки и добавляем по одной случайной точке
+  // внутри каждой. Заканчиваем финальной точкой внутри плашки жертвы.
+
+  const liveChipsWithoutVictim = liveChips.filter(
+    c => Number(c.dataset.id) !== Number(victimId)
+  );
+
+  // Перемешиваем плашки случайно
+  const shuffled = [...liveChipsWithoutVictim].sort(() => Math.random() - 0.5);
+
+  // Стартовая точка — внутри первой плашки
+  const startChip = shuffled[0] || victimChip;
+  const startPoint = pointIn(startChip);
+
+  // Точки промежуточные — по одной внутри каждой оставшейся плашки
+  const midPoints = shuffled.slice(1).map(chip => pointIn(chip));
+
+  // Финальная точка — внутри плашки жертвы
+  const finalPoint = pointIn(victimChip);
+
+  const points = [startPoint, ...midPoints, finalPoint];
+
+  console.log('[sniper] точек в траектории:', points.length);
+
+  // === Тайминги ===
+  const BUFFER = 400;
+  const totalDuration = Math.max(1500, _serverAimDuration - BUFFER);
+  const startTime = performance.now();
+
+  // === Catmull-Rom позиция ===
+  // Интерполирует точку между p1 и p2 по параметру t (0..1).
+  // p0 и p3 — соседи для расчёта наклона.
+  function catmullRom(p0, p1, p2, p3, t) {
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return {
+      x: 0.5 * (
+        (2 * p1.x) +
+        (-p0.x + p2.x) * t +
+        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+      ),
+      y: 0.5 * (
+        (2 * p1.y) +
+        (-p0.y + p2.y) * t +
+        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+      ),
+    };
+  }
+
+  // Квантизованные индексы с зажимом
+  function clampIdx(i, len) {
+    return Math.max(0, Math.min(len - 1, i));
+  }
+
+  // === Анимационный цикл ===
+  function step(now) {
+    if (!isShooting) return;
+
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / totalDuration, 1);
+
+    // === Easing ===
+    // Мягкий старт, плавное движение, плавное торможение.
+    // easeInOutSine — самая «естественная» кривая, без ускорений в середине.
+    const eased = 0.5 - Math.cos(Math.PI * progress) / 2;
+
+    // === Интерполяция по кривой Catmull-Rom ===
+    // Разбиваем [0..1] на (points.length - 1) сегментов.
+    const totalSegments = points.length - 1;
+    const scaledT = eased * totalSegments;
+    const segIndex = Math.min(Math.floor(scaledT), totalSegments - 1);
+    const segT = scaledT - segIndex;
+
+    const p0 = points[clampIdx(segIndex - 1, points.length)];
+    const p1 = points[segIndex];
+    const p2 = points[segIndex + 1];
+    const p3 = points[clampIdx(segIndex + 2, points.length)];
+
+    const pos = catmullRom(p0, p1, p2, p3, segT);
+
+    // === Микро-дрожание в конце ===
+    // Даёт эффект «дыхания» прицела на финальной наводке.
+    // Амплитуда затухает до нуля к самому концу.
+    let trembleX = 0;
+    let trembleY = 0;
+    if (progress > 0.75) {
+      const trembleAmount = (1 - progress) * 12; // до 12 пикселей
+      const phase = elapsed * 0.015;
+      trembleX = Math.sin(phase) * trembleAmount;
+      trembleY = Math.cos(phase * 1.3) * trembleAmount;
+    }
+
+    moveCrosshair(pos.x + trembleX, pos.y + trembleY);
+
+    // === Пульсация .locked ===
+    // Когда близко к финалу, но ещё летим — начинаем пульсировать.
+    if (progress > 0.9) {
+      crosshair.classList.add('locked');
+    }
+
+    // === Подсветка плашки под прицелом ===
+    // Ищем, к какой ближайшей плашке ближе всего — подсвечиваем.
+    // Делаем это раз в ~5 кадров для производительности.
+    if (Math.random() < 0.2) {
+      let closest = null;
+      let minDist = Infinity;
+      for (const chip of liveChips) {
+        const r = chip.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = pos.x - cx;
+        const dy = pos.y - cy;
+        const d = dx * dx + dy * dy;
+        if (d < minDist) {
+          minDist = d;
+          closest = chip;
+        }
+      }
+      // Подсвечиваем только если прицел достаточно близко (в радиусе 60 px)
+      if (closest && minDist < 3600) {
+        arena.querySelectorAll('.chip.targeted').forEach(c => {
+          if (c !== closest) c.classList.remove('targeted');
+        });
+        closest.classList.add('targeted');
+      } else {
+        arena.querySelectorAll('.chip.targeted').forEach(c => c.classList.remove('targeted'));
+      }
+    }
+
+    if (progress < 1) {
+      aimFrame = requestAnimationFrame(step);
+    } else {
+      // Финал — точно на finalPoint
+      moveCrosshair(finalPoint.x, finalPoint.y);
+      crosshair.classList.add('locked');
+      arena.querySelectorAll('.chip.targeted').forEach(c => c.classList.remove('targeted'));
+      const liveVictim = arena.querySelector(`.chip[data-id="${victimId}"]`);
+      if (liveVictim) liveVictim.classList.add('targeted');
+      console.log('[sniper] ========== runAim FINISH ==========');
+      console.log('[sniper] финальная позиция =', finalPoint.x, finalPoint.y);
+    }
+  }
+
+  aimFrame = requestAnimationFrame(step);
 }
 
 function connect() {
@@ -342,51 +457,64 @@ function connect() {
     }
 
     if (type === 'sniper:state') {
-      if (payload.status !== 'shooting') {
+      if (isShooting && payload.status !== 'shooting') {
         stopAiming();
         hideCrosshair();
       }
-      participants = payload.participants;
-      targetingId = payload.victimId;
-      if (participants.length > 0) ov.classList.add('active');
-      if (participants.length === 0) ov.classList.remove('active');
-      render();
+
+      if (!isShooting) {
+        participants = payload.participants;
+        targetingId = payload.victimId;
+        if (participants.length > 0) ov.classList.add('active');
+        if (participants.length === 0) ov.classList.remove('active');
+        render();
+      } else {
+        participants = payload.participants;
+      }
     }
 
     if (type === 'sniper:shooting') {
+      console.log('[sniper] получен sniper:shooting, victimId =', payload.victimId, 'aimDuration =', payload.aimDuration);
+      _serverAimDuration = payload.aimDuration || 2500;
       participants = payload.participants;
       targetingId = null;
       ov.classList.add('active');
       render();
-      // Небольшая задержка, чтобы DOM успел обновиться после render()
-      setTimeout(() => runAim(payload.victimId), 50);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          runAim(payload.victimId);
+        });
+      });
     }
 
     if (type === 'sniper:shot') {
+      console.log('[sniper] получен sniper:shot, victimId =', payload.victimId);
       stopAiming();
 
-      participants = payload.participants;
-      targetingId = null;
+      const victimChip = arena.querySelector(`.chip[data-id="${payload.victimId}"]`);
+      if (victimChip) {
+        victimChip.classList.add('shot');
+        victimChip.classList.add('targeted');
+      }
+
       flash();
       showBanner(payload.victimName);
       shotSound.volume = 0.2;
       shotSound.currentTime = 0;
       shotSound.play().catch(() => {});
 
-      // Подсвечиваем жертву как убитую
-      const victimChip = arena.querySelector(`.chip[data-id="${payload.victimId}"]`);
-      if (victimChip) {
-        victimChip.classList.add('shot');
-      }
-
-      render();
-
-      // Прячем прицел через 1.5 секунды
       if (hideTimer) clearTimeout(hideTimer);
       hideTimer = setTimeout(() => {
         hideCrosshair();
         hideTimer = null;
       }, 1500);
+
+      setTimeout(() => {
+        participants = payload.participants;
+        targetingId = null;
+        render();
+      }, 1600);
     }
 
     if (type === 'winner:show' && payload.tag?.includes('Снайпер')) {
