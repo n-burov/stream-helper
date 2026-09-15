@@ -39,7 +39,7 @@ const ctx = {
     }
   },
   db,
-  twitch: null, // будет установлен при подключении
+  twitch: null,
 };
 
 mechanics.initAll(ctx);
@@ -209,6 +209,7 @@ app.get('/api/logout', (req, res) => {
   db.update(d => { d.tokens = null; d.settings.channel = null; });
   if (twitch) { twitch.disconnect(); twitch = null; }
   if (eventSub) { eventSub.disconnect(); eventSub = null; }
+  ctx.twitch = null;
   ircState.connected = false;
   ctx.broadcast('twitchStatus', ircState);
   res.redirect('/');
@@ -225,7 +226,6 @@ async function restartTwitch() {
     token: data.tokens.access_token,
     channel: data.settings.channel,
   });
-  ctx.twitch = twitch;
 
   twitch.on('chat', (msg) => {
     mechanics.handleChat(msg);
@@ -241,8 +241,12 @@ async function restartTwitch() {
     ctx.broadcast('twitchStatus', { ...ircState, reason });
   });
 
-  try { await twitch.connect(); }
-  catch (e) { console.error('IRC connect error:', e.message); }
+  try {
+    await twitch.connect();
+    ctx.twitch = twitch;
+  } catch (e) {
+    console.error('IRC connect error:', e.message);
+  }
 }
 
 // === EventSub ===
@@ -350,24 +354,17 @@ async function startDonationAlerts() {
 }
 
 // === Автообновление ===
-let updateAvailable = null;
+console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
+
 (async () => {
+  // Проверяем обновление до запуска сервера.
+  // Если обновление найдено — checkForUpdate сам создаст bat и завершит процесс.
   try {
-    const result = await checkForUpdate({
-      onUpdateReady: (info) => {
-        updateAvailable = info;
-        ctx.broadcast('updateAvailable', info);
-      },
-    });
-    if (result.restartRequired) {
-      console.log('🔄 Доступно обновление! Перезапусти приложение для применения.');
-    }
+    await checkForUpdate();
   } catch (e) {
     console.warn('⚠️ updater:', e.message);
   }
 })();
-
-console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
 
 // === Старт ===
 (async () => {
