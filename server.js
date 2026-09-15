@@ -39,6 +39,7 @@ const ctx = {
     }
   },
   db,
+  twitch: null, // будет установлен при подключении
 };
 
 mechanics.initAll(ctx);
@@ -224,6 +225,7 @@ async function restartTwitch() {
     token: data.tokens.access_token,
     channel: data.settings.channel,
   });
+  ctx.twitch = twitch;
 
   twitch.on('chat', (msg) => {
     mechanics.handleChat(msg);
@@ -235,6 +237,7 @@ async function restartTwitch() {
   });
   twitch.on('disconnected', (reason) => {
     ircState.connected = false;
+    ctx.twitch = null;
     ctx.broadcast('twitchStatus', { ...ircState, reason });
   });
 
