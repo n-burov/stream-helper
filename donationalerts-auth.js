@@ -2,8 +2,8 @@
 const crypto = require('crypto');
 
 // ЗАМЕНИ НА СВОИ ЗНАЧЕНИЯ ИЗ ЛИЧНОГО КАБИНЕТА DA
-const DA_CLIENT_ID = 'ТВОЙ_CLIENT_ID';
-const DA_CLIENT_SECRET = 'ТВОЙ_CLIENT_SECRET';
+const DA_CLIENT_ID = '21169';
+const DA_CLIENT_SECRET = 'pkqLH26wl7p27p85S8BG5iLovrd40geJqYDVJoKv';
 const DA_REDIRECT_URI = 'http://localhost:3000/auth/donationalerts/callback';
 
 const DA_AUTHORIZE_URL = 'https://www.donationalerts.com/oauth/authorize';
