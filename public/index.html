@@ -201,9 +201,9 @@
       <span class="status-dot red" id="twitchDot"></span>
       <span id="twitchText">Twitch...</span>
     </div>
-    <div class="status-badge donat" id="donatBadge">
-      <span class="status-dot red" id="donatDot"></span>
-      <span id="donatText">DonatePay...</span>
+    <div class="status-badge donat" id="daBadge">
+      <span class="status-dot red" id="daDot"></span>
+      <span id="daText">DonationAlerts...</span>
     </div>
   </div>
   <div style="display:flex; gap:8px;">
@@ -327,14 +327,11 @@
   <div class="card">
     <div class="card-title">
       <span class="icon">💸</span> Донатеры
-      <div style="margin-left:auto; display:flex; gap:8px;">
-        <button class="btn btn-sm btn-success" id="donorsRefresh">🔄 Обновить</button>
-        <button class="btn btn-sm btn-danger" id="donorsReset">🗑️ Сбросить всё</button>
-      </div>
+      <button class="btn btn-sm btn-danger" id="donorsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
     </div>
     <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Один человек — одна плашка. Список пересобирается из DonatePay автоматически каждые 5 минут.
-      Учитываются донаты за текущую неделю с момента последнего сброса.
+      Список пополняется автоматически при поступлении донатов через DonationAlerts.
+      Один человек — одна плашка, суммы складываются.
     </p>
     <div class="row">
       <input type="text" id="donorsName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
@@ -398,8 +395,8 @@
 
       <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
 
-      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">Access token DonatePay</label>
-      <input type="password" id="setDonateToken" placeholder="Вставь токен из ЛК DonatePay" />
+      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">Access token DonationAlerts</label>
+      <input type="password" id="setDAToken" placeholder="Вставь токен из ЛК DonationAlerts" />
 
       <button class="btn btn-success" id="setSave" style="margin-top:16px;">💾 Сохранить</button>
     </div>
@@ -492,7 +489,7 @@ function handleMessage(type, payload) {
     case 'winner:show':    showWinnerModal(payload.name); break;
 
     case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
-    case 'donatePayStatus':updateDonatePayStatus(payload.connected); break;
+    case 'donationAlertsStatus': updateDAStatus(payload.connected); break;
 
     case 'error': showToast(payload.message); break;
   }
@@ -508,10 +505,10 @@ function updateTwitchStatus(online) {
   document.getElementById('twitchDot').classList.toggle('red', !online);
   document.getElementById('twitchText').textContent = online ? 'Twitch OK' : 'Twitch offline';
 }
-function updateDonatePayStatus(online) {
-  document.getElementById('donatBadge').classList.toggle('offline', !online);
-  document.getElementById('donatDot').classList.toggle('red', !online);
-  document.getElementById('donatText').textContent = online ? 'DonatePay OK' : 'DonatePay offline';
+function updateDAStatus(online) {
+  document.getElementById('daBadge').classList.toggle('offline', !online);
+  document.getElementById('daDot').classList.toggle('red', !online);
+  document.getElementById('daText').textContent = online ? 'DonationAlerts OK' : 'DonationAlerts offline';
 }
 function showWinnerModal(name) {
   document.getElementById('winnerName').textContent = name;
@@ -859,10 +856,6 @@ donorsName.addEventListener('keydown', e => { if (e.key === 'Enter') document.ge
 document.getElementById('donorsReset').addEventListener('click', () => {
   if (confirm('Очистить список донатеров?')) sendAction('donors:reset');
 });
-document.getElementById('donorsRefresh').addEventListener('click', () => {
-  sendAction('donors:refresh');
-  showToast('🔄 Запрос на обновление отправлен', 'success');
-});
 
 function renderDonors() {
   const d = state.donors;
@@ -1003,8 +996,8 @@ async function loadSettings() {
     const s = await r.json();
     window._savedRewardId = s.ticketRewardId || '';
 
-    if (s.hasDonatePayToken) {
-      document.getElementById('setDonateToken').placeholder =
+    if (s.hasDonationAlertsToken) {
+      document.getElementById('setDAToken').placeholder =
         '✅ Токен сохранён (введи новый, чтобы заменить)';
     }
 
@@ -1075,9 +1068,9 @@ document.getElementById('setSave').addEventListener('click', async () => {
     ticketRewardId = document.getElementById('setRewardIdManual').value.trim();
   }
 
-  const donatePayToken = document.getElementById('setDonateToken').value.trim();
+  const donationAlertsToken = document.getElementById('setDAToken').value.trim();
   const body = { ticketRewardId, ticketRewardTitle };
-  if (donatePayToken) body.donatePayToken = donatePayToken;
+  if (donationAlertsToken) body.donationAlertsToken = donationAlertsToken;
 
   try {
     const r = await fetch('/api/settings', {
@@ -1088,7 +1081,7 @@ document.getElementById('setSave').addEventListener('click', async () => {
     const data = await r.json();
     if (data.error) { showToast('❌ ' + data.error); return; }
     showToast('✅ Настройки сохранены', 'success');
-    document.getElementById('setDonateToken').value = '';
+    document.getElementById('setDAToken').value = '';
     window._savedRewardId = ticketRewardId;
     await loadSettings();
   } catch (e) {
