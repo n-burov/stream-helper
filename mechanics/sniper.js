@@ -106,7 +106,7 @@ function shoot() {
 
   const victim = alive[Math.floor(Math.random() * alive.length)];
   const spinId = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  const aimDuration = 2200 + Math.random() * 600;
+  const aimDuration = 6600 + Math.random() * 600;
 
   db.update(dd => {
     dd.sniper.status = 'shooting';
