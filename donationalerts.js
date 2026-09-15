@@ -21,10 +21,12 @@ class DonationAlertsService extends EventEmitter {
     this.pendingSubscribeId = null;
     this.processedDonations = new Set();
     this.connected = false;
+    this.manualClose = false;
   }
 
   async start() {
     this.shouldReconnect = true;
+    this.manualClose = false;
 
     try {
       // 1. Получаем User ID и socket_connection_token
@@ -85,21 +87,41 @@ class DonationAlertsService extends EventEmitter {
 
   onOpen() {
     console.log('[donationalerts] WebSocket открыт, авторизация...');
-    // Centrifugo v2 (старый протокол): используем params вместо connect
+    // Centrifugo v2 (старый протокол): params вместо connect
     this.pendingAuthId = this.send({
       params: { token: this.socketToken },
     });
   }
 
   async onMessage(raw) {
+    const rawText = raw.toString();
+
     let msg;
     try {
-      msg = JSON.parse(raw.toString());
+      msg = JSON.parse(rawText);
     } catch {
       return;
     }
+    console.log('[donationalerts] RAW:', rawText.slice(0, 200));
+    // === Server-side ping от Centrifugo ===
+    // Формат: { id: N } — только id, без других полей.
+    // Клиент должен ответить { id: N }.
+    const keys = Object.keys(msg);
+    if (
+      keys.length === 1 &&
+      msg.id !== undefined &&
+      msg.result === undefined &&
+      msg.error === undefined &&
+      msg.push === undefined
+    ) {
+      // Отвечаем тем же id
+      if (this.ws && this.ws.readyState === 1) {
+        this.ws.send(JSON.stringify({ id: msg.id }));
+      }
+      return;
+    }
 
-    // === Ответ на авторизацию (Centrifugo v2: поле result) ===
+    // === Ответ на авторизацию ===
     if (msg.id === this.pendingAuthId) {
       if (msg.error) {
         this.emit('error', 'Auth error: ' + JSON.stringify(msg.error));
@@ -122,7 +144,7 @@ class DonationAlertsService extends EventEmitter {
       return;
     }
 
-    // === Ответ на подписку (Centrifugo v2: поле result) ===
+    // === Ответ на подписку ===
     if (msg.id === this.pendingSubscribeId) {
       if (msg.error) {
         this.emit('error', 'Subscribe error: ' + JSON.stringify(msg.error));
@@ -133,17 +155,13 @@ class DonationAlertsService extends EventEmitter {
       this.connected = true;
       this.emit('connected');
 
-      // Пинг каждые 25 секунд (Centrifugo v2: method 0)
+      // Клиентский ping каждые 20 секунд — чтобы сервер видел активность
       if (this.pingInterval) clearInterval(this.pingInterval);
       this.pingInterval = setInterval(() => {
-        this.send({ method: 0 });
-      }, 25000);
-      return;
-    }
-
-    // === Pong (ответ на ping) ===
-    if (msg.result === undefined && msg.id && !msg.push && !msg.error) {
-      // Игнорируем пустые ответы на ping
+        if (this.ws && this.ws.readyState === 1) {
+          this.send({ method: 0 });
+        }
+      }, 20000);
       return;
     }
 
@@ -169,6 +187,7 @@ class DonationAlertsService extends EventEmitter {
 
       console.log('[donationalerts] Новый донат:', donation);
       this.emit('donation', donation);
+      return;
     }
   }
 
@@ -203,7 +222,7 @@ class DonationAlertsService extends EventEmitter {
 
       console.log('[donationalerts] Подписываюсь на канал:', channelName);
 
-      // Centrifugo v2: method 1 = subscribe, params с channel и token
+      // Centrifugo v2: method 1 = subscribe
       this.pendingSubscribeId = this.send({
         method: 1,
         params: {
@@ -226,7 +245,9 @@ class DonationAlertsService extends EventEmitter {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
-    if (this.shouldReconnect) this.scheduleReconnect(5000);
+    if (this.shouldReconnect && !this.manualClose) {
+      this.scheduleReconnect(5000);
+    }
   }
 
   scheduleReconnect(delayMs = 5000) {
@@ -239,6 +260,7 @@ class DonationAlertsService extends EventEmitter {
 
   stop() {
     this.shouldReconnect = false;
+    this.manualClose = true;
     if (this.pingInterval) clearInterval(this.pingInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     if (this.ws) {
