@@ -395,10 +395,10 @@
 
       <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
 
-      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">Access token DonationAlerts</label>
-      <input type="password" id="setDAToken" placeholder="Вставь токен из ЛК DonationAlerts" />
-
-      <button class="btn btn-success" id="setSave" style="margin-top:16px;">💾 Сохранить</button>
+      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">DonationAlerts</label>
+      <div id="daAuthBlock" style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+        <div class="list-empty" style="padding:0;">Загрузка...</div>
+      </div>
     </div>
   </div>
 
@@ -996,13 +996,30 @@ async function loadSettings() {
     const s = await r.json();
     window._savedRewardId = s.ticketRewardId || '';
 
-    if (s.hasDonationAlertsToken) {
-      document.getElementById('setDAToken').placeholder =
-        '✅ Токен сохранён (введи новый, чтобы заменить)';
-    }
-
     await loadRewards({ silent: true });
+    await renderDaAuthBlock();
   } catch {}
+}
+
+async function renderDaAuthBlock() {
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    const block = document.getElementById('daAuthBlock');
+
+    if (s.donationAlertsAuthorized) {
+      block.innerHTML = `
+        <span style="color:#00ff64; font-size:14px;">✅ Подключено</span>
+        <a href="/api/logout/donationalerts" class="btn btn-sm btn-danger" style="text-decoration:none;">Отключить</a>
+      `;
+    } else {
+      block.innerHTML = `
+        <a href="/auth/donationalerts/login" class="btn btn-sm btn-primary" style="text-decoration:none;">🔐 Подключить DonationAlerts</a>
+      `;
+    }
+  } catch (e) {
+    document.getElementById('daAuthBlock').innerHTML = `<span style="color:#ff4757;">Ошибка загрузки статуса</span>`;
+  }
 }
 
 async function loadRewards({ silent } = {}) {
@@ -1068,9 +1085,7 @@ document.getElementById('setSave').addEventListener('click', async () => {
     ticketRewardId = document.getElementById('setRewardIdManual').value.trim();
   }
 
-  const donationAlertsToken = document.getElementById('setDAToken').value.trim();
   const body = { ticketRewardId, ticketRewardTitle };
-  if (donationAlertsToken) body.donationAlertsToken = donationAlertsToken;
 
   try {
     const r = await fetch('/api/settings', {
@@ -1081,7 +1096,6 @@ document.getElementById('setSave').addEventListener('click', async () => {
     const data = await r.json();
     if (data.error) { showToast('❌ ' + data.error); return; }
     showToast('✅ Настройки сохранены', 'success');
-    document.getElementById('setDAToken').value = '';
     window._savedRewardId = ticketRewardId;
     await loadSettings();
   } catch (e) {
