@@ -3,7 +3,14 @@ const fs = require('fs');
 const path = require('path');
 
 const isPkg = typeof process.pkg !== 'undefined';
-const BASE_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
+const EXE_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
+
+// Если exe запущен из папки versions/ — используем data.json из родительской папки.
+// Это позволяет любой старой версии работать с общими данными.
+let BASE_DIR = EXE_DIR;
+if (path.basename(EXE_DIR).toLowerCase() === 'versions') {
+  BASE_DIR = path.dirname(EXE_DIR);
+}
 
 const DATA_FILE = path.join(BASE_DIR, 'data.json');
 const HISTORY_FILE = path.join(BASE_DIR, 'history.json');
@@ -30,7 +37,7 @@ const DEFAULT_DATA = {
     resetAt: null,
   },
 
-  nicks: {},  // { userId: { userId, twitchUsername, nick, updatedAt } }
+  nicks: {},
 
   keyword: {
     status: 'idle',
@@ -74,11 +81,14 @@ function loadData() {
   try {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     dataCache = { ...DEFAULT_DATA, ...raw };
-    // Мержим вложенные объекты
+    // Мержим вложенные объекты, чтобы новые поля из DEFAULT_DATA подтягивались
     dataCache.settings = { ...DEFAULT_DATA.settings, ...(raw.settings || {}) };
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
+    if (!dataCache.nicks || typeof dataCache.nicks !== 'object') {
+      dataCache.nicks = {};
+    }
     return dataCache;
   } catch {
     dataCache = JSON.parse(JSON.stringify(DEFAULT_DATA));
@@ -89,7 +99,7 @@ function loadData() {
 function saveData() {
   if (!dataCache) return;
   const tmp = DATA_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(dataCache, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify(dataCache, null, 2), 'utf8');
   fs.renameSync(tmp, DATA_FILE);
 }
 
@@ -108,7 +118,7 @@ function loadHistory() {
 
 function saveHistory(list) {
   const tmp = HISTORY_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(list, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify(list, null, 2), 'utf8');
   fs.renameSync(tmp, HISTORY_FILE);
 }
 
@@ -125,4 +135,5 @@ function clearHistory() { saveHistory([]); }
 module.exports = {
   loadData, saveData, update,
   loadHistory, saveHistory, addHistoryEntry, clearHistory,
+  BASE_DIR,
 };
