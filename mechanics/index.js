@@ -6,6 +6,7 @@ const winner = require('./winner');
 const tickets = require('./tickets');
 const donors = require('./donors');
 const dj = require('./dj');
+const nicks = require('./nicks');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -15,6 +16,7 @@ function initAll(ctx) {
   tickets.init(ctx);
   donors.init(ctx);
   dj.init(ctx);
+  nicks.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -46,6 +48,10 @@ function handleCommand(action, data) {
     case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
     case 'dj:reset':         return dj.reset();
 
+    case 'nicks:remove':     return nicks.remove(data?.userId);
+    case 'nicks:reset':      return nicks.reset();
+    case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
+
     default:
       return { error: 'Unknown action: ' + action };
   }
@@ -60,14 +66,16 @@ function getFullState() {
     tickets: tickets.getState(),
     donors: donors.getState(),
     dj: dj.getState(),
+    nicks: nicks.getState(),
   };
 }
 
 function handleChat(msg) {
   keyword.handleChat(msg);
+  nicks.handleChat(msg);
 }
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj,
+  tickets, donors, sniper, dj, nicks,
 };
