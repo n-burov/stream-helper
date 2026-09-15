@@ -12,9 +12,11 @@ const DEFAULT_DATA = {
   tokens: null,
   settings: {
     channel: null,
-    donationAlertsToken: null,
     ticketRewardId: null,
     ticketRewardTitle: null,
+    donationAlertsToken: null,
+    donationAlertsRefreshToken: null,
+    donationAlertsExpiresAt: null,
   },
   follows: [],
   redemptions: [],
