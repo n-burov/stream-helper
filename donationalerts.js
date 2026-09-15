@@ -13,7 +13,6 @@ class DonationAlertsService extends EventEmitter {
     this.userId = null;
     this.socketToken = null;
     this.clientId = null;
-    this.pingInterval = null;
     this.reconnectTimeout = null;
     this.shouldReconnect = true;
     this.msgId = 0;
@@ -22,6 +21,7 @@ class DonationAlertsService extends EventEmitter {
     this.processedDonations = new Set();
     this.connected = false;
     this.manualClose = false;
+    this.debug = true;
   }
 
   async start() {
@@ -29,7 +29,6 @@ class DonationAlertsService extends EventEmitter {
     this.manualClose = false;
 
     try {
-      // 1. Получаем User ID и socket_connection_token
       const userRes = await fetch(`${API_BASE}/user/oauth`, {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
@@ -70,7 +69,7 @@ class DonationAlertsService extends EventEmitter {
 
     this.ws.on('open', () => this.onOpen());
     this.ws.on('message', (data) => this.onMessage(data));
-    this.ws.on('close', () => this.onClose());
+    this.ws.on('close', (code, reason) => this.onClose(code, reason));
     this.ws.on('error', (err) => this.emit('error', 'WS: ' + err.message));
   }
 
@@ -87,7 +86,6 @@ class DonationAlertsService extends EventEmitter {
 
   onOpen() {
     console.log('[donationalerts] WebSocket открыт, авторизация...');
-    // Centrifugo v2 (старый протокол): params вместо connect
     this.pendingAuthId = this.send({
       params: { token: this.socketToken },
     });
@@ -96,27 +94,24 @@ class DonationAlertsService extends EventEmitter {
   async onMessage(raw) {
     const rawText = raw.toString();
 
+    if (this.debug) {
+      console.log('[donationalerts] RAW:', rawText.slice(0, 300));
+    }
+
     let msg;
     try {
       msg = JSON.parse(rawText);
     } catch {
       return;
     }
-    console.log('[donationalerts] RAW:', rawText.slice(0, 200));
-    // === Server-side ping от Centrifugo ===
-    // Формат: { id: N } — только id, без других полей.
-    // Клиент должен ответить { id: N }.
+
     const keys = Object.keys(msg);
-    if (
-      keys.length === 1 &&
-      msg.id !== undefined &&
-      msg.result === undefined &&
-      msg.error === undefined &&
-      msg.push === undefined
-    ) {
-      // Отвечаем тем же id
+
+    // === Server-side ping от Centrifugo v2: пустой объект {} ===
+    if (keys.length === 0) {
+      if (this.debug) console.log('[donationalerts] Server ping -> отправляю pong');
       if (this.ws && this.ws.readyState === 1) {
-        this.ws.send(JSON.stringify({ id: msg.id }));
+        this.ws.send('{}');
       }
       return;
     }
@@ -127,18 +122,15 @@ class DonationAlertsService extends EventEmitter {
         this.emit('error', 'Auth error: ' + JSON.stringify(msg.error));
         return;
       }
-
       if (!msg.result) {
-        this.emit('error', 'Auth failed: no result in response');
+        this.emit('error', 'Auth failed: no result');
         return;
       }
-
       this.clientId = msg.result.client;
       if (!this.clientId) {
-        this.emit('error', 'Auth failed: no client id in result');
+        this.emit('error', 'Auth failed: no client id');
         return;
       }
-
       console.log('[donationalerts] Авторизация успешна. Client ID:', this.clientId);
       await this.subscribeToChannel();
       return;
@@ -150,24 +142,25 @@ class DonationAlertsService extends EventEmitter {
         this.emit('error', 'Subscribe error: ' + JSON.stringify(msg.error));
         return;
       }
-
       console.log('[donationalerts] Подписка на канал донатов активна');
       this.connected = true;
       this.emit('connected');
-
-      // Клиентский ping каждые 20 секунд — чтобы сервер видел активность
-      if (this.pingInterval) clearInterval(this.pingInterval);
-      this.pingInterval = setInterval(() => {
-        if (this.ws && this.ws.readyState === 1) {
-          this.send({ method: 0 });
-        }
-      }, 20000);
       return;
     }
 
-    // === Событие push с донатом ===
-    if (msg.push && msg.push.pub && msg.push.pub.data) {
-      const data = msg.push.pub.data;
+    // === Информационное сообщение о подписке (type 1) — игнорируем ===
+    if (msg.result && msg.result.type === 1) {
+      return;
+    }
+
+    // === Recovery-подсказка от сервера (recoverable/epoch) — игнорируем ===
+    if (msg.result && msg.result.recoverable) {
+      return;
+    }
+
+    // === Событие доната (Centrifugo v2: result.channel + result.data.data) ===
+    if (msg.result && msg.result.channel && msg.result.data && msg.result.data.data) {
+      const data = msg.result.data.data;
 
       if (this.processedDonations.has(data.id)) return;
       this.processedDonations.add(data.id);
@@ -222,7 +215,6 @@ class DonationAlertsService extends EventEmitter {
 
       console.log('[donationalerts] Подписываюсь на канал:', channelName);
 
-      // Centrifugo v2: method 1 = subscribe
       this.pendingSubscribeId = this.send({
         method: 1,
         params: {
@@ -236,15 +228,11 @@ class DonationAlertsService extends EventEmitter {
     }
   }
 
-  onClose() {
-    console.log('[donationalerts] WebSocket закрыт');
+  onClose(code, reason) {
+    console.log('[donationalerts] WebSocket закрыт. Код:', code, 'Причина:', reason?.toString() || '(нет)');
     this.connected = false;
     this.emit('disconnected');
 
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
-    }
     if (this.shouldReconnect && !this.manualClose) {
       this.scheduleReconnect(5000);
     }
@@ -261,7 +249,6 @@ class DonationAlertsService extends EventEmitter {
   stop() {
     this.shouldReconnect = false;
     this.manualClose = true;
-    if (this.pingInterval) clearInterval(this.pingInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     if (this.ws) {
       try { this.ws.close(); } catch {}
