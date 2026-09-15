@@ -74,7 +74,7 @@
   .btn-reset   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
   .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-  input[type="text"], input[type="number"], input[type="password"], select {
+  input[type="text"], input[type="number"], select {
     padding: 12px 18px; border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.05); color: #fff; font-size: 16px;
@@ -104,7 +104,12 @@
   .list-chip.donor {
     background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.25);
   }
+  .list-chip.nick {
+    background: rgba(0,255,100,0.10); border-color: rgba(0,255,100,0.22);
+  }
   .list-chip .amount { color: #00d4ff; font-weight: 600; font-size: 12px; }
+  .list-chip .nick-arrow { color: rgba(255,255,255,0.4); }
+  .list-chip .nick-value { color: #00ff64; font-weight: 600; }
   .list-empty {
     text-align: center; color: rgba(255,255,255,0.3); padding: 30px;
     width: 100%; font-size: 14px;
@@ -208,7 +213,7 @@
   </div>
   <div style="display:flex; gap:8px;">
     <a class="logout-btn" id="loginBtn" href="/auth/login" style="background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
-    <a class="logout-btn" id="logoutBtn" href="/api/logout">🚪 Выйти</a>
+    <a class="logout-btn" id="logoutBtn" href="/api/logout" style="display:none;">🚪 Выйти</a>
   </div>
 </header>
 
@@ -219,6 +224,7 @@
   <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
   <button class="tab-btn" data-tab="tab-donors">💸 Донатеры</button>
   <button class="tab-btn" data-tab="tab-dj">🎧 Диджей дня</button>
+  <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
 </nav>
 
@@ -369,6 +375,38 @@
   </div>
 </div>
 
+<!-- ============ NICKS ============ -->
+<div class="tab-content" id="tab-nicks">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">🎮</span> Ники зрителей
+      <button class="btn btn-sm btn-danger" id="nicksReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Зрители пишут в чат <strong>!ник &lt;ник&gt;</strong>, чтобы указать свой игровой ник.
+      Если указать другой ник позже — старый заменится новым.
+      Можно добавить вручную через форму ниже.
+    </p>
+
+    <div class="row" style="margin-bottom:8px;">
+      <input type="text" id="nicksTwitchInput" placeholder="Twitch-юзернейм..." style="flex:1; min-width:180px;" />
+      <input type="text" id="nicksNickInput" placeholder="Игровой ник..." style="flex:1; min-width:180px;" />
+      <button class="btn btn-primary" id="nicksAddManual">➕ Добавить</button>
+    </div>
+    <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:16px;">
+      Если такой Twitch-юзернейм уже есть в списке — ник заменится.
+    </div>
+
+    <div class="row">
+      <input type="text" id="nicksSearch" placeholder="🔍 Поиск по юзернейму или нику..." style="flex:1; min-width:200px;" />
+    </div>
+    <div class="counter-bar">
+      <span>Всего ников: <strong id="nicksCount">0</strong></span>
+    </div>
+    <div class="list-grid" id="nicksList"><div class="list-empty">Пока никто не указал ник</div></div>
+  </div>
+</div>
+
 <!-- ============ SETTINGS ============ -->
 <div class="tab-content" id="tab-settings">
   <div class="card">
@@ -394,10 +432,12 @@
       </div>
 
       <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
+
       <button class="btn btn-success" id="setSave" style="margin-top:16px;">💾 Сохранить</button>
+
       <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">DonationAlerts</label>
       <div id="daAuthBlock" style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-        <div class="list-empty" style="padding:0;">Загрузка...</div>
+        <span style="color:rgba(255,255,255,0.35); font-size:13px;">Загрузка...</span>
       </div>
     </div>
   </div>
@@ -435,7 +475,7 @@
 //  WebSocket
 // ============================================================
 let ws;
-const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null };
+const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null, nicks:null };
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -457,7 +497,8 @@ function handleMessage(type, payload) {
       state.tickets = payload.tickets;
       state.donors = payload.donors;
       state.dj = payload.dj;
-      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors(); renderDj();
+      state.nicks = payload.nicks;
+      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors(); renderDj(); renderNicks();
       break;
 
     case 'keyword:state':  state.keyword = payload; renderKeyword(); break;
@@ -485,6 +526,8 @@ function handleMessage(type, payload) {
     case 'tickets:state':  state.tickets = payload; renderTickets(); break;
     case 'donors:state':   state.donors = payload; renderDonors(); break;
     case 'dj:state':       state.dj = payload; renderDj(); break;
+    case 'nicks:state':    state.nicks = payload; renderNicks(); break;
+    case 'nicks:updated':  renderNicks(); break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
@@ -955,6 +998,83 @@ document.getElementById('djReset').addEventListener('click', () => {
 document.querySelector('[data-tab="tab-dj"]').addEventListener('click', loadDjRewards);
 
 // ============================================================
+//  NICKS
+// ============================================================
+const nicksList = document.getElementById('nicksList');
+const nicksCount = document.getElementById('nicksCount');
+const nicksSearch = document.getElementById('nicksSearch');
+const nicksTwitchInput = document.getElementById('nicksTwitchInput');
+const nicksNickInput = document.getElementById('nicksNickInput');
+
+let nicksFilter = '';
+
+nicksSearch.addEventListener('input', () => {
+  nicksFilter = nicksSearch.value.trim().toLowerCase();
+  renderNicks();
+});
+
+function renderNicks() {
+  const n = state.nicks;
+  if (!n) return;
+
+  const all = Object.values(n.nicks || {});
+  nicksCount.textContent = all.length;
+
+  const filtered = nicksFilter
+    ? all.filter(x =>
+        x.twitchUsername.toLowerCase().includes(nicksFilter) ||
+        x.nick.toLowerCase().includes(nicksFilter)
+      )
+    : all;
+
+  if (filtered.length === 0) {
+    nicksList.innerHTML = `<div class="list-empty">${nicksFilter ? 'Никого не найдено' : 'Пока никто не указал ник'}</div>`;
+    return;
+  }
+
+  filtered.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+  nicksList.innerHTML = filtered.map(x => `
+    <div class="list-chip nick">
+      <span style="color:#9146ff; font-weight:700;">${escapeHtml(x.twitchUsername)}</span>
+      <span class="nick-arrow">→</span>
+      <span class="nick-value">${escapeHtml(x.nick)}</span>
+      ${x.manual ? '<span style="color:rgba(255,255,255,0.25); font-size:10px;">вручную</span>' : ''}
+      <span class="chip-x" data-user-id="${escapeAttr(x.userId)}">✕</span>
+    </div>
+  `).join('');
+
+  nicksList.querySelectorAll('[data-user-id]').forEach(el => {
+    el.addEventListener('click', () => sendAction('nicks:remove', { userId: el.dataset.userId }));
+  });
+}
+
+document.getElementById('nicksAddManual').addEventListener('click', () => {
+  const tw = nicksTwitchInput.value.trim();
+  const nk = nicksNickInput.value.trim();
+
+  if (!tw) { showToast('Укажи Twitch-юзернейм'); nicksTwitchInput.focus(); return; }
+  if (!nk) { showToast('Укажи ник'); nicksNickInput.focus(); return; }
+
+  sendAction('nicks:addManual', { twitchUsername: tw, nick: nk });
+  nicksTwitchInput.value = '';
+  nicksNickInput.value = '';
+  nicksTwitchInput.focus();
+  showToast('✅ Ник добавлен', 'success');
+});
+
+nicksNickInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('nicksAddManual').click();
+});
+nicksTwitchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') nicksNickInput.focus();
+});
+
+document.getElementById('nicksReset').addEventListener('click', () => {
+  if (confirm('Очистить все ники?')) sendAction('nicks:reset');
+});
+
+// ============================================================
 //  HISTORY
 // ============================================================
 async function loadHistory() {
@@ -1002,10 +1122,12 @@ async function loadSettings() {
 }
 
 async function renderDaAuthBlock() {
+  const block = document.getElementById('daAuthBlock');
+  if (!block) return;
+
   try {
     const r = await fetch('/api/status');
     const s = await r.json();
-    const block = document.getElementById('daAuthBlock');
 
     if (s.donationAlertsAuthorized) {
       block.innerHTML = `
@@ -1018,7 +1140,7 @@ async function renderDaAuthBlock() {
       `;
     }
   } catch (e) {
-    document.getElementById('daAuthBlock').innerHTML = `<span style="color:#ff4757;">Ошибка загрузки статуса</span>`;
+    block.innerHTML = `<span style="color:#ff4757; font-size:13px;">Ошибка загрузки статуса</span>`;
   }
 }
 
@@ -1071,7 +1193,7 @@ async function loadRewards({ silent } = {}) {
   }
 }
 
-document.getElementById('setLoadRewards')?.addEventListener('click', () => loadRewards());
+document.getElementById('setLoadRewards').addEventListener('click', () => loadRewards());
 
 document.getElementById('setSave').addEventListener('click', async () => {
   let ticketRewardId = '';
