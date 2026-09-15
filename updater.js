@@ -2,12 +2,18 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const { exec } = require('child_process');
 
 const CURRENT_VERSION = require('./package.json').version;
 const REPO = 'n-burov/stream-helper';
+
 const isPkg = typeof process.pkg !== 'undefined';
 const EXE_PATH = process.execPath;
 const EXE_DIR = path.dirname(EXE_PATH);
+const EXE_NAME = path.basename(EXE_PATH);
+const NEW_EXE_PATH = EXE_PATH + '.new';
+const VERSIONS_DIR = path.join(EXE_DIR, 'versions');
+const UPDATE_BAT = path.join(EXE_DIR, 'update.bat');
 
 function log(...args) { console.log('[updater]', ...args); }
 
@@ -25,7 +31,7 @@ function httpsGet(url, headers = {}) {
   });
 }
 
-// Скачать файл с редиректами
+// Скачивание файла с редиректами
 function downloadFile(url, dest, headers = {}) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers }, (res) => {
@@ -56,27 +62,81 @@ function isNewer(remote, local) {
   return false;
 }
 
-// Основная функция проверки
-async function checkForUpdate({ silent = false } = {}) {
-  // В dev-режиме (npm start) ничего не делаем
+// Создать bat для автообновления.
+// Логика:
+// 1. Ждём 2 секунды, чтобы exe освободился
+// 2. Копируем текущий exe в versions/<имя>_v<версия>.exe
+// 3. Копируем .new на место основного exe
+// 4. Запускаем новую версию
+// 5. Чистим старые версии, оставляя 5 последних
+// 6. Самоудаление bat
+function createUpdateBat() {
+  if (!fs.existsSync(VERSIONS_DIR)) {
+    fs.mkdirSync(VERSIONS_DIR, { recursive: true });
+  }
+
+  const baseName = EXE_NAME.replace(/\.exe$/i, '');
+  const archivedName = `${baseName}_v${CURRENT_VERSION}.exe`;
+  const ARCHIVED_PATH = path.join(VERSIONS_DIR, archivedName);
+
+  const batContent = `@echo off
+chcp 65001 > nul
+timeout /t 2 /nobreak > nul
+
+rem Сохраняем текущую версию в архив
+copy /y "${EXE_PATH}" "${ARCHIVED_PATH}" > nul
+
+rem Подменяем основной exe новой версией
+copy /y "${NEW_EXE_PATH}" "${EXE_PATH}" > nul
+del /q "${NEW_EXE_PATH}"
+
+rem Запускаем новую версию
+start "" "${EXE_PATH}"
+
+rem Чистим старые версии (оставляем максимум 5 последних по дате изменения)
+cd /d "${VERSIONS_DIR}"
+for /f "skip=5 delims=" %%F in ('dir /b /o-d /a-d "*.exe" 2^>nul') do del /q "%%F"
+
+rem Самоудаление
+cd /d "${EXE_DIR}"
+del /q "%~f0"
+`;
+
+  fs.writeFileSync(UPDATE_BAT, batContent, 'utf8');
+  return archivedName;
+}
+
+// Основная функция проверки и автоустановки
+async function checkForUpdate() {
+  // 1. Если запущено из папки versions/ — не обновляемся.
+  //    Это "безопасный режим": старая версия всегда остаётся рабочей.
+  if (isPkg && path.basename(EXE_DIR).toLowerCase() === 'versions') {
+    log('запущено из versions/, автообновление отключено');
+    return { skipped: true, reason: 'in versions folder' };
+  }
+
+  // 2. В dev-режиме (npm start) автообновление не работает
   if (!isPkg) {
-    if (!silent) log('dev-режим: автообновление отключено');
+    log('dev-режим: автообновление отключено');
     return { skipped: true, reason: 'dev mode' };
   }
 
-  // Если есть .new с прошлого раза — значит предыдущий апдейт уже скачан, применяем
-  const newExePath = EXE_PATH + '.new';
-  if (fs.existsSync(newExePath)) {
+  // 3. Если есть .new с прошлого раза — значит предыдущий запуск упал до применения.
+  //    Применяем сразу, не дожидаясь проверки GitHub.
+  if (fs.existsSync(NEW_EXE_PATH)) {
+    log('найден скачанный .new с прошлого раза, применяю...');
     try {
-      fs.copyFileSync(newExePath, EXE_PATH);
-      fs.unlinkSync(newExePath);
-      log('обновление применено, нужен перезапуск');
-      return { applied: true, restartRequired: true };
+      createUpdateBat();
+      exec(`start "" "${UPDATE_BAT}"`, { detached: true, stdio: 'ignore', windowsHide: true });
+      setTimeout(() => process.exit(0), 500);
+      return { applied: true };
     } catch (e) {
-      log('не удалось применить обновление:', e.message);
+      log('не удалось применить .new:', e.message);
+      try { fs.unlinkSync(NEW_EXE_PATH); } catch {}
     }
   }
 
+  // 4. Проверяем GitHub на новую версию
   try {
     const headers = {
       'User-Agent': 'TwitchOverlay-Updater',
@@ -89,7 +149,7 @@ async function checkForUpdate({ silent = false } = {}) {
     );
 
     if (res.status !== 200) {
-      log('не удалось получить релиз:', res.status);
+      log('GitHub API:', res.status);
       return { error: `GitHub API: ${res.status}` };
     }
 
@@ -97,47 +157,34 @@ async function checkForUpdate({ silent = false } = {}) {
     const remoteVersion = String(release.tag_name || '').replace(/^v/, '');
 
     if (!remoteVersion) {
+      log('в релизе нет тега');
       return { error: 'нет тега в релизе' };
     }
 
     if (!isNewer(remoteVersion, CURRENT_VERSION)) {
-      if (!silent) log(`обновлений нет (текущая ${CURRENT_VERSION}, последняя ${remoteVersion})`);
+      log(`обновлений нет (текущая ${CURRENT_VERSION}, последняя ${remoteVersion})`);
       return { upToDate: true, current: CURRENT_VERSION, remote: remoteVersion };
     }
 
-    // Находим ассет TwitchOverlay.exe
+    log(`найдено обновление ${remoteVersion} (текущая ${CURRENT_VERSION}), скачиваю...`);
+
     const asset = (release.assets || []).find(a => a.name === 'TwitchOverlay.exe');
     if (!asset) {
-      return { error: 'в релизе нет TwitchOverlay.exe' };
+      log('в релизе нет ассета TwitchOverlay.exe');
+      return { error: 'в релизе нет ассета TwitchOverlay.exe' };
     }
 
-    log(`скачиваю ${remoteVersion} (${(asset.size / 1024 / 1024).toFixed(1)} МБ)...`);
+    await downloadFile(asset.browser_download_url, NEW_EXE_PATH, headers);
 
-    await downloadFile(asset.browser_download_url, newExePath, headers);
+    log(`скачано ${(asset.size / 1024 / 1024).toFixed(1)} МБ, применяю...`);
 
-    log('скачано. Обновление применится при следующем запуске.');
+    createUpdateBat();
+    exec(`start "" "${UPDATE_BAT}"`, { detached: true, stdio: 'ignore', windowsHide: true });
 
-    // Пробуем применить сразу — если exe не заблокирован
-    try {
-      fs.copyFileSync(newExePath, EXE_PATH);
-      fs.unlinkSync(newExePath);
-      log('обновление применено');
-      return {
-        updated: true,
-        restartRequired: true,
-        from: CURRENT_VERSION,
-        to: remoteVersion,
-      };
-    } catch (e) {
-      // Windows не даст перезаписать запущенный exe — это нормально
-      log('не удалось применить на лету:', e.message);
-      return {
-        downloaded: true,
-        from: CURRENT_VERSION,
-        to: remoteVersion,
-        restartRequired: true,
-      };
-    }
+    // Даём bat-скрипту стартовать и выходим
+    setTimeout(() => process.exit(0), 500);
+
+    return { updated: true, to: remoteVersion };
   } catch (e) {
     log('ошибка:', e.message);
     return { error: e.message };
