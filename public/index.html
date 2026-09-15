@@ -74,7 +74,7 @@
   .btn-reset   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
   .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-  input[type="text"], input[type="number"], select {
+  input[type="text"], input[type="number"], input[type="password"], select {
     padding: 12px 18px; border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.05); color: #fff; font-size: 16px;
@@ -208,7 +208,7 @@
   </div>
   <div style="display:flex; gap:8px;">
     <a class="logout-btn" id="loginBtn" href="/auth/login" style="display:none; background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
-    <a class="logout-btn" id="logoutBtn" href="/api/logout" style="display:none;">🚪 Выйти</a>
+    <a class="logout-btn" id="logoutBtn" href="/api/logout">🚪 Выйти</a>
   </div>
 </header>
 
@@ -397,7 +397,7 @@
 
       <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">DonationAlerts</label>
       <div id="daAuthBlock" style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-        <span style="color:rgba(255,255,255,0.35); font-size:13px;">Загрузка...</span>
+        <div class="list-empty" style="padding:0;">Загрузка...</div>
       </div>
     </div>
   </div>
@@ -1002,12 +1002,10 @@ async function loadSettings() {
 }
 
 async function renderDaAuthBlock() {
-  const block = document.getElementById('daAuthBlock');
-  if (!block) return;
-
   try {
     const r = await fetch('/api/status');
     const s = await r.json();
+    const block = document.getElementById('daAuthBlock');
 
     if (s.donationAlertsAuthorized) {
       block.innerHTML = `
@@ -1020,7 +1018,7 @@ async function renderDaAuthBlock() {
       `;
     }
   } catch (e) {
-    block.innerHTML = `<span style="color:#ff4757; font-size:13px;">Ошибка загрузки статуса</span>`;
+    document.getElementById('daAuthBlock').innerHTML = `<span style="color:#ff4757;">Ошибка загрузки статуса</span>`;
   }
 }
 
@@ -1073,7 +1071,7 @@ async function loadRewards({ silent } = {}) {
   }
 }
 
-document.getElementById('setLoadRewards').addEventListener('click', () => loadRewards());
+document.getElementById('setLoadRewards')?.addEventListener('click', () => loadRewards());
 
 document.getElementById('setSave').addEventListener('click', async () => {
   let ticketRewardId = '';
