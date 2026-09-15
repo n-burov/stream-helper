@@ -20,6 +20,7 @@ class DonationAlertsService extends EventEmitter {
     this.pendingAuthId = null;
     this.pendingSubscribeId = null;
     this.processedDonations = new Set();
+    this.connected = false;
   }
 
   async start() {
@@ -34,10 +35,15 @@ class DonationAlertsService extends EventEmitter {
         },
       });
 
+      if (!userRes.ok) {
+        const text = await userRes.text();
+        throw new Error(`User API: ${userRes.status} ${text.slice(0, 200)}`);
+      }
+
       const userData = await userRes.json();
 
       if (!userData?.data?.id) {
-        throw new Error('Не удалось получить User ID от DonationAlerts: ' + JSON.stringify(userData).slice(0, 200));
+        throw new Error('Не удалось получить User ID: ' + JSON.stringify(userData).slice(0, 200));
       }
 
       this.userId = userData.data.id;
@@ -79,8 +85,9 @@ class DonationAlertsService extends EventEmitter {
 
   onOpen() {
     console.log('[donationalerts] WebSocket открыт, авторизация...');
+    // Centrifugo v2 (старый протокол): используем params вместо connect
     this.pendingAuthId = this.send({
-      connect: { token: this.socketToken },
+      params: { token: this.socketToken },
     });
   }
 
@@ -92,41 +99,55 @@ class DonationAlertsService extends EventEmitter {
       return;
     }
 
-    // === Ответ на connect ===
-    if (msg.id === this.pendingAuthId && msg.connect) {
-      if (msg.connect.error) {
-        this.emit('error', 'Connect error: ' + JSON.stringify(msg.connect.error));
+    // === Ответ на авторизацию (Centrifugo v2: поле result) ===
+    if (msg.id === this.pendingAuthId) {
+      if (msg.error) {
+        this.emit('error', 'Auth error: ' + JSON.stringify(msg.error));
         return;
       }
 
-      this.clientId = msg.connect.client;
-      console.log('[donationalerts] Авторизация успешна. Client ID:', this.clientId);
+      if (!msg.result) {
+        this.emit('error', 'Auth failed: no result in response');
+        return;
+      }
 
-      // Дальше — подписка на канал
+      this.clientId = msg.result.client;
+      if (!this.clientId) {
+        this.emit('error', 'Auth failed: no client id in result');
+        return;
+      }
+
+      console.log('[donationalerts] Авторизация успешна. Client ID:', this.clientId);
       await this.subscribeToChannel();
       return;
     }
 
-    // === Ответ на subscribe ===
-    if (msg.id === this.pendingSubscribeId && msg.subscribe) {
-      if (msg.subscribe.error) {
-        this.emit('error', 'Subscribe error: ' + JSON.stringify(msg.subscribe.error));
+    // === Ответ на подписку (Centrifugo v2: поле result) ===
+    if (msg.id === this.pendingSubscribeId) {
+      if (msg.error) {
+        this.emit('error', 'Subscribe error: ' + JSON.stringify(msg.error));
         return;
       }
 
       console.log('[donationalerts] Подписка на канал донатов активна');
+      this.connected = true;
       this.emit('connected');
 
+      // Пинг каждые 25 секунд (Centrifugo v2: method 0)
       if (this.pingInterval) clearInterval(this.pingInterval);
       this.pingInterval = setInterval(() => {
-        this.send({ ping: {} });
+        this.send({ method: 0 });
       }, 25000);
       return;
     }
 
-    if (msg.pong) return;
+    // === Pong (ответ на ping) ===
+    if (msg.result === undefined && msg.id && !msg.push && !msg.error) {
+      // Игнорируем пустые ответы на ping
+      return;
+    }
 
-    // === Событие нового доната ===
+    // === Событие push с донатом ===
     if (msg.push && msg.push.pub && msg.push.pub.data) {
       const data = msg.push.pub.data;
 
@@ -155,7 +176,6 @@ class DonationAlertsService extends EventEmitter {
     try {
       const channelName = `$alerts:donation_${this.userId}`;
 
-      // Получаем subscription_token для канала
       const subRes = await fetch(`${API_BASE}/centrifuge/subscribe`, {
         method: 'POST',
         headers: {
@@ -168,19 +188,25 @@ class DonationAlertsService extends EventEmitter {
         }),
       });
 
-      const subData = await subRes.json();
+      if (!subRes.ok) {
+        const text = await subRes.text();
+        throw new Error(`Subscribe API: ${subRes.status} ${text.slice(0, 200)}`);
+      }
 
-      // Ответ: { channels: [{ channel, token }] }
+      const subData = await subRes.json();
       const channels = subData?.channels || [];
       const entry = channels.find(c => c.channel === channelName);
+
       if (!entry?.token) {
         throw new Error('Не удалось получить subscription_token: ' + JSON.stringify(subData).slice(0, 200));
       }
 
       console.log('[donationalerts] Подписываюсь на канал:', channelName);
 
+      // Centrifugo v2: method 1 = subscribe, params с channel и token
       this.pendingSubscribeId = this.send({
-        subscribe: {
+        method: 1,
+        params: {
           channel: channelName,
           token: entry.token,
         },
@@ -193,7 +219,9 @@ class DonationAlertsService extends EventEmitter {
 
   onClose() {
     console.log('[donationalerts] WebSocket закрыт');
+    this.connected = false;
     this.emit('disconnected');
+
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
