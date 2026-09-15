@@ -16,358 +16,364 @@ const { DonationAlertsService } = require('./donationalerts');
 const { getCustomRewards } = require('./twitch-api');
 const { checkForUpdate, CURRENT_VERSION } = require('./updater');
 
-const app = express();
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+console.log('📦 Twitch Overlay v' + CURRENT_VERSION);
 
-const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
-
-let twitch = null;
-let eventSub = null;
-let donationAlerts = null;
-let pendingState = null;
-let pendingDaState = null;
-const ircState = { connected: false };
-const daState = { connected: false };
-
-const ctx = {
-  broadcast: (type, payload) => {
-    const msg = JSON.stringify({ type, payload });
-    for (const client of wss.clients) {
-      if (client.readyState === 1) client.send(msg);
-    }
-  },
-  db,
-  twitch: null,
-};
-
-mechanics.initAll(ctx);
-
-// === WebSocket ===
-wss.on('connection', (ws) => {
-  ws.send(JSON.stringify({ type: 'state', payload: mechanics.getFullState() }));
-  ws.send(JSON.stringify({ type: 'twitchStatus', payload: ircState }));
-  ws.send(JSON.stringify({ type: 'donationAlertsStatus', payload: daState }));
-
-  ws.on('message', (raw) => {
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-    if (!msg || !msg.action) return;
-
-    const result = mechanics.handleCommand(msg.action, msg.data);
-    if (result?.error) {
-      ws.send(JSON.stringify({ type: 'error', payload: { action: msg.action, message: result.error } }));
-    }
-  });
-});
-
-// === История ===
-app.get('/api/history', (req, res) => res.json(db.loadHistory()));
-app.delete('/api/history', (req, res) => { db.clearHistory(); res.json({ ok: true }); });
-
-// === Настройки ===
-app.get('/api/settings', (req, res) => {
-  const d = db.loadData();
-  res.json({
-    ticketRewardId: d.settings.ticketRewardId || '',
-    ticketRewardTitle: d.settings.ticketRewardTitle || '',
-  });
-});
-
-// Список всех кастомных награда канала
-app.get('/api/rewards', async (req, res) => {
-  const d = db.loadData();
-  if (!d.tokens || !d.tokens.access_token) {
-    return res.status(400).json({ error: 'Не авторизован в Twitch' });
-  }
+// === Автообновление (СТРОГО до старта сервера) ===
+(async () => {
+  console.log('[boot] Проверяю обновления...');
   try {
-    const rewards = await getCustomRewards({
-      token: d.tokens.access_token,
-      clientId: auth.CLIENT_ID,
-      broadcasterId: d.tokens.user_id,
-    });
-    res.json({
-      available: true,
-      rewards: rewards.map(r => ({ id: r.id, title: r.title, cost: r.cost })),
-    });
+    const result = await checkForUpdate();
+    console.log('[boot] updater result:', JSON.stringify(result));
   } catch (e) {
-    const isAffiliateError = e.message.includes('partner or affiliate status');
+    console.warn('[boot] updater error:', e.message);
+  }
+
+  console.log('[boot] Запускаю приложение...');
+  await startApp();
+})().catch((e) => {
+  console.error('[boot] FATAL:', e);
+  process.exit(1);
+});
+
+// === Всё остальное — внутри startApp ===
+async function startApp() {
+  const app = express();
+  app.use(express.json());
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  const server = http.createServer(app);
+  const wss = new WebSocketServer({ server });
+
+  let twitch = null;
+  let eventSub = null;
+  let donationAlerts = null;
+  let pendingState = null;
+  let pendingDaState = null;
+  const ircState = { connected: false };
+  const daState = { connected: false };
+
+  const ctx = {
+    broadcast: (type, payload) => {
+      const msg = JSON.stringify({ type, payload });
+      for (const client of wss.clients) {
+        if (client.readyState === 1) client.send(msg);
+      }
+    },
+    db,
+    twitch: null,
+  };
+
+  mechanics.initAll(ctx);
+
+  // === WebSocket ===
+  wss.on('connection', (ws) => {
+    ws.send(JSON.stringify({ type: 'state', payload: mechanics.getFullState() }));
+    ws.send(JSON.stringify({ type: 'twitchStatus', payload: ircState }));
+    ws.send(JSON.stringify({ type: 'donationAlertsStatus', payload: daState }));
+
+    ws.on('message', (raw) => {
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+      if (!msg || !msg.action) return;
+
+      const result = mechanics.handleCommand(msg.action, msg.data);
+      if (result?.error) {
+        ws.send(JSON.stringify({ type: 'error', payload: { action: msg.action, message: result.error } }));
+      }
+    });
+  });
+
+  // === История ===
+  app.get('/api/history', (req, res) => res.json(db.loadHistory()));
+  app.delete('/api/history', (req, res) => { db.clearHistory(); res.json({ ok: true }); });
+
+  // === Настройки ===
+  app.get('/api/settings', (req, res) => {
+    const d = db.loadData();
     res.json({
-      available: false,
-      reason: isAffiliateError
-        ? 'Канал не имеет статуса Affiliate или Partner.'
-        : e.message,
-      rewards: [],
+      ticketRewardId: d.settings.ticketRewardId || '',
+      ticketRewardTitle: d.settings.ticketRewardTitle || '',
     });
-  }
-});
-
-app.post('/api/settings', (req, res) => {
-  const { ticketRewardId, ticketRewardTitle } = req.body || {};
-  const patch = {};
-
-  if (typeof ticketRewardId === 'string') patch.ticketRewardId = ticketRewardId.trim() || null;
-  if (typeof ticketRewardTitle === 'string') patch.ticketRewardTitle = ticketRewardTitle.trim() || null;
-
-  db.update(d => { Object.assign(d.settings, patch); });
-
-  res.json({ ok: true, ticketRewardId: patch.ticketRewardId || undefined });
-});
-
-// === Twitch Auth ===
-app.get('/auth/login', (req, res) => {
-  pendingState = crypto.randomBytes(16).toString('hex');
-  res.redirect(auth.getAuthUrl(pendingState));
-});
-
-app.get('/auth/callback', async (req, res) => {
-  const { code, state: returnedState } = req.query;
-  if (returnedState !== pendingState) return res.status(400).send('Invalid state');
-  pendingState = null;
-
-  try {
-    const tokens = await auth.exchangeCode(code);
-    const info = await auth.validateToken(tokens.access_token);
-
-    db.update(d => {
-      d.tokens = {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: Date.now() + tokens.expires_in * 1000,
-        user_id: info.user_id,
-        login: info.login,
-      };
-      d.settings.channel = info.login;
-    });
-
-    await restartTwitch();
-    await restartEventSub();
-    res.redirect('/');
-  } catch (err) {
-    console.error('Auth error:', err);
-    res.status(500).send('Ошибка авторизации: ' + err.message);
-  }
-});
-
-// === DonationAlerts Auth ===
-app.get('/auth/donationalerts/login', (req, res) => {
-  pendingDaState = crypto.randomBytes(16).toString('hex');
-  res.redirect(daAuth.getAuthUrl(pendingDaState));
-});
-
-app.get('/auth/donationalerts/callback', async (req, res) => {
-  const { code, state } = req.query;
-  if (state !== pendingDaState) {
-    return res.status(400).send('Invalid state');
-  }
-  pendingDaState = null;
-
-  try {
-    const tokens = await daAuth.exchangeCode(code);
-
-    db.update(d => {
-      d.settings.donationAlertsToken = tokens.access_token;
-      d.settings.donationAlertsRefreshToken = tokens.refresh_token;
-      d.settings.donationAlertsExpiresAt = Date.now() + tokens.expires_in * 1000;
-    });
-
-    console.log('✅ DonationAlerts авторизован');
-    await startDonationAlerts();
-    res.redirect('/');
-  } catch (err) {
-    console.error('DA auth error:', err);
-    res.status(500).send('Ошибка авторизации DonationAlerts: ' + err.message);
-  }
-});
-
-app.get('/api/logout/donationalerts', (req, res) => {
-  db.update(d => {
-    d.settings.donationAlertsToken = null;
-    d.settings.donationAlertsRefreshToken = null;
-    d.settings.donationAlertsExpiresAt = null;
-  });
-  if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
-  daState.connected = false;
-  ctx.broadcast('donationAlertsStatus', daState);
-  res.redirect('/');
-});
-
-app.get('/api/status', (req, res) => {
-  const data = db.loadData();
-  res.json({
-    authorized: !!data.tokens,
-    login: data.tokens?.login || null,
-    channel: data.settings.channel,
-    ircConnected: ircState.connected,
-    donationAlertsAuthorized: !!data.settings.donationAlertsToken,
-    donationAlertsConnected: daState.connected,
-  });
-});
-
-app.get('/api/logout', (req, res) => {
-  db.update(d => { d.tokens = null; d.settings.channel = null; });
-  if (twitch) { twitch.disconnect(); twitch = null; }
-  if (eventSub) { eventSub.disconnect(); eventSub = null; }
-  ctx.twitch = null;
-  ircState.connected = false;
-  ctx.broadcast('twitchStatus', ircState);
-  res.redirect('/');
-});
-
-// === Twitch IRC ===
-async function restartTwitch() {
-  if (twitch) { await twitch.disconnect(); twitch = null; }
-  const data = db.loadData();
-  if (!data.tokens || !data.settings.channel) return;
-
-  twitch = new TwitchService({
-    username: data.tokens.login,
-    token: data.tokens.access_token,
-    channel: data.settings.channel,
   });
 
-  twitch.on('chat', (msg) => {
-    mechanics.handleChat(msg);
-    ctx.broadcast('chat', msg);
-  });
-  twitch.on('connected', () => {
-    ircState.connected = true;
-    ctx.broadcast('twitchStatus', ircState);
-  });
-  twitch.on('disconnected', (reason) => {
-    ircState.connected = false;
-    ctx.twitch = null;
-    ctx.broadcast('twitchStatus', { ...ircState, reason });
-  });
-
-  try {
-    await twitch.connect();
-    ctx.twitch = twitch;
-  } catch (e) {
-    console.error('IRC connect error:', e.message);
-  }
-}
-
-// === EventSub ===
-async function restartEventSub() {
-  if (eventSub) { eventSub.disconnect(); eventSub = null; }
-  const data = db.loadData();
-  if (!data.tokens) return;
-
-  eventSub = new TwitchEventSub({
-    token: data.tokens.access_token,
-    clientId: auth.CLIENT_ID,
-    userId: data.tokens.user_id,
-  });
-
-  eventSub.on('connected', () => console.log('✅ EventSub подключён'));
-  eventSub.on('subscribed', (type) => console.log('📌 EventSub подписка:', type));
-  eventSub.on('error', (msg) => console.warn('⚠️ EventSub:', msg));
-  eventSub.on('disconnected', () => console.log('⚠️ EventSub отключён, реконнект...'));
-
-  eventSub.on('event', ({ type, event }) => {
-    if (type === 'channel.channel_points_custom_reward_redemption.add') {
-      const result = mechanics.tickets.addFromRedemption({
-        userId: event.user_id,
-        username: event.user_name || event.user_login,
-        rewardId: event.reward?.id,
-        redeemedAt: new Date(event.redeemed_at).getTime(),
+  // Список всех кастомных награда канала
+  app.get('/api/rewards', async (req, res) => {
+    const d = db.loadData();
+    if (!d.tokens || !d.tokens.access_token) {
+      return res.status(400).json({ error: 'Не авторизован в Twitch' });
+    }
+    try {
+      const rewards = await getCustomRewards({
+        token: d.tokens.access_token,
+        clientId: auth.CLIENT_ID,
+        broadcasterId: d.tokens.user_id,
       });
-      console.log('🎟️ Билет:', event.user_name, result);
-
-      mechanics.dj.addRedemption({
-        userId: event.user_id,
-        username: event.user_name || event.user_login,
-        rewardId: event.reward?.id,
-        cost: event.reward?.cost,
+      res.json({
+        available: true,
+        rewards: rewards.map(r => ({ id: r.id, title: r.title, cost: r.cost })),
+      });
+    } catch (e) {
+      const isAffiliateError = e.message.includes('partner or affiliate status');
+      res.json({
+        available: false,
+        reason: isAffiliateError
+          ? 'Канал не имеет статуса Affiliate или Partner.'
+          : e.message,
+        rewards: [],
       });
     }
+  });
 
-    if (type === 'stream.offline') {
-      console.log('📴 Стрим завершён — сбрасываю Диджея дня');
-      mechanics.dj.reset();
-    }
+  app.post('/api/settings', (req, res) => {
+    const { ticketRewardId, ticketRewardTitle } = req.body || {};
+    const patch = {};
 
-    if (type === 'stream.online') {
-      console.log('📺 Стрим начался — сбрасываю Диджея дня');
-      mechanics.dj.reset();
+    if (typeof ticketRewardId === 'string') patch.ticketRewardId = ticketRewardId.trim() || null;
+    if (typeof ticketRewardTitle === 'string') patch.ticketRewardTitle = ticketRewardTitle.trim() || null;
+
+    db.update(d => { Object.assign(d.settings, patch); });
+
+    res.json({ ok: true, ticketRewardId: patch.ticketRewardId || undefined });
+  });
+
+  // === Twitch Auth ===
+  app.get('/auth/login', (req, res) => {
+    pendingState = crypto.randomBytes(16).toString('hex');
+    res.redirect(auth.getAuthUrl(pendingState));
+  });
+
+  app.get('/auth/callback', async (req, res) => {
+    const { code, state: returnedState } = req.query;
+    if (returnedState !== pendingState) return res.status(400).send('Invalid state');
+    pendingState = null;
+
+    try {
+      const tokens = await auth.exchangeCode(code);
+      const info = await auth.validateToken(tokens.access_token);
+
+      db.update(d => {
+        d.tokens = {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: Date.now() + tokens.expires_in * 1000,
+          user_id: info.user_id,
+          login: info.login,
+        };
+        d.settings.channel = info.login;
+      });
+
+      await restartTwitch();
+      await restartEventSub();
+      res.redirect('/');
+    } catch (err) {
+      console.error('Auth error:', err);
+      res.status(500).send('Ошибка авторизации: ' + err.message);
     }
   });
 
-  eventSub.connect();
-}
+  // === DonationAlerts Auth ===
+  app.get('/auth/donationalerts/login', (req, res) => {
+    pendingDaState = crypto.randomBytes(16).toString('hex');
+    res.redirect(daAuth.getAuthUrl(pendingDaState));
+  });
 
-// === DonationAlerts ===
-async function startDonationAlerts() {
-  if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
+  app.get('/auth/donationalerts/callback', async (req, res) => {
+    const { code, state } = req.query;
+    if (state !== pendingDaState) {
+      return res.status(400).send('Invalid state');
+    }
+    pendingDaState = null;
 
-  const data = db.loadData();
-  let token = data.settings.donationAlertsToken;
+    try {
+      const tokens = await daAuth.exchangeCode(code);
 
-  if (!token) {
+      db.update(d => {
+        d.settings.donationAlertsToken = tokens.access_token;
+        d.settings.donationAlertsRefreshToken = tokens.refresh_token;
+        d.settings.donationAlertsExpiresAt = Date.now() + tokens.expires_in * 1000;
+      });
+
+      console.log('✅ DonationAlerts авторизован');
+      await startDonationAlerts();
+      res.redirect('/');
+    } catch (err) {
+      console.error('DA auth error:', err);
+      res.status(500).send('Ошибка авторизации DonationAlerts: ' + err.message);
+    }
+  });
+
+  app.get('/api/logout/donationalerts', (req, res) => {
+    db.update(d => {
+      d.settings.donationAlertsToken = null;
+      d.settings.donationAlertsRefreshToken = null;
+      d.settings.donationAlertsExpiresAt = null;
+    });
+    if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
     daState.connected = false;
     ctx.broadcast('donationAlertsStatus', daState);
-    return;
+    res.redirect('/');
+  });
+
+  app.get('/api/status', (req, res) => {
+    const data = db.loadData();
+    res.json({
+      authorized: !!data.tokens,
+      login: data.tokens?.login || null,
+      channel: data.settings.channel,
+      ircConnected: ircState.connected,
+      donationAlertsAuthorized: !!data.settings.donationAlertsToken,
+      donationAlertsConnected: daState.connected,
+    });
+  });
+
+  app.get('/api/logout', (req, res) => {
+    db.update(d => { d.tokens = null; d.settings.channel = null; });
+    if (twitch) { twitch.disconnect(); twitch = null; }
+    if (eventSub) { eventSub.disconnect(); eventSub = null; }
+    ctx.twitch = null;
+    ircState.connected = false;
+    ctx.broadcast('twitchStatus', ircState);
+    res.redirect('/');
+  });
+
+  // === Twitch IRC ===
+  async function restartTwitch() {
+    if (twitch) { await twitch.disconnect(); twitch = null; }
+    const data = db.loadData();
+    if (!data.tokens || !data.settings.channel) return;
+
+    twitch = new TwitchService({
+      username: data.tokens.login,
+      token: data.tokens.access_token,
+      channel: data.settings.channel,
+    });
+
+    twitch.on('chat', (msg) => {
+      mechanics.handleChat(msg);
+      ctx.broadcast('chat', msg);
+    });
+    twitch.on('connected', () => {
+      ircState.connected = true;
+      ctx.broadcast('twitchStatus', ircState);
+    });
+    twitch.on('disconnected', (reason) => {
+      ircState.connected = false;
+      ctx.twitch = null;
+      ctx.broadcast('twitchStatus', { ...ircState, reason });
+    });
+
+    try {
+      await twitch.connect();
+      ctx.twitch = twitch;
+    } catch (e) {
+      console.error('IRC connect error:', e.message);
+    }
   }
 
-  // Обновляем токен, если истёк (запас 5 минут)
-  const expiresAt = data.settings.donationAlertsExpiresAt || 0;
-  if (Date.now() > expiresAt - 5 * 60 * 1000) {
-    try {
-      const refreshed = await daAuth.refreshToken(data.settings.donationAlertsRefreshToken);
-      token = refreshed.access_token;
-      db.update(d => {
-        d.settings.donationAlertsToken = refreshed.access_token;
-        d.settings.donationAlertsRefreshToken = refreshed.refresh_token;
-        d.settings.donationAlertsExpiresAt = Date.now() + refreshed.expires_in * 1000;
-      });
-      console.log('🔄 DonationAlerts токен обновлён');
-    } catch (e) {
-      console.warn('⚠️ Не удалось обновить токен DonationAlerts:', e.message);
+  // === EventSub ===
+  async function restartEventSub() {
+    if (eventSub) { eventSub.disconnect(); eventSub = null; }
+    const data = db.loadData();
+    if (!data.tokens) return;
+
+    eventSub = new TwitchEventSub({
+      token: data.tokens.access_token,
+      clientId: auth.CLIENT_ID,
+      userId: data.tokens.user_id,
+    });
+
+    eventSub.on('connected', () => console.log('✅ EventSub подключён'));
+    eventSub.on('subscribed', (type) => console.log('📌 EventSub подписка:', type));
+    eventSub.on('error', (msg) => console.warn('⚠️ EventSub:', msg));
+    eventSub.on('disconnected', () => console.log('⚠️ EventSub отключён, реконнект...'));
+
+    eventSub.on('event', ({ type, event }) => {
+      if (type === 'channel.channel_points_custom_reward_redemption.add') {
+        const result = mechanics.tickets.addFromRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          redeemedAt: new Date(event.redeemed_at).getTime(),
+        });
+        console.log('🎟️ Билет:', event.user_name, result);
+
+        mechanics.dj.addRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          cost: event.reward?.cost,
+        });
+      }
+
+      if (type === 'stream.offline') {
+        console.log('📴 Стрим завершён — сбрасываю Диджея дня');
+        mechanics.dj.reset();
+      }
+
+      if (type === 'stream.online') {
+        console.log('📺 Стрим начался — сбрасываю Диджея дня');
+        mechanics.dj.reset();
+      }
+    });
+
+    eventSub.connect();
+  }
+
+  // === DonationAlerts ===
+  async function startDonationAlerts() {
+    if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
+
+    const data = db.loadData();
+    let token = data.settings.donationAlertsToken;
+
+    if (!token) {
       daState.connected = false;
       ctx.broadcast('donationAlertsStatus', daState);
       return;
     }
+
+    const expiresAt = data.settings.donationAlertsExpiresAt || 0;
+    if (Date.now() > expiresAt - 5 * 60 * 1000) {
+      try {
+        const refreshed = await daAuth.refreshToken(data.settings.donationAlertsRefreshToken);
+        token = refreshed.access_token;
+        db.update(d => {
+          d.settings.donationAlertsToken = refreshed.access_token;
+          d.settings.donationAlertsRefreshToken = refreshed.refresh_token;
+          d.settings.donationAlertsExpiresAt = Date.now() + refreshed.expires_in * 1000;
+        });
+        console.log('🔄 DonationAlerts токен обновлён');
+      } catch (e) {
+        console.warn('⚠️ Не удалось обновить токен DonationAlerts:', e.message);
+        daState.connected = false;
+        ctx.broadcast('donationAlertsStatus', daState);
+        return;
+      }
+    }
+
+    donationAlerts = new DonationAlertsService({ accessToken: token });
+
+    donationAlerts.on('connected', () => {
+      daState.connected = true;
+      ctx.broadcast('donationAlertsStatus', daState);
+      console.log('✅ DonationAlerts подключён');
+    });
+
+    donationAlerts.on('disconnected', () => {
+      daState.connected = false;
+      ctx.broadcast('donationAlertsStatus', daState);
+    });
+
+    donationAlerts.on('error', (msg) => console.warn('⚠️ DonationAlerts:', msg));
+
+    donationAlerts.on('donation', (donation) => {
+      mechanics.donors.addDonor(donation);
+    });
+
+    donationAlerts.start();
   }
 
-  donationAlerts = new DonationAlertsService({ accessToken: token });
-
-  donationAlerts.on('connected', () => {
-    daState.connected = true;
-    ctx.broadcast('donationAlertsStatus', daState);
-    console.log('✅ DonationAlerts подключён');
-  });
-
-  donationAlerts.on('disconnected', () => {
-    daState.connected = false;
-    ctx.broadcast('donationAlertsStatus', daState);
-  });
-
-  donationAlerts.on('error', (msg) => console.warn('⚠️ DonationAlerts:', msg));
-
-  donationAlerts.on('donation', (donation) => {
-    mechanics.donors.addDonor(donation);
-  });
-
-  donationAlerts.start();
-}
-
-// === Автообновление ===
-console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
-
-(async () => {
-  // Проверяем обновление до запуска сервера.
-  // Если обновление найдено — checkForUpdate сам создаст bat и завершит процесс.
-  try {
-    await checkForUpdate();
-  } catch (e) {
-    console.warn('⚠️ updater:', e.message);
-  }
-})();
-
-// === Старт ===
-(async () => {
+  // === Подключение к Twitch и запуск сервера ===
   const tokens = await auth.ensureFreshToken();
   if (tokens) {
     await restartTwitch();
@@ -388,4 +394,4 @@ console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
     console.log('   Оверлей DJ:        http://localhost:3000/overlay-dj.html');
     await open('http://localhost:3000');
   });
-})();
+}
