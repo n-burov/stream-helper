@@ -42,7 +42,6 @@ function handleCommand(action, data) {
     case 'donors:add':       return donors.addManual(data?.name);
     case 'donors:remove':    return donors.removeAt(data?.index);
     case 'donors:reset':     return donors.reset();
-    case 'donors:refresh':   return { ok: true }; // обрабатывается в server.js
 
     case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
     case 'dj:reset':         return dj.reset();
