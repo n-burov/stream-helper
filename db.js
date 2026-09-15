@@ -30,6 +30,8 @@ const DEFAULT_DATA = {
     resetAt: null,
   },
 
+  nicks: {},  // { userId: { userId, twitchUsername, nick, updatedAt } }
+
   keyword: {
     status: 'idle',
     word: 'Голда',
