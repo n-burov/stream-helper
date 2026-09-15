@@ -29,7 +29,8 @@
   .arena { display: flex; flex-wrap: wrap; gap: 4px; padding: 12px;
            min-height: 80px; max-height: 60vh; overflow-y: auto;
            background: rgba(255,255,255,0.02); border-radius: 12px;
-           border: 1px solid rgba(255,255,255,0.04); justify-content: center; }
+           border: 1px solid rgba(255,255,255,0.04); justify-content: center;
+           position: relative; }
   .chip {
     display: inline-flex; align-items: center; padding: 4px 12px;
     border-radius: 16px; background: rgba(255,255,255,0.04);
@@ -37,22 +38,82 @@
     font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap; height: 32px; position: relative;
+    z-index: 1;
   }
-  .chip.eliminated { opacity: 0.4; transform: scale(0.9); text-decoration: line-through; color: rgba(255,255,255,0.3); }
+  .chip.eliminated {
+    opacity: 0.4; transform: scale(0.9); text-decoration: line-through;
+    color: rgba(255,255,255,0.3);
+  }
   .chip.targeted {
-    border-color: #ffd700; background: rgba(255,215,0,0.15); color: #fff;
-    box-shadow: 0 0 30px rgba(255,215,0,0.3); transform: scale(1.08); z-index: 2;
+    border-color: #ff4757;
+    background: rgba(255,71,87,0.15);
+    color: #fff;
+    z-index: 2;
   }
-  .chip.shot { animation: shotEffect 0.9s ease-out forwards; }
+  .chip.shot {
+    animation: shotEffect 0.9s ease-out forwards;
+  }
   @keyframes shotEffect {
-    0% { border-color:#ffd700; box-shadow:0 0 60px rgba(255,215,0,0.5); transform: scale(1.2); }
-    35% { border-color:#ff4757; box-shadow:0 0 120px rgba(255,71,87,0.8); transform: scale(1.5) rotate(10deg); }
-    100% { opacity:0.4; transform: scale(0.9); }
+    0% {
+      border-color: #ff4757;
+      box-shadow: 0 0 60px rgba(255,71,87,0.5);
+      transform: scale(1.2);
+    }
+    35% {
+      border-color: #ff4757;
+      box-shadow: 0 0 120px rgba(255,71,87,0.9);
+      transform: scale(1.4);
+    }
+    100% {
+      opacity: 0.4;
+      transform: scale(0.9);
+    }
+  }
+
+  /* === ПРИЦЕЛ === */
+  .crosshair {
+    position: fixed;
+    top: 0; left: 0;
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 100;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s cubic-bezier(0.4, 0, 0.6, 1);
+    will-change: transform;
+    display: none;
+  }
+  .crosshair.active { display: block; }
+
+  .crosshair svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 6px rgba(255,71,87,0.9));
+  }
+
+  .crosshair::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #ff4757;
+    box-shadow: 0 0 12px rgba(255,71,87,1), 0 0 24px rgba(255,71,87,0.6);
+    transform: translate(-50%, -50%);
+  }
+
+  /* Пульсация при финальной наводке */
+  .crosshair.locked::after {
+    animation: lockPulse 0.5s ease-in-out infinite;
+  }
+  @keyframes lockPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.6); }
   }
 
   .flash {
     position: fixed; inset: 0; pointer-events: none; z-index: 999;
-    background: radial-gradient(circle at center, rgba(255,215,0,0.4), transparent 70%);
+    background: radial-gradient(circle at center, rgba(255,71,87,0.45), transparent 70%);
     animation: flashBang 0.35s ease-out forwards;
   }
   @keyframes flashBang {
@@ -88,6 +149,17 @@
   <div class="victim-banner hidden" id="banner">💀 Жертва</div>
 </div>
 
+<!-- Прицел -->
+<div class="crosshair" id="crosshair">
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="16" cy="16" r="12" fill="none" stroke="#ff4757" stroke-width="1.5" opacity="0.85"/>
+    <line x1="16" y1="0" x2="16" y2="6" stroke="#ff4757" stroke-width="2" stroke-linecap="round"/>
+    <line x1="16" y1="26" x2="16" y2="32" stroke="#ff4757" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="16" x2="6" y2="16" stroke="#ff4757" stroke-width="2" stroke-linecap="round"/>
+    <line x1="26" y1="16" x2="32" y2="16" stroke="#ff4757" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+</div>
+
 <script>
 const ov = document.getElementById('ov');
 const arena = document.getElementById('arena');
@@ -96,22 +168,41 @@ const deadEl = document.getElementById('dead');
 const totalEl = document.getElementById('total');
 const banner = document.getElementById('banner');
 const shotSound = document.getElementById('shotSound');
+const crosshair = document.getElementById('crosshair');
 
 let participants = [];
 let targetingId = null;
-let animTimer = null;
+let aimTimer = null;
 let hideTimer = null;
-let isShooting = false; // флаг: идёт ли сейчас анимация прицеливания
-let currentSpinId = null;
+let isShooting = false;
 
-// === Сброс всей анимации ===
+// === Скрыть прицел ===
+function hideCrosshair() {
+  crosshair.classList.remove('active', 'locked');
+}
+
+// === Переместить прицел в координаты (в пикселях от левого верхнего края окна) ===
+function moveCrosshair(x, y) {
+  crosshair.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+}
+
+// === Получить случайную точку внутри элемента ===
+function randomPointIn(el) {
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left + Math.random() * rect.width,
+    y: rect.top + Math.random() * rect.height,
+  };
+}
+
+// === Остановить анимацию ===
 function stopAiming() {
-  if (animTimer) {
-    clearTimeout(animTimer);
-    animTimer = null;
+  if (aimTimer) {
+    clearTimeout(aimTimer);
+    aimTimer = null;
   }
   isShooting = false;
-  targetingId = null;
+  crosshair.classList.remove('locked');
 }
 
 function render() {
@@ -135,7 +226,7 @@ function render() {
   arena.innerHTML = sorted.map(p => {
     const targeted = targetingId === p.id && p.alive;
     const cls = `chip ${p.alive ? '' : 'eliminated'} ${targeted ? 'targeted' : ''}`;
-    return `<div class="${cls}">#${p.id} ${escapeHtml(p.name)}${p.alive ? '' : ' 💀'}</div>`;
+    return `<div class="${cls}" data-id="${p.id}">#${p.id} ${escapeHtml(p.name)}${p.alive ? '' : ' 💀'}</div>`;
   }).join('');
 }
 
@@ -156,47 +247,84 @@ function flash() {
   setTimeout(() => el.remove(), 400);
 }
 
-// Запуск анимации прицеливания
-function runAim(victimId, aimDuration) {
-  // Всегда сбрасываем прошлую анимацию перед новой
+// === Анимация прицеливания ===
+function runAim(victimId) {
   stopAiming();
+  hideCrosshair();
 
   const alive = participants.filter(p => p.alive);
   if (alive.length <= 1) return;
 
-  isShooting = true;
-  currentSpinId = victimId;
+  // Проверяем, что arena отрисована и у нас есть DOM-элементы
+  const chips = [...arena.querySelectorAll('.chip:not(.eliminated)')];
+  if (chips.length === 0) return;
 
-  let steps = 0;
-  const maxSteps = 14 + Math.floor(Math.random() * 8);
-  let delay = 80;
-  let lastIdx = -1;
+  isShooting = true;
+  crosshair.classList.add('active');
+
+  // Случайные точки по всей арене
+  const arenaRect = arena.getBoundingClientRect();
+
+  const steps = 12 + Math.floor(Math.random() * 6);
+  let currentStep = 0;
+  let lastX = arenaRect.left + arenaRect.width / 2;
+  let lastY = arenaRect.top + arenaRect.height / 2;
 
   function step() {
-    // Если анимация была остановлена (пришёл sniper:shot) — не продолжаем
     if (!isShooting) return;
 
-    if (steps >= maxSteps) {
-      // Финальное наведение на жертву
-      targetingId = victimId;
-      render();
+    currentStep++;
+
+    if (currentStep >= steps) {
+      // Финальная наводка — целимся в жертву, в случайную точку внутри её плашки
+      const victimChip = arena.querySelector(`.chip[data-id="${victimId}"]`);
+      if (victimChip) {
+        const p = randomPointIn(victimChip);
+        // Отмечаем жертву в стейте для подсветки
+        targetingId = victimId;
+        render();
+        moveCrosshair(p.x, p.y);
+        crosshair.classList.add('locked');
+      }
       return;
     }
 
-    let idx;
-    let attempts = 0;
-    do {
-      idx = Math.floor(Math.random() * alive.length);
-      attempts++;
-    } while (idx === lastIdx && attempts < 20 && alive.length > 1);
+    // Случайная точка: иногда — общая по арене, иногда — рядом с одной из плашек
+    let x, y;
+    if (Math.random() < 0.65) {
+      // Летим к случайной живой плашке
+      const targetChip = chips[Math.floor(Math.random() * chips.length)];
+      const p = randomPointIn(targetChip);
+      x = p.x;
+      y = p.y;
+    } else {
+      // Летим в случайную точку внутри арены
+      x = arenaRect.left + Math.random() * arenaRect.width;
+      y = arenaRect.top + Math.random() * arenaRect.height;
+    }
 
-    lastIdx = idx;
-    targetingId = alive[idx].id;
-    render();
+    // Не даём двигаться слишком монотонно
+    if (Math.abs(x - lastX) < 40 && Math.abs(y - lastY) < 40) {
+      x = arenaRect.left + Math.random() * arenaRect.width;
+      y = arenaRect.top + Math.random() * arenaRect.height;
+    }
 
-    steps++;
-    delay *= 1.15;
-    animTimer = setTimeout(step, Math.min(delay, 300));
+    lastX = x;
+    lastY = y;
+    moveCrosshair(x, y);
+
+    // Ускорение к концу: сначала медленно, потом быстро, потом тормозим
+    const progress = currentStep / steps;
+    let delay;
+    if (progress < 0.5) {
+      delay = 360 - progress * 200; // 360 → 260 мс
+    } else if (progress < 0.85) {
+      delay = 260 - (progress - 0.5) * 500; // 260 → 80 мс
+    } else {
+      delay = 80 + (progress - 0.85) * 1200; // 80 → 260 мс (замедление)
+    }
+
+    aimTimer = setTimeout(step, delay);
   }
 
   step();
@@ -214,48 +342,58 @@ function connect() {
     }
 
     if (type === 'sniper:state') {
-      // Если пришёл статус "idle", "shot", "winner" — останавливаем анимацию
       if (payload.status !== 'shooting') {
         stopAiming();
+        hideCrosshair();
       }
-
       participants = payload.participants;
       targetingId = payload.victimId;
-
       if (participants.length > 0) ov.classList.add('active');
-
-      if (participants.length === 0) {
-        ov.classList.remove('active');
-      }
-
+      if (participants.length === 0) ov.classList.remove('active');
       render();
     }
 
     if (type === 'sniper:shooting') {
       participants = payload.participants;
+      targetingId = null;
       ov.classList.add('active');
-      runAim(payload.victimId, payload.aimDuration);
+      render();
+      // Небольшая задержка, чтобы DOM успел обновиться после render()
+      setTimeout(() => runAim(payload.victimId), 50);
     }
 
     if (type === 'sniper:shot') {
-      // Останавливаем анимацию НЕМЕДЛЕННО, до обновления participants
       stopAiming();
 
       participants = payload.participants;
+      targetingId = null;
       flash();
       showBanner(payload.victimName);
       shotSound.volume = 0.2;
       shotSound.currentTime = 0;
       shotSound.play().catch(() => {});
+
+      // Подсвечиваем жертву как убитую
+      const victimChip = arena.querySelector(`.chip[data-id="${payload.victimId}"]`);
+      if (victimChip) {
+        victimChip.classList.add('shot');
+      }
+
       render();
+
+      // Прячем прицел через 1.5 секунды
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        hideCrosshair();
+        hideTimer = null;
+      }, 1500);
     }
 
     if (type === 'winner:show' && payload.tag?.includes('Снайпер')) {
       stopAiming();
+      hideCrosshair();
       render();
-      setTimeout(() => {
-        ov.classList.remove('active');
-      }, 3000);
+      setTimeout(() => ov.classList.remove('active'), 3000);
     }
   };
   ws.onclose = () => setTimeout(connect, 1000);
