@@ -12,36 +12,29 @@ const DEFAULT_DATA = {
   tokens: null,
   settings: {
     channel: null,
-    donatePayToken: null,
-    ticketRewardId: null,        // ID награды «Билет на розыгрыш» (если null — ловим все награды)
-	ticketRewardTitle: null,
+    donationAlertsToken: null,
+    ticketRewardId: null,
+    ticketRewardTitle: null,
   },
   follows: [],
   redemptions: [],
 
-  // === Билеты на розыгрыш (снайпер по воскресеньям) ===
   tickets: {
-    participants: [],            // [{ userId, username, redeemedAt }]
+    participants: [],
   },
 
-  // === Донатеры (розыгрыш среди тех, кто задонатил за неделю) ===
   donors: {
     participants: [],
-    resetAt: null,     // timestamp последнего ручного сброса
-  },
-  dj: {
-    rewardIds: [],          // ID наград, которые считаем
-    scores: {},             // { userId: { username, points, avatar? } }
-    leader: null,           // { userId, username, points }
+    resetAt: null,
   },
 
-  // === Механики ===
   keyword: {
     status: 'idle',
     word: 'Голда',
     participants: [],
     winners: [],
   },
+
   wheel: {
     sectors: [],
     currentRotation: 0,
@@ -49,12 +42,19 @@ const DEFAULT_DATA = {
     lastSpinId: null,
     winner: null,
   },
+
   sniper: {
     status: 'idle',
     participants: [],
     victimId: null,
     winnerName: null,
     nextId: 1,
+  },
+
+  dj: {
+    rewardIds: [],
+    scores: {},
+    leader: null,
   },
 };
 
@@ -70,10 +70,11 @@ function loadData() {
   try {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     dataCache = { ...DEFAULT_DATA, ...raw };
-    // Мержим вложенные объекты, чтобы новые поля появлялись у старых data.json
+    // Мержим вложенные объекты
     dataCache.settings = { ...DEFAULT_DATA.settings, ...(raw.settings || {}) };
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
+    dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
     return dataCache;
   } catch {
     dataCache = JSON.parse(JSON.stringify(DEFAULT_DATA));
