@@ -101,6 +101,18 @@ let participants = [];
 let targetingId = null;
 let animTimer = null;
 let hideTimer = null;
+let isShooting = false; // флаг: идёт ли сейчас анимация прицеливания
+let currentSpinId = null;
+
+// === Сброс всей анимации ===
+function stopAiming() {
+  if (animTimer) {
+    clearTimeout(animTimer);
+    animTimer = null;
+  }
+  isShooting = false;
+  targetingId = null;
+}
 
 function render() {
   const alive = participants.filter(p => p.alive).length;
@@ -144,11 +156,16 @@ function flash() {
   setTimeout(() => el.remove(), 400);
 }
 
+// Запуск анимации прицеливания
 function runAim(victimId, aimDuration) {
-  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  // Всегда сбрасываем прошлую анимацию перед новой
+  stopAiming();
 
   const alive = participants.filter(p => p.alive);
   if (alive.length <= 1) return;
+
+  isShooting = true;
+  currentSpinId = victimId;
 
   let steps = 0;
   const maxSteps = 14 + Math.floor(Math.random() * 8);
@@ -156,24 +173,32 @@ function runAim(victimId, aimDuration) {
   let lastIdx = -1;
 
   function step() {
+    // Если анимация была остановлена (пришёл sniper:shot) — не продолжаем
+    if (!isShooting) return;
+
     if (steps >= maxSteps) {
+      // Финальное наведение на жертву
       targetingId = victimId;
       render();
       return;
     }
+
     let idx;
     let attempts = 0;
     do {
       idx = Math.floor(Math.random() * alive.length);
       attempts++;
     } while (idx === lastIdx && attempts < 20 && alive.length > 1);
+
     lastIdx = idx;
     targetingId = alive[idx].id;
     render();
+
     steps++;
     delay *= 1.15;
     animTimer = setTimeout(step, Math.min(delay, 300));
   }
+
   step();
 }
 
@@ -189,12 +214,20 @@ function connect() {
     }
 
     if (type === 'sniper:state') {
+      // Если пришёл статус "idle", "shot", "winner" — останавливаем анимацию
+      if (payload.status !== 'shooting') {
+        stopAiming();
+      }
+
       participants = payload.participants;
       targetingId = payload.victimId;
-      if (participants.length > 0 && payload.status !== 'idle') {
-        ov.classList.add('active');
-      }
+
       if (participants.length > 0) ov.classList.add('active');
+
+      if (participants.length === 0) {
+        ov.classList.remove('active');
+      }
+
       render();
     }
 
@@ -205,8 +238,10 @@ function connect() {
     }
 
     if (type === 'sniper:shot') {
+      // Останавливаем анимацию НЕМЕДЛЕННО, до обновления participants
+      stopAiming();
+
       participants = payload.participants;
-      targetingId = null;
       flash();
       showBanner(payload.victimName);
       shotSound.volume = 0.2;
@@ -216,7 +251,7 @@ function connect() {
     }
 
     if (type === 'winner:show' && payload.tag?.includes('Снайпер')) {
-      targetingId = null;
+      stopAiming();
       render();
       setTimeout(() => {
         ov.classList.remove('active');
