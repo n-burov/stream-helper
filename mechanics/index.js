@@ -79,5 +79,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks,
+  tickets, donors, sniper, dj, nicks, wheel,
 };
