@@ -33,8 +33,15 @@ const DEFAULT_DATA = {
   },
 
   donors: {
-    participants: [],
-    resetAt: null,
+    // «полоска» — очистка только вручную
+    stream: {
+      participants: [],
+    },
+    // недельный — автоочистка в понедельник
+    weekly: {
+      participants: [],
+      lastResetAt: null, // timestamp последнего сброса
+    },
   },
 
   nicks: {},
