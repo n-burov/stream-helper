@@ -261,8 +261,11 @@
       <button class="btn btn-gold" id="wheelSpin">🎡 Запустить</button>
       <button class="btn btn-danger" id="wheelReset">🗑️ Сбросить всё</button>
     </div>
-    <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5);">
+    <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5); gap:16px;">
       <span id="wheelStatus">⏸️ Ожидание</span>
+      <span id="wheelQueueBadge" style="display:none; padding:4px 12px; background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.3); border-radius:12px; color:#00d4ff; font-weight:600;">
+        ⏳ В очереди: 0
+      </span>
     </div>
   </div>
   <div class="card">
@@ -503,7 +506,7 @@
 //  WebSocket
 // ============================================================
 let ws;
-const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null, nicks:null };
+const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null, nicks:null, wheelQueueSize: 0 };
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -526,7 +529,9 @@ function handleMessage(type, payload) {
       state.donors = payload.donors;
       state.dj = payload.dj;
       state.nicks = payload.nicks;
+      state.wheelQueueSize = payload.wheelQueueSize || 0;
       renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors(); renderDj(); renderNicks();
+      renderWheelQueue();
       break;
 
     case 'keyword:state':  state.keyword = payload; renderKeyword(); break;
@@ -535,6 +540,10 @@ function handleMessage(type, payload) {
       break;
 
     case 'wheel:state':    state.wheel = payload; renderWheel(); break;
+    case 'wheel:queue':
+      state.wheelQueueSize = payload.size;
+      renderWheelQueue();
+      break;
     case 'wheel:spin':
       if (state.wheel) state.wheel.isSpinning = true;
       renderWheel(); animateLocalWheel(payload);
@@ -720,6 +729,18 @@ function renderWheel() {
         sendAction('wheel:setSectors', { sectors });
       });
     });
+  }
+}
+
+function renderWheelQueue() {
+  const badge = document.getElementById('wheelQueueBadge');
+  if (!badge) return;
+  const size = state.wheelQueueSize || 0;
+  if (size > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = `⏳ В очереди: ${size}`;
+  } else {
+    badge.style.display = 'none';
   }
 }
 
