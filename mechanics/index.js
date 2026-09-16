@@ -41,7 +41,6 @@ function handleCommand(action, data) {
     case 'tickets:setCount': return tickets.setCount(data?.name, data?.count);
     case 'tickets:reset':    return tickets.reset();
 
-    // donors
     case 'donors:add':         return donors.addManual(data?.list, data?.name);
     case 'donors:remove':      return donors.removeAt(data?.list, data?.index);
     case 'donors:reset':       return donors.reset(data?.list);
@@ -50,9 +49,9 @@ function handleCommand(action, data) {
     case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
     case 'dj:reset':         return dj.reset();
 
+    case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
     case 'nicks:remove':     return nicks.remove(data?.userId);
     case 'nicks:reset':      return nicks.reset();
-    case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
 
     default:
       return { error: 'Unknown action: ' + action };
@@ -69,6 +68,7 @@ function getFullState() {
     donors: donors.getState(),
     dj: dj.getState(),
     nicks: nicks.getState(),
+    wheelQueueSize: wheel.getQueueSize(),
   };
 }
 
