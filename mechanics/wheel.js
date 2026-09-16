@@ -114,9 +114,11 @@ function spin() {
       tag: '🎡 Колесо',
     });
 
+    // Запись в историю
     db.addHistoryEntry({
-      mechanic: 'wheel',
-      sectors: sectors.map(s => s.label),
+      mechanic: 'wheel-donation',
+      donors: opts.donorName ? [opts.donorName] : [],
+      donorAmount: opts.donorAmount || 0,
       winners: [winnerLabel],
       status: 'finished',
       time: Date.now(),
