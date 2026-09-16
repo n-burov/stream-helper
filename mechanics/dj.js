@@ -29,6 +29,14 @@ function setRewards(rewardIds) {
 // Вызывается из EventSub при покупке награды
 function addRedemption({ userId, username, rewardId, cost, avatar }) {
   const d = db.loadData();
+  
+  // Игнорируем покупки самого стримера
+  const broadcasterLogin = d.tokens?.login;
+  if (broadcasterLogin && username && username.toLowerCase() === broadcasterLogin.toLowerCase()) {
+    console.log('[dj] Пропускаю покупку стримера:', username);
+    return { skipped: true, reason: 'broadcaster' };
+  }
+  
   if (!d.dj.rewardIds.includes(rewardId)) {
     return { skipped: true };
   }
