@@ -38,7 +38,16 @@ console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
 async function startApp() {
   const app = express();
   app.use(express.json());
-  app.use(express.static(path.join(__dirname, 'public')));
+
+  // Отключаем Range-запросы — они ломают раздачу видео в OBS
+  app.use(express.static(path.join(__dirname, 'public'), {
+    acceptRanges: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.webm') || filePath.endsWith('.mov') || filePath.endsWith('.mp4')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }));
 
   const server = http.createServer(app);
   const wss = new WebSocketServer({ server });
@@ -372,7 +381,7 @@ async function startApp() {
     donationAlerts.on('error', (msg) => console.warn('⚠️ DonationAlerts:', msg));
 
     donationAlerts.on('donation', (donation) => {
-      // 1. Добавляем донатера в оба списка (stream + weekly)
+      // 1. Добавляем донатера в оба списка
       mechanics.donors.addDonor(donation);
 
       // 2. Автокрутка колеса при донате от 200 ₽
@@ -389,6 +398,8 @@ async function startApp() {
           });
           if (result?.error) {
             console.warn('⚠️ Не удалось запустить колесо:', result.error);
+          } else if (result?.queued) {
+            console.log(`[wheel] донат от ${donation.name} в очереди (позиция ${result.queueSize})`);
           }
         } catch (e) {
           console.warn('⚠️ Ошибка автокрутки:', e.message);
