@@ -26,7 +26,7 @@ function setSectors(sectors) {
   return { ok: true };
 }
 
-function spin() {
+function spin(opts = {}) {
   const d = db.loadData();
   const sectors = d.wheel.sectors;
   if (!sectors || sectors.length === 0) return { error: 'Нет секторов' };
@@ -51,30 +51,27 @@ function spin() {
   const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
   const baseTarget = -Math.PI / 2 - winnerMidAngle;
 
-  // Небольшой случайный оффсет внутри сектора — чтобы колесо не останавливалось всегда в центр
   const maxOffset = sliceAngle * 0.35;
   const randomOffset = (Math.random() * 2 - 1) * maxOffset;
 
-  // Приводим целевую позицию к [0, 2π)
   let normalizedTarget = (baseTarget + randomOffset) % (Math.PI * 2);
   if (normalizedTarget < 0) normalizedTarget += Math.PI * 2;
 
-  // Текущее положение колеса
   const currentRot = d.wheel.currentRotation || 0;
   let currentNorm = currentRot % (Math.PI * 2);
   if (currentNorm < 0) currentNorm += Math.PI * 2;
 
-  // Сколько нужно добавить, чтобы попасть в нормализованную цель
   let deltaToTarget = normalizedTarget - currentNorm;
   if (deltaToTarget < 0) deltaToTarget += Math.PI * 2;
 
-  // + 15 полных оборотов для эффекта
   const extraSpins = 15 * Math.PI * 2;
   const targetAngle = currentRot + deltaToTarget + extraSpins;
 
   const spinId = Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   const duration = 18000;
   const winnerLabel = sectors[winnerIndex].label;
+  const donorName = opts.donorName || null;
+  const donorAmount = opts.donorAmount || 0;
 
   db.update(dd => {
     dd.wheel.isSpinning = true;
@@ -91,7 +88,6 @@ function spin() {
     sectors,
   });
 
-  // Сервер сам решает, когда спин завершён
   const t = setTimeout(() => {
     timers.delete(spinId);
     db.update(dd => {
@@ -107,26 +103,36 @@ function spin() {
       currentRotation: targetAngle % (Math.PI * 2),
     });
 
+    // showWinner на оверлей
     winner.showWinner({
       name: winnerLabel,
       title: 'Выигрыш!',
-      subtitle: '🎡 Колесо фортуны',
-      tag: '🎡 Колесо',
+      subtitle: donorName ? `🎡 Колесо за донат от ${donorName}` : '🎡 Колесо фортуны',
+      tag: donorName ? '🎡 Донат-колесо' : '🎡 Колесо',
     });
 
-    // Запись в историю
-    db.addHistoryEntry({
-      mechanic: 'wheel-donation',
-      donors: opts.donorName ? [opts.donorName] : [],
-      donorAmount: opts.donorAmount || 0,
-      winners: [winnerLabel],
-      status: 'finished',
-      time: Date.now(),
-    });
+    // История
+    if (donorName) {
+      db.addHistoryEntry({
+        mechanic: 'wheel-donation',
+        donors: [donorName],
+        donorAmount,
+        winners: [winnerLabel],
+        status: 'finished',
+        time: Date.now(),
+      });
+    } else {
+      db.addHistoryEntry({
+        mechanic: 'wheel',
+        sectors: sectors.map(s => s.label),
+        winners: [winnerLabel],
+        status: 'finished',
+        time: Date.now(),
+      });
+    }
   }, duration + 500);
 
   timers.set(spinId, t);
-
   return { ok: true, spinId };
 }
 
