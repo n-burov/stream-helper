@@ -154,7 +154,7 @@
   .sniper-stats .alive strong { color: #00ff64; }
   .sniper-stats .dead strong { color: #ff4757; }
 
-  .history-container { max-height: 300px; overflow-y: auto; margin-top: 15px; }
+  .history-container { max-height: 500px; overflow-y: auto; margin-top: 15px; }
   .history-item {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 14px; background: rgba(255,255,255,0.03);
@@ -222,9 +222,11 @@
   <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
   <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
   <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
-  <button class="tab-btn" data-tab="tab-donors">💸 Донатеры</button>
+  <button class="tab-btn" data-tab="tab-donors-weekly">💸 Донатеры (неделя)</button>
+  <button class="tab-btn" data-tab="tab-donors-stream">📊 Донатеры (полоска)</button>
   <button class="tab-btn" data-tab="tab-dj">🎧 Диджей дня</button>
   <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
+  <button class="tab-btn" data-tab="tab-history">📜 История</button>
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
 </nav>
 
@@ -245,13 +247,6 @@
       <span>Слово: <strong id="kwWordDisplay">—</strong></span>
     </div>
     <div class="list-grid" id="kwList"><div class="list-empty">Пока никого нет 😴</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">📜</span> История
-      <button class="btn btn-sm btn-danger" id="histClear" style="margin-left:auto;">Очистить</button>
-    </div>
-    <div class="history-container" id="histList"><div class="history-empty">История пуста</div></div>
   </div>
 </div>
 
@@ -328,25 +323,46 @@
   </div>
 </div>
 
-<!-- ============ DONORS ============ -->
-<div class="tab-content" id="tab-donors">
+<!-- ============ DONORS WEEKLY ============ -->
+<div class="tab-content" id="tab-donors-weekly">
   <div class="card">
     <div class="card-title">
-      <span class="icon">💸</span> Донатеры
-      <button class="btn btn-sm btn-danger" id="donorsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+      <span class="icon">💸</span> Донатеры (неделя)
+      <button class="btn btn-sm btn-danger" id="donorsWeeklyReset" style="margin-left:auto;">🗑️ Сбросить</button>
     </div>
     <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Список пополняется автоматически при поступлении донатов через DonationAlerts.
+      Список автоматически очищается каждый понедельник.
       Один человек — одна плашка, суммы складываются.
     </p>
     <div class="row">
-      <input type="text" id="donorsName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="donorsAdd">➕ Добавить</button>
+      <input type="text" id="donorsWeeklyName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="donorsWeeklyAdd">➕ Добавить</button>
     </div>
     <div class="counter-bar">
-      <span>Всего донатеров: <strong id="donorsCount">0</strong></span>
+      <span>Всего донатеров: <strong id="donorsWeeklyCount">0</strong></span>
     </div>
-    <div class="list-grid" id="donorsList"><div class="list-empty">Пусто</div></div>
+    <div class="list-grid" id="donorsWeeklyList"><div class="list-empty">Пусто</div></div>
+  </div>
+</div>
+
+<!-- ============ DONORS STREAM ============ -->
+<div class="tab-content" id="tab-donors-stream">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">📊</span> Донатеры (полоска)
+      <button class="btn btn-sm btn-danger" id="donorsStreamReset" style="margin-left:auto;">🗑️ Сбросить</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Список не очищается автоматически. Подходит для длительного розыгрыша (сезон, марафон).
+    </p>
+    <div class="row">
+      <input type="text" id="donorsStreamName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
+      <button class="btn btn-primary" id="donorsStreamAdd">➕ Добавить</button>
+    </div>
+    <div class="counter-bar">
+      <span>Всего донатеров: <strong id="donorsStreamCount">0</strong></span>
+    </div>
+    <div class="list-grid" id="donorsStreamList"><div class="list-empty">Пусто</div></div>
   </div>
 </div>
 
@@ -359,6 +375,7 @@
     </div>
     <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
       Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
+      Покупки самого стримера не учитываются.
     </p>
 
     <div style="max-width:600px;">
@@ -404,6 +421,17 @@
       <span>Всего ников: <strong id="nicksCount">0</strong></span>
     </div>
     <div class="list-grid" id="nicksList"><div class="list-empty">Пока никто не указал ник</div></div>
+  </div>
+</div>
+
+<!-- ============ HISTORY ============ -->
+<div class="tab-content" id="tab-history">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">📜</span> История розыгрышей
+      <button class="btn btn-sm btn-danger" id="histClear" style="margin-left:auto;">Очистить всё</button>
+    </div>
+    <div class="history-container" id="histList"><div class="history-empty">История пуста</div></div>
   </div>
 </div>
 
@@ -561,7 +589,6 @@ document.getElementById('winnerClose').addEventListener('click', () => {
   document.getElementById('winnerModal').classList.remove('active');
 });
 
-// Кнопки авторизации
 async function refreshAuthButtons() {
   try {
     const r = await fetch('/api/status');
@@ -779,13 +806,25 @@ document.getElementById('snImportTickets').addEventListener('click', () => {
 });
 
 document.getElementById('snImportDonors').addEventListener('click', () => {
-  if (!state.donors || state.donors.participants.length === 0) {
-    showToast('Список донатеров пуст'); return;
+  if (!state.donors) { showToast('Нет донатов'); return; }
+
+  // Спрашиваем, из какого списка
+  const useWeekly = confirm(
+    'Импортировать из какого списка?\n\n' +
+    'ОК — Донатеры (неделя)\n' +
+    'Отмена — Донатеры (полоска)'
+  );
+
+  const list = useWeekly ? state.donors.weekly : state.donors.stream;
+  const listName = useWeekly ? 'неделя' : 'полоска';
+
+  if (!list || list.length === 0) {
+    showToast(`Список "${listName}" пуст`); return;
   }
   if (state.sniper && state.sniper.participants.length > 0) {
     if (!confirm('Импорт заменит текущий список снайпера. Продолжить?')) return;
   }
-  const names = state.donors.participants.map(p => p.name);
+  const names = list.map(p => p.name);
   sendAction('sniper:import', { names });
 });
 
@@ -886,40 +925,103 @@ function renderTickets() {
 }
 
 // ============================================================
-//  DONORS
+//  DONORS — два списка (weekly + stream)
 // ============================================================
-const donorsList = document.getElementById('donorsList');
-const donorsCount = document.getElementById('donorsCount');
-const donorsName = document.getElementById('donorsName');
 
-document.getElementById('donorsAdd').addEventListener('click', () => {
-  if (donorsName.value.trim()) { sendAction('donors:add', { name: donorsName.value }); donorsName.value = ''; }
+// --- WEEKLY ---
+const donorsWeeklyList = document.getElementById('donorsWeeklyList');
+const donorsWeeklyCount = document.getElementById('donorsWeeklyCount');
+const donorsWeeklyName = document.getElementById('donorsWeeklyName');
+
+document.getElementById('donorsWeeklyAdd').addEventListener('click', () => {
+  if (donorsWeeklyName.value.trim()) {
+    sendAction('donors:add', { list: 'weekly', name: donorsWeeklyName.value });
+    donorsWeeklyName.value = '';
+  }
 });
-donorsName.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('donorsAdd').click(); });
-document.getElementById('donorsReset').addEventListener('click', () => {
-  if (confirm('Очистить список донатеров?')) sendAction('donors:reset');
+donorsWeeklyName.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('donorsWeeklyAdd').click();
+});
+document.getElementById('donorsWeeklyReset').addEventListener('click', () => {
+  if (confirm('Сбросить недельный список донатеров?')) {
+    sendAction('donors:reset', { list: 'weekly' });
+  }
 });
 
-function renderDonors() {
+function renderDonorsWeekly() {
   const d = state.donors;
   if (!d) return;
-  donorsCount.textContent = d.participants.length;
+  const list = d.weekly || [];
+  donorsWeeklyCount.textContent = list.length;
 
-  if (d.participants.length === 0) {
-    donorsList.innerHTML = `<div class="list-empty">Пока нет донатов 💸</div>`;
+  if (list.length === 0) {
+    donorsWeeklyList.innerHTML = `<div class="list-empty">Пока нет донатов 💸</div>`;
     return;
   }
-  donorsList.innerHTML = d.participants.map((p, i) => `
+  donorsWeeklyList.innerHTML = list.map((p, i) => `
     <div class="list-chip donor">
       💸 ${escapeHtml(p.name)}
       <span class="amount">${p.totalAmount || 0} ${p.currency || ''}</span>
-      <span class="chip-x" data-idx="${i}">✕</span>
+      <span class="chip-x" data-list="weekly" data-idx="${i}">✕</span>
     </div>
   `).join('');
 
-  donorsList.querySelectorAll('[data-idx]').forEach(el => {
-    el.addEventListener('click', () => sendAction('donors:remove', { index: +el.dataset.idx }));
+  donorsWeeklyList.querySelectorAll('[data-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      sendAction('donors:remove', { list: 'weekly', index: +el.dataset.idx });
+    });
   });
+}
+
+// --- STREAM ---
+const donorsStreamList = document.getElementById('donorsStreamList');
+const donorsStreamCount = document.getElementById('donorsStreamCount');
+const donorsStreamName = document.getElementById('donorsStreamName');
+
+document.getElementById('donorsStreamAdd').addEventListener('click', () => {
+  if (donorsStreamName.value.trim()) {
+    sendAction('donors:add', { list: 'stream', name: donorsStreamName.value });
+    donorsStreamName.value = '';
+  }
+});
+donorsStreamName.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('donorsStreamAdd').click();
+});
+document.getElementById('donorsStreamReset').addEventListener('click', () => {
+  if (confirm('Сбросить список донатеров (полоска)?')) {
+    sendAction('donors:reset', { list: 'stream' });
+  }
+});
+
+function renderDonorsStream() {
+  const d = state.donors;
+  if (!d) return;
+  const list = d.stream || [];
+  donorsStreamCount.textContent = list.length;
+
+  if (list.length === 0) {
+    donorsStreamList.innerHTML = `<div class="list-empty">Пока нет донатов 💸</div>`;
+    return;
+  }
+  donorsStreamList.innerHTML = list.map((p, i) => `
+    <div class="list-chip donor">
+      💸 ${escapeHtml(p.name)}
+      <span class="amount">${p.totalAmount || 0} ${p.currency || ''}</span>
+      <span class="chip-x" data-list="stream" data-idx="${i}">✕</span>
+    </div>
+  `).join('');
+
+  donorsStreamList.querySelectorAll('[data-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      sendAction('donors:remove', { list: 'stream', index: +el.dataset.idx });
+    });
+  });
+}
+
+// --- Общий рендер донатеров ---
+function renderDonors() {
+  renderDonorsWeekly();
+  renderDonorsStream();
 }
 
 // ============================================================
@@ -1088,11 +1190,21 @@ function renderHistory(list) {
   if (!list || list.length === 0) { el.innerHTML = `<div class="history-empty">История пуста</div>`; return; }
   el.innerHTML = list.map(item => {
     const date = new Date(item.time).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-    const label = item.mechanic === 'keyword' ? '🎯 ' + item.word
-      : item.mechanic === 'wheel' ? '🎡 Колесо' : '🔫 Снайпер';
+
+    let label = '';
+    if (item.mechanic === 'keyword') label = '🎯 ' + (item.word || 'Ключевое слово');
+    else if (item.mechanic === 'wheel') label = '🎡 Колесо';
+    else if (item.mechanic === 'wheel-donation') label = '🎡 Колесо (донат)';
+    else if (item.mechanic === 'sniper') label = '🔫 Снайпер';
+    else label = '📌 ' + item.mechanic;
+
     const winners = (item.winners || []).join(', ') || '—';
+    const donors = (item.donors || []).join(', ');
+
     return `<div class="history-item">
-      <span>${label}</span><span>👥 ${item.participants || 0}</span>
+      <span>${label}</span>
+      ${donors ? `<span style="color:#00d4ff;">💸 ${escapeHtml(donors)}${item.donorAmount ? ' (' + item.donorAmount + '₽)' : ''}</span>` : ''}
+      <span>👥 ${item.participants || 0}</span>
       <span style="color:#00ff64;">🏆 ${escapeHtml(winners)}</span>
       <span style="color:rgba(255,255,255,0.3); font-size:11px;">${date}</span>
     </div>`;
@@ -1240,8 +1352,10 @@ connect();
 loadHistory();
 loadSettings();
 refreshAuthButtons();
+sendAction('donors:checkWeekly');
 setInterval(loadHistory, 10000);
 setInterval(refreshAuthButtons, 15000);
+setInterval(() => sendAction('donors:checkWeekly'), 60000);
 </script>
 </body>
 </html>
