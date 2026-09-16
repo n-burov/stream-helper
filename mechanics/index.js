@@ -41,9 +41,11 @@ function handleCommand(action, data) {
     case 'tickets:setCount': return tickets.setCount(data?.name, data?.count);
     case 'tickets:reset':    return tickets.reset();
 
-    case 'donors:add':       return donors.addManual(data?.name);
-    case 'donors:remove':    return donors.removeAt(data?.index);
-    case 'donors:reset':     return donors.reset();
+    // donors
+    case 'donors:add':         return donors.addManual(data?.list, data?.name);
+    case 'donors:remove':      return donors.removeAt(data?.list, data?.index);
+    case 'donors:reset':       return donors.reset(data?.list);
+    case 'donors:checkWeekly': return donors.checkWeeklyReset();
 
     case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
     case 'dj:reset':         return dj.reset();
