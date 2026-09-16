@@ -8,25 +8,85 @@
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: transparent !important;
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 20px; overflow: hidden;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
   }
+
+  .stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .wrap {
-    display: none; width: 420px; height: 420px;
-    align-items: center; justify-content: center;
+    display: none;
+    width: 420px;
+    height: 420px;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
   .wrap.active { display: flex; }
   .inner { width: 350px; height: 350px; position: relative; }
-  #c { width: 100%; height: 100%; border-radius: 50%;
-       box-shadow: 0 0 60px rgba(145,70,255,0.15), 0 0 120px rgba(145,70,255,0.08); }
+  #c {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 0 60px rgba(145,70,255,0.15), 0 0 120px rgba(145,70,255,0.08);
+  }
+
+  /* === Плашка донатера (сверху) === */
+  .donor-badge {
+    position: absolute;
+    top: -70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: linear-gradient(135deg, rgba(0,212,255,0.95), rgba(0,140,200,0.95));
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 6px 30px rgba(0,212,255,0.4);
+    border: 1px solid rgba(255,255,255,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    z-index: 10;
+  }
+  .donor-badge.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .donor-badge .icon { margin-right: 6px; }
+  .donor-badge .amount {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.75);
+    margin-left: 6px;
+  }
 </style>
 </head>
 <body>
 
 <audio id="spinSound" preload="auto"><source src="/sounds/wheel-spin.mp3" type="audio/mpeg"></audio>
 
-<div class="wrap" id="wrap">
-  <div class="inner"><canvas id="c" width="600" height="600"></canvas></div>
+<div class="stage">
+  <div class="donor-badge" id="donorBadge">
+    <span class="icon">🎡</span>
+    <span class="text">Донат</span>
+    <span class="amount"></span>
+  </div>
+
+  <div class="wrap" id="wrap">
+    <div class="inner"><canvas id="c" width="600" height="600"></canvas></div>
+  </div>
 </div>
 
 <script>
@@ -34,6 +94,7 @@ const wrap = document.getElementById('wrap');
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 const spinSound = document.getElementById('spinSound');
+const donorBadge = document.getElementById('donorBadge');
 
 const defaultColors = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#1dd1a1','#f368e0','#00d2d3','#ff9f43','#10ac84','#ee5a24'];
 
@@ -46,6 +107,23 @@ function show() { wrap.classList.add('active'); }
 function hide() {
   wrap.classList.remove('active');
   spinSound.pause(); spinSound.currentTime = 0;
+  hideDonorBadge();
+}
+
+// === Показать плашку донатера ===
+function showDonorBadge(name, amount) {
+  if (!name) { hideDonorBadge(); return; }
+  const textEl = donorBadge.querySelector('.text');
+  const amountEl = donorBadge.querySelector('.amount');
+
+  textEl.textContent = `Донат от ${name}`;
+  amountEl.textContent = amount ? `(${amount} ₽)` : '';
+
+  donorBadge.classList.add('visible');
+}
+
+function hideDonorBadge() {
+  donorBadge.classList.remove('visible');
 }
 
 function draw() {
@@ -77,8 +155,10 @@ function draw() {
     ctx.rotate(mid + (mid > Math.PI / 2 ? Math.PI : 0));
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 14px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 3;
     ctx.fillText(sec.label.slice(0, 10), 0, 0);
     ctx.restore();
 
@@ -88,21 +168,30 @@ function draw() {
   ctx.beginPath();
   ctx.arc(300, 300, 280, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 2; ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.stroke();
 
+  // Стрелка
   ctx.fillStyle = '#ff4757';
-  ctx.shadowColor = 'rgba(255,71,87,0.3)'; ctx.shadowBlur = 15;
+  ctx.shadowColor = 'rgba(255,71,87,0.3)';
+  ctx.shadowBlur = 15;
   ctx.beginPath();
-  ctx.moveTo(300, 6); ctx.lineTo(285, 28); ctx.lineTo(315, 28);
-  ctx.closePath(); ctx.fill();
+  ctx.moveTo(300, 6);
+  ctx.lineTo(285, 28);
+  ctx.lineTo(315, 28);
+  ctx.closePath();
+  ctx.fill();
   ctx.shadowBlur = 0;
 }
 
-function spinTo({ targetAngle, duration, spinId }) {
+function spinTo({ targetAngle, duration, spinId, donorName, donorAmount }) {
   if (isSpinning) return;
   currentSpinId = spinId;
   isSpinning = true;
   show();
+
+  // Показываем плашку донатера, если спин по донату
+  showDonorBadge(donorName, donorAmount);
 
   spinSound.loop = true;
   spinSound.volume = 0.2;
@@ -122,7 +211,11 @@ function spinTo({ targetAngle, duration, spinId }) {
       rotation = targetAngle % (Math.PI * 2);
       draw();
       isSpinning = false;
-      spinSound.pause(); spinSound.currentTime = 0;
+      spinSound.pause();
+      spinSound.currentTime = 0;
+      // Плашку прячем через 3 секунды — чтобы стример и зритель успели
+      // прочитать, кому крутилось
+      setTimeout(hideDonorBadge, 3000);
     }
   }
   requestAnimationFrame(step);
@@ -148,7 +241,8 @@ function connect() {
       spinTo(payload);
     }
     if (type === 'wheel:completed') {
-      setTimeout(() => { if (!isSpinning) hide(); }, 3000);
+      // Ничего не делаем — плашка спрячется сама через 3 секунды
+      setTimeout(() => { if (!isSpinning) hide(); }, 5000);
     }
   };
   ws.onclose = () => setTimeout(connect, 1000);
