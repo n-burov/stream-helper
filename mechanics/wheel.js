@@ -4,7 +4,9 @@ const winner = require('./winner');
 const tickets = require('./tickets');
 
 let ctxRef = null;
-const timers = new Map(); // spinId -> timeout
+const timers = new Map();
+const spinQueue = []; // очередь ожидающих спинов
+let isProcessing = false;
 
 function init(ctx) { ctxRef = ctx; }
 
@@ -27,9 +29,22 @@ function setSectors(sectors) {
   return { ok: true };
 }
 
-// opts: { donorName?: string, donorAmount?: number }
-// Передаётся при автокрутке от доната. При ручной крутке opts = {}.
+// Публичная функция, которую вызывает server.js при донате и UI при ручной крутке
 function spin(opts = {}) {
+  // Если сейчас ничего не крутится — запускаем сразу
+  // Если крутится — ставим в очередь
+  const d = db.loadData();
+  if (d.wheel.isSpinning) {
+    spinQueue.push(opts);
+    console.log(`[wheel] спин добавлен в очередь (${spinQueue.length} в очереди)`);
+    return { ok: true, queued: true, queueSize: spinQueue.length };
+  }
+
+  return startSpin(opts);
+}
+
+// Непосредственный запуск одного спина
+function startSpin(opts = {}) {
   const d = db.loadData();
   const sectors = d.wheel.sectors;
   if (!sectors || sectors.length === 0) return { error: 'Нет секторов' };
@@ -45,7 +60,6 @@ function spin(opts = {}) {
     if (rand <= acc) { winnerIndex = i; break; }
   }
 
-  // === Угол, при котором центр сектора победителя окажется сверху ===
   const sliceAngle = (sectors[winnerIndex].weight / totalWeight) * Math.PI * 2;
   let winnerStartAngle = 0;
   for (let i = 0; i < winnerIndex; i++) {
@@ -54,24 +68,19 @@ function spin(opts = {}) {
   const winnerMidAngle = winnerStartAngle + sliceAngle / 2;
   const baseTarget = -Math.PI / 2 - winnerMidAngle;
 
-  // Небольшой случайный оффсет внутри сектора
   const maxOffset = sliceAngle * 0.35;
   const randomOffset = (Math.random() * 2 - 1) * maxOffset;
 
-  // Приводим целевую позицию к [0, 2π)
   let normalizedTarget = (baseTarget + randomOffset) % (Math.PI * 2);
   if (normalizedTarget < 0) normalizedTarget += Math.PI * 2;
 
-  // Текущее положение колеса
   const currentRot = d.wheel.currentRotation || 0;
   let currentNorm = currentRot % (Math.PI * 2);
   if (currentNorm < 0) currentNorm += Math.PI * 2;
 
-  // Сколько нужно добавить, чтобы попасть в нормализованную цель
   let deltaToTarget = normalizedTarget - currentNorm;
   if (deltaToTarget < 0) deltaToTarget += Math.PI * 2;
 
-  // + 15 полных оборотов
   const extraSpins = 15 * Math.PI * 2;
   const targetAngle = currentRot + deltaToTarget + extraSpins;
 
@@ -113,9 +122,7 @@ function spin(opts = {}) {
       currentRotation: targetAngle % (Math.PI * 2),
     });
 
-    // === АВТО-ВЫДАЧА БИЛЕТА ===
-    // Если выпал сектор, содержащий "билет", и известен донатер —
-    // начисляем ему билет. Если у него уже есть — увеличиваем count.
+    // Авто-выдача билета
     let awardedTicket = false;
     if (donorName && /билет/i.test(winnerLabel)) {
       try {
@@ -127,7 +134,6 @@ function spin(opts = {}) {
       }
     }
 
-    // Показываем победителя на общем overlay-winner.html
     winner.showWinner({
       name: winnerLabel,
       title: 'Выигрыш!',
@@ -137,7 +143,6 @@ function spin(opts = {}) {
       tag: donorName ? '🎡 Донат-колесо' : '🎡 Колесо',
     });
 
-    // Запись в историю
     if (donorName) {
       db.addHistoryEntry({
         mechanic: 'wheel-donation',
@@ -157,6 +162,17 @@ function spin(opts = {}) {
         time: Date.now(),
       });
     }
+
+    // === После завершения — проверяем очередь ===
+    if (spinQueue.length > 0) {
+      const nextOpts = spinQueue.shift();
+      console.log(`[wheel] запускаю следующий спин из очереди, осталось: ${spinQueue.length}`);
+
+      // Небольшая пауза, чтобы оверлей успел отрисовать победителя
+      setTimeout(() => {
+        startSpin(nextOpts);
+      }, 2500); // 2.5 секунды между спинами
+    }
   }, duration + 500);
 
   timers.set(spinId, t);
@@ -167,6 +183,7 @@ function spin(opts = {}) {
 function resetAll() {
   for (const t of timers.values()) clearTimeout(t);
   timers.clear();
+  spinQueue.length = 0;
 
   db.update(d => {
     d.wheel.sectors = [];
@@ -180,4 +197,9 @@ function resetAll() {
   return { ok: true };
 }
 
-module.exports = { init, getState, setSectors, spin, resetAll };
+// Для UI: узнать, сколько спинов в очереди
+function getQueueSize() {
+  return spinQueue.length;
+}
+
+module.exports = { init, getState, setSectors, spin, resetAll, getQueueSize };
