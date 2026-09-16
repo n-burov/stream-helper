@@ -6,12 +6,12 @@ function init(ctx) { ctxRef = ctx; }
 
 function getState() {
   const d = db.loadData();
-  // Нормализуем: у каждого участника есть count (по умолчанию 1)
   const participants = (d.tickets?.participants || []).map(p => ({
     userId: p.userId,
     username: p.username,
     count: typeof p.count === 'number' ? p.count : 1,
     redeemedAt: p.redeemedAt,
+    lastSource: p.lastSource || null,
   }));
   return { participants };
 }
@@ -34,6 +34,7 @@ function addFromRedemption({ userId, username, rewardId, redeemedAt }) {
     username,
     count: 1,
     redeemedAt: redeemedAt || Date.now(),
+    lastSource: 'twitch',
   };
 
   db.update(dd => { dd.tickets.participants.push(entry); });
@@ -56,6 +57,7 @@ function addManual(name) {
     username: trimmed,
     count: 1,
     redeemedAt: Date.now(),
+    lastSource: 'manual',
   };
 
   db.update(dd => { dd.tickets.participants.push(entry); });
@@ -93,13 +95,45 @@ function setCount(username, count) {
   return { ok: true };
 }
 
+// Прибавить билет пользователю по имени.
+// Если пользователя нет — создать его с одним билетом.
+// Если есть — увеличить count. Используется для автовыдачи из колеса.
+function incrementByUsername(username, source = 'wheel') {
+  const trimmed = String(username || '').trim();
+  if (!trimmed) return { error: 'Пустое имя' };
+
+  const lower = trimmed.toLowerCase();
+
+  db.update(d => {
+    const existing = d.tickets.participants.find(
+      p => p.username.toLowerCase() === lower
+    );
+
+    if (existing) {
+      existing.count = (existing.count || 1) + 1;
+      existing.redeemedAt = Date.now();
+      existing.lastSource = source;
+    } else {
+      d.tickets.participants.push({
+        userId: 'auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        username: trimmed,
+        count: 1,
+        redeemedAt: Date.now(),
+        lastSource: source,
+      });
+    }
+  });
+
+  ctxRef.broadcast('tickets:state', getState());
+  return { ok: true, username: trimmed };
+}
+
 function reset() {
   db.update(d => { d.tickets.participants = []; });
   ctxRef.broadcast('tickets:state', getState());
   return { ok: true };
 }
 
-// Экспорт чистого массива никнеймов для импорта в снайпер
 function getUsernames() {
   const d = db.loadData();
   return (d.tickets?.participants || []).map(p => p.username);
@@ -108,4 +142,5 @@ function getUsernames() {
 module.exports = {
   init, getState, addFromRedemption, addManual,
   removeByName, setCount, reset, getUsernames,
+  incrementByUsername,
 };
