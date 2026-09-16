@@ -16,9 +16,9 @@ const { DonationAlertsService } = require('./donationalerts');
 const { getCustomRewards } = require('./twitch-api');
 const { checkForUpdate, CURRENT_VERSION } = require('./updater');
 
-console.log('📦 Twitch Overlay v' + CURRENT_VERSION);
+console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
 
-// === Автообновление (СТРОГО до старта сервера) ===
+// === Автообновление (до старта сервера) ===
 (async () => {
   console.log('[boot] Проверяю обновления...');
   try {
@@ -35,7 +35,6 @@ console.log('📦 Twitch Overlay v' + CURRENT_VERSION);
   process.exit(1);
 });
 
-// === Всё остальное — внутри startApp ===
 async function startApp() {
   const app = express();
   app.use(express.json());
@@ -64,6 +63,13 @@ async function startApp() {
   };
 
   mechanics.initAll(ctx);
+
+  // Проверка недельного сброса донатеров при старте
+  try {
+    mechanics.donors.checkWeeklyReset();
+  } catch (e) {
+    console.warn('⚠️ Ошибка weekly-сброса:', e.message);
+  }
 
   // === WebSocket ===
   wss.on('connection', (ws) => {
@@ -96,7 +102,6 @@ async function startApp() {
     });
   });
 
-  // Список всех кастомных награда канала
   app.get('/api/rewards', async (req, res) => {
     const d = db.loadData();
     if (!d.tokens || !d.tokens.access_token) {
@@ -367,7 +372,28 @@ async function startApp() {
     donationAlerts.on('error', (msg) => console.warn('⚠️ DonationAlerts:', msg));
 
     donationAlerts.on('donation', (donation) => {
+      // 1. Добавляем донатера в оба списка (stream + weekly)
       mechanics.donors.addDonor(donation);
+
+      // 2. Автокрутка колеса при донате от 200 ₽
+      const AMOUNT_THRESHOLD = 200;
+      const currency = (donation.currency || 'RUB').toUpperCase();
+      const amount = Number(donation.amount) || 0;
+
+      if (currency === 'RUB' && amount >= AMOUNT_THRESHOLD) {
+        console.log(`🎡 Донат ${amount}₽ от ${donation.name} — запускаю колесо`);
+        try {
+          const result = mechanics.wheel.spin({
+            donorName: donation.name,
+            donorAmount: amount,
+          });
+          if (result?.error) {
+            console.warn('⚠️ Не удалось запустить колесо:', result.error);
+          }
+        } catch (e) {
+          console.warn('⚠️ Ошибка автокрутки:', e.message);
+        }
+      }
     });
 
     donationAlerts.start();
