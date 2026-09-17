@@ -8,6 +8,7 @@ const donors = require('./donors');
 const dj = require('./dj');
 const nicks = require('./nicks');
 const tops = require('./tops');
+const announcements = require('./announcements');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -19,6 +20,7 @@ function initAll(ctx) {
   dj.init(ctx);
   nicks.init(ctx);
   tops.init(ctx);
+  announcements.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -59,6 +61,14 @@ function handleCommand(action, data) {
     case 'tops:resetMonthly': return tops.resetMonthlyManual();
     case 'tops:checkMonthly': return tops.checkMonthlyReset() || { ok: true };
 
+    case 'announcements:setEnabled':  return announcements.setEnabled(data?.enabled);
+    case 'announcements:setInterval': return announcements.setIntervalMin(data?.minutes);
+    case 'announcements:setGap':      return announcements.setMessagesGapMs(data?.ms);
+    case 'announcements:add':         return announcements.addAnnouncement(data);
+    case 'announcements:update':      return announcements.updateAnnouncement(data?.id, data?.patch || {});
+    case 'announcements:remove':      return announcements.removeAnnouncement(data?.id);
+    case 'announcements:sendNow':     return announcements.sendNow(data?.id);
+
     default:
       return { error: 'Unknown action: ' + action };
   }
@@ -75,6 +85,7 @@ function getFullState() {
     dj: dj.getState(),
     nicks: nicks.getState(),
     tops: tops.getState(),
+    announcements: announcements.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -86,5 +97,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel, tops,
+  tickets, donors, sniper, dj, nicks, wheel, tops, announcements,
 };
