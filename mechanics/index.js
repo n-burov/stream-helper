@@ -7,6 +7,7 @@ const tickets = require('./tickets');
 const donors = require('./donors');
 const dj = require('./dj');
 const nicks = require('./nicks');
+const tops = require('./tops');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -17,6 +18,7 @@ function initAll(ctx) {
   donors.init(ctx);
   dj.init(ctx);
   nicks.init(ctx);
+  tops.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -53,6 +55,10 @@ function handleCommand(action, data) {
     case 'nicks:remove':     return nicks.remove(data?.userId);
     case 'nicks:reset':      return nicks.reset();
 
+    case 'tops:resetDaily':   return tops.resetDailyManual();
+    case 'tops:resetMonthly': return tops.resetMonthlyManual();
+    case 'tops:checkMonthly': return tops.checkMonthlyReset() || { ok: true };
+
     default:
       return { error: 'Unknown action: ' + action };
   }
@@ -68,6 +74,7 @@ function getFullState() {
     donors: donors.getState(),
     dj: dj.getState(),
     nicks: nicks.getState(),
+    tops: tops.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -79,5 +86,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel,
+  tickets, donors, sniper, dj, nicks, wheel, tops,
 };
