@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>Оверлей | Диджей дня</title>
+<title>Оверлей | Топы</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -15,128 +15,234 @@
     padding: 10px;
     color: #fff;
   }
-  .dj-card {
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(12px);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 200, 0, 0.2);
-    padding: 8px 18px;
+
+  .tops-card {
+    background: linear-gradient(135deg,
+      rgba(13, 10, 36, 0.72) 0%,
+      rgba(26, 18, 64, 0.72) 50%,
+      rgba(13, 10, 36, 0.72) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 10px 16px;
     display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 260px;
+    max-width: 340px;
+
+    /* Золотая обводка */
+    border: 2px solid rgba(249, 202, 36, 0.75);
+
+    /* Свечение наружу + направленное внутрь */
+    box-shadow:
+      0 0 20px rgba(249, 202, 36, 0.35),
+      0 0 40px rgba(249, 202, 36, 0.15),
+      inset 0 0 24px rgba(249, 202, 36, 0.15),
+      inset 0 0 4px rgba(249, 202, 36, 0.4);
+
+    position: relative;
+  }
+
+  /* Внутренняя тонкая золотая линия для усиления эффекта */
+  .tops-card::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 12px;
+    border: 1px solid rgba(249, 202, 36, 0.2);
+    pointer-events: none;
+  }
+
+  .row {
+    display: flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 20px rgba(255, 200, 0, 0.08);
+    gap: 10px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    transition: background 0.3s;
   }
-  .dj-icon {
-    font-size: 22px;
+
+  .row.dj {
+    background: rgba(145, 70, 255, 0.10);
+  }
+  .row.daily {
+    background: rgba(249, 202, 36, 0.08);
+  }
+  .row.monthly {
+    background: rgba(255, 215, 0, 0.08);
+  }
+
+  .row .emoji {
+    font-size: 18px;
     line-height: 1;
+    flex-shrink: 0;
   }
-  .dj-info {
+
+  .row .info {
     display: flex;
     flex-direction: column;
     gap: 1px;
+    min-width: 0;
+    flex: 1;
   }
-  .dj-title {
+
+  .row .label {
     font-size: 9px;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: rgba(255, 200, 0, 0.6);
+    color: rgba(249, 202, 36, 0.65);
     line-height: 1;
+    font-weight: 600;
   }
-  .dj-row {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .dj-name {
-    font-size: 18px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #f9ca24, #f0932b);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    white-space: nowrap;
-    line-height: 1.1;
-  }
-  .dj-points {
+
+  .row .value {
     font-size: 14px;
-    color: #00d4ff;
     font-weight: 700;
+    color: #fff;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
   }
-  .dj-points .unit {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
+
+  .row .value .points {
+    font-size: 12px;
+    color: #00d4ff;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+
+  .row .empty-value {
+    color: rgba(255, 255, 255, 0.3);
     font-weight: 400;
-    margin-left: 3px;
+    font-style: italic;
   }
-  .dj-empty {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.35);
+
+  /* Пульсация при смене лидера */
+  .row.bump {
+    animation: rowBump 0.6s ease;
   }
-  .bump {
-    animation: bump 0.4s ease;
-  }
-  @keyframes bump {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.04); }
-    100% { transform: scale(1); }
+  @keyframes rowBump {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(249, 202, 36, 0.6); }
+    50%  { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(249, 202, 36, 0); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(249, 202, 36, 0); }
   }
 </style>
 </head>
 <body>
 
-<div class="dj-card" id="card">
-  <div class="dj-icon">🎧</div>
-  <div class="dj-info">
-    <div class="dj-title">Диджей дня</div>
-    <div id="content">
-      <div class="dj-empty" id="empty">Пока никто не купил награды</div>
-      <div class="dj-row" id="leaderRow" style="display:none;">
-        <span class="dj-name" id="name"></span>
-        <span class="dj-points" id="points"></span>
-      </div>
+<div class="tops-card" id="card">
+  <div class="row monthly" id="rowMonthly">
+    <span class="emoji">👑</span>
+    <div class="info">
+      <div class="label">Легенда месяца</div>
+      <div class="value empty-value" id="monthlyValue">нет данных</div>
+    </div>
+  </div>
+
+  <div class="row daily" id="rowDaily">
+    <span class="emoji">🌟</span>
+    <div class="info">
+      <div class="label">Легенда дня</div>
+      <div class="value empty-value" id="dailyValue">нет данных</div>
+    </div>
+  </div>
+
+  <div class="row dj" id="rowDj">
+    <span class="emoji">🎧</span>
+    <div class="info">
+      <div class="label">Диджей дня</div>
+      <div class="value empty-value" id="djValue">нет данных</div>
     </div>
   </div>
 </div>
 
 <script>
 const card = document.getElementById('card');
-const emptyEl = document.getElementById('empty');
-const leaderRow = document.getElementById('leaderRow');
-const nameEl = document.getElementById('name');
-const pointsEl = document.getElementById('points');
+const dailyValue = document.getElementById('dailyValue');
+const monthlyValue = document.getElementById('monthlyValue');
+const djValue = document.getElementById('djValue');
+const rowDaily = document.getElementById('rowDaily');
+const rowMonthly = document.getElementById('rowMonthly');
+const rowDj = document.getElementById('rowDj');
 
-let lastLeaderId = null;
+let lastDailyName = null;
+let lastMonthlyName = null;
+let lastDjName = null;
 
-function render(dj) {
-  if (!dj || !dj.leader) {
-    emptyEl.style.display = 'block';
-    leaderRow.style.display = 'none';
-    lastLeaderId = null;
+function renderText(el, name, value, suffix = '₽') {
+  if (!name) {
+    el.classList.add('empty-value');
+    el.textContent = 'нет данных';
     return;
   }
+  el.classList.remove('empty-value');
+  el.innerHTML = `${escapeHtml(name)}<span class="points">${value} ${suffix}</span>`;
+}
 
-  const { username, points, userId } = dj.leader;
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
-  emptyEl.style.display = 'none';
-  leaderRow.style.display = 'flex';
+function bumpRow(row) {
+  row.classList.remove('bump');
+  void row.offsetWidth;
+  row.classList.add('bump');
+}
 
-  nameEl.textContent = username;
-  pointsEl.innerHTML = `${points.toLocaleString('ru-RU')}<span class="unit">баллов</span>`;
-
-  if (lastLeaderId !== null && lastLeaderId !== userId) {
-    card.classList.remove('bump');
-    void card.offsetWidth;
-    card.classList.add('bump');
+function render(tops, dj) {
+  // --- Monthly ---
+  const monthlyLeader = tops?.monthly?.leader;
+  if (monthlyLeader) {
+    renderText(monthlyValue, monthlyLeader.name, monthlyLeader.totalAmount || 0);
+    if (lastMonthlyName && lastMonthlyName !== monthlyLeader.name) bumpRow(rowMonthly);
+    lastMonthlyName = monthlyLeader.name;
+  } else {
+    renderText(monthlyValue, null);
+    lastMonthlyName = null;
   }
-  lastLeaderId = userId;
+
+  // --- Daily ---
+  const dailyLeader = tops?.daily?.leader;
+  if (dailyLeader) {
+    renderText(dailyValue, dailyLeader.name, dailyLeader.totalAmount || 0);
+    if (lastDailyName && lastDailyName !== dailyLeader.name) bumpRow(rowDaily);
+    lastDailyName = dailyLeader.name;
+  } else {
+    renderText(dailyValue, null);
+    lastDailyName = null;
+  }
+
+  // --- DJ ---
+  const djLeader = dj?.leader;
+  if (djLeader) {
+    renderText(djValue, djLeader.username, djLeader.points || 0, 'баллов');
+    if (lastDjName && lastDjName !== djLeader.username) bumpRow(rowDj);
+    lastDjName = djLeader.username;
+  } else {
+    renderText(djValue, null);
+    lastDjName = null;
+  }
 }
 
 function connect() {
   const ws = new WebSocket(`ws://${location.host}`);
   ws.onmessage = (e) => {
     const { type, payload } = JSON.parse(e.data);
-    if (type === 'state') render(payload.dj);
-    if (type === 'dj:state') render(payload);
+
+    if (type === 'state') {
+      render(payload.tops, payload.dj);
+    }
+    if (type === 'tops:state') {
+      // сохраняем dj из текущего стейта
+      render(payload, window._lastDj);
+    }
+    if (type === 'dj:state') {
+      window._lastDj = payload;
+      render(window._lastTops, payload);
+    }
   };
   ws.onclose = () => setTimeout(connect, 1000);
 }
