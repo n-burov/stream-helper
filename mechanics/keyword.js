@@ -15,11 +15,26 @@ function start(word) {
   const w = (word || '').trim();
   if (!w) return { error: 'Пустое кодовое слово' };
 
-  db.update(d => {
-    d.keyword.status = 'collecting';
-    d.keyword.word = w;
-    d.keyword.participants = [];
-    d.keyword.winners = [];
+  const d = db.loadData();
+  if (d.keyword.status === 'collecting') {
+    return { error: 'Сбор уже идёт. Сначала остановите или сбросьте текущий.' };
+  }
+
+  // Если статус locked и есть победители — мягко закрываем историю перед новым стартом
+  if (d.keyword.status === 'locked' && d.keyword.winners.length > 0) {
+    const history = db.loadHistory();
+    if (history.length > 0 && history[0].mechanic === 'keyword' && history[0].status === 'locked') {
+      history[0].status = 'finished';
+      history[0].winners = d.keyword.winners.map(w => w.username);
+      db.saveHistory(history);
+    }
+  }
+
+  db.update(dd => {
+    dd.keyword.status = 'collecting';
+    dd.keyword.word = w;
+    dd.keyword.participants = [];
+    dd.keyword.winners = [];
   });
 
   ctxRef.broadcast('keyword:state', getState());
@@ -54,7 +69,8 @@ function draw() {
 
   db.update(dd => {
     dd.keyword.winners.push({ username: p.username, at: Date.now() });
-    dd.keyword.status = 'finished';
+    // Статус НЕ меняем — оставляем 'locked'.
+    // Это позволяет жать «Победитель» сколько угодно раз до сброса.
   });
 
   const state = getState();
@@ -67,10 +83,9 @@ function draw() {
     tag: '🎯 Ключевое слово',
   });
 
-  // обновляем запись в истории
+  // Обновляем историю — перезаписываем победителей актуальным списком
   const history = db.loadHistory();
   if (history.length > 0 && history[0].mechanic === 'keyword' && history[0].status === 'locked') {
-    history[0].status = 'finished';
     history[0].winners = state.winners.map(w => w.username);
     db.saveHistory(history);
   }
@@ -79,10 +94,22 @@ function draw() {
 }
 
 function reset() {
-  db.update(d => {
-    d.keyword.status = 'idle';
-    d.keyword.participants = [];
-    d.keyword.winners = [];
+  const d = db.loadData();
+
+  // Если был активный/зафиксированный розыгрыш с победителями — закрываем запись в истории
+  if ((d.keyword.status === 'locked' || d.keyword.status === 'finished') && d.keyword.winners.length > 0) {
+    const history = db.loadHistory();
+    if (history.length > 0 && history[0].mechanic === 'keyword' && history[0].status === 'locked') {
+      history[0].status = 'finished';
+      history[0].winners = d.keyword.winners.map(w => w.username);
+      db.saveHistory(history);
+    }
+  }
+
+  db.update(dd => {
+    dd.keyword.status = 'idle';
+    dd.keyword.participants = [];
+    dd.keyword.winners = [];
   });
   ctxRef.broadcast('keyword:state', getState());
   return { ok: true };
