@@ -43,6 +43,17 @@ const DEFAULT_DATA = {
       lastResetAt: null, // timestamp последнего сброса
     },
   },
+  
+  tops: {
+	  daily: {
+		participants: [],
+		lastResetAt: null,
+	  },
+	  monthly: {
+		participants: [],
+		lastResetAt: null,
+	  },
+	},
 
   nicks: {},
 
@@ -92,6 +103,7 @@ function loadData() {
     dataCache.settings = { ...DEFAULT_DATA.settings, ...(raw.settings || {}) };
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
+	dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
     if (!dataCache.nicks || typeof dataCache.nicks !== 'object') {
       dataCache.nicks = {};
