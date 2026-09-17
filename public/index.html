@@ -221,9 +221,7 @@
   <button class="tab-btn active" data-tab="tab-keyword">🎯 Ключевое слово</button>
   <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
   <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
-  <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
-  <button class="tab-btn" data-tab="tab-donors-weekly">💸 Донатеры (неделя)</button>
-  <button class="tab-btn" data-tab="tab-donors-stream">📊 Донатеры (полоска)</button>
+  <button class="tab-btn" data-tab="tab-lists">🎟️ Списки на розыгрыши</button>
   <button class="tab-btn" data-tab="tab-tops">🏆 Топы</button>
   <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
   <button class="tab-btn" data-tab="tab-history">📜 История</button>
@@ -303,8 +301,10 @@
   </div>
 </div>
 
-<!-- ============ TICKETS ============ -->
-<div class="tab-content" id="tab-tickets">
+<!-- ============ LISTS ============ -->
+<div class="tab-content" id="tab-lists">
+
+  <!-- === БИЛЕТЫ === -->
   <div class="card">
     <div class="card-title">
       <span class="icon">🎟️</span> Билеты на розыгрыш
@@ -324,10 +324,8 @@
     </div>
     <div class="list-grid" id="ticketsList"><div class="list-empty">Пусто</div></div>
   </div>
-</div>
 
-<!-- ============ DONORS WEEKLY ============ -->
-<div class="tab-content" id="tab-donors-weekly">
+  <!-- === ДОНАТЕРЫ (НЕДЕЛЯ) === -->
   <div class="card">
     <div class="card-title">
       <span class="icon">💸</span> Донатеры (неделя)
@@ -346,10 +344,8 @@
     </div>
     <div class="list-grid" id="donorsWeeklyList"><div class="list-empty">Пусто</div></div>
   </div>
-</div>
 
-<!-- ============ DONORS STREAM ============ -->
-<div class="tab-content" id="tab-donors-stream">
+  <!-- === ДОНАТЕРЫ (ПОЛОСКА) === -->
   <div class="card">
     <div class="card-title">
       <span class="icon">📊</span> Донатеры (полоска)
@@ -367,6 +363,7 @@
     </div>
     <div class="list-grid" id="donorsStreamList"><div class="list-empty">Пусто</div></div>
   </div>
+
 </div>
 
 <!-- ============ TOPS ============ -->
