@@ -224,7 +224,7 @@
   <button class="tab-btn" data-tab="tab-tickets">🎟️ Билеты</button>
   <button class="tab-btn" data-tab="tab-donors-weekly">💸 Донатеры (неделя)</button>
   <button class="tab-btn" data-tab="tab-donors-stream">📊 Донатеры (полоска)</button>
-  <button class="tab-btn" data-tab="tab-dj">🎧 Диджей дня</button>
+  <button class="tab-btn" data-tab="tab-tops">🏆 Топы</button>
   <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
   <button class="tab-btn" data-tab="tab-history">📜 История</button>
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
@@ -369,8 +369,38 @@
   </div>
 </div>
 
-<!-- ============ DJ ============ -->
-<div class="tab-content" id="tab-dj">
+<!-- ============ TOPS ============ -->
+<div class="tab-content" id="tab-tops">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">🌟</span> Легенда дня
+      <button class="btn btn-sm btn-danger" id="topsResetDaily" style="margin-left:auto;">🔄 Сбросить вручную</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Топ донатер за текущий стрим. Автоматически обнуляется при запуске и завершении стрима.
+    </p>
+    <div class="counter-bar">
+      <span>Лидер: <strong id="topsDailyLeader">—</strong></span>
+      <span>Всего участников: <strong id="topsDailyCount">0</strong></span>
+    </div>
+    <div class="list-grid" id="topsDailyList"><div class="list-empty">Пока нет донатов</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">👑</span> Легенда месяца
+      <button class="btn btn-sm btn-danger" id="topsResetMonthly" style="margin-left:auto;">🔄 Сбросить вручную</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Топ донатер месяца. Автоматически обнуляется 1-го числа каждого месяца.
+    </p>
+    <div class="counter-bar">
+      <span>Лидер: <strong id="topsMonthlyLeader">—</strong></span>
+      <span>Всего участников: <strong id="topsMonthlyCount">0</strong></span>
+    </div>
+    <div class="list-grid" id="topsMonthlyList"><div class="list-empty">Пока нет донатов</div></div>
+  </div>
+
   <div class="card">
     <div class="card-title">
       <span class="icon">🎧</span> Диджей дня
@@ -380,14 +410,12 @@
       Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
       Покупки самого стримера не учитываются.
     </p>
-
     <div style="max-width:600px;">
       <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
       <div id="djRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
         <div class="list-empty">Загрузка наград...</div>
       </div>
     </div>
-
     <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
       <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
       <div id="djLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
@@ -484,7 +512,7 @@
       <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
       <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
       <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎧 Диджей дня</label>
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Топы</label>
       <input type="text" readonly value="http://localhost:3000/overlay-dj.html" onclick="this.select()" />
     </div>
   </div>
@@ -506,7 +534,11 @@
 //  WebSocket
 // ============================================================
 let ws;
-const state = { keyword:null, wheel:null, sniper:null, tickets:null, donors:null, dj:null, nicks:null, wheelQueueSize: 0 };
+const state = {
+  keyword: null, wheel: null, sniper: null, tickets: null,
+  donors: null, dj: null, nicks: null, tops: null,
+  wheelQueueSize: 0,
+};
 
 function connect() {
   ws = new WebSocket(`ws://${location.host}`);
@@ -529,8 +561,10 @@ function handleMessage(type, payload) {
       state.donors = payload.donors;
       state.dj = payload.dj;
       state.nicks = payload.nicks;
+      state.tops = payload.tops;
       state.wheelQueueSize = payload.wheelQueueSize || 0;
-      renderKeyword(); renderWheel(); renderSniper(); renderTickets(); renderDonors(); renderDj(); renderNicks();
+      renderKeyword(); renderWheel(); renderSniper(); renderTickets();
+      renderDonors(); renderDj(); renderNicks(); renderTops();
       renderWheelQueue();
       break;
 
@@ -565,6 +599,7 @@ function handleMessage(type, payload) {
     case 'dj:state':       state.dj = payload; renderDj(); break;
     case 'nicks:state':    state.nicks = payload; renderNicks(); break;
     case 'nicks:updated':  renderNicks(); break;
+    case 'tops:state':     state.tops = payload; renderTops(); break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
@@ -829,7 +864,6 @@ document.getElementById('snImportTickets').addEventListener('click', () => {
 document.getElementById('snImportDonors').addEventListener('click', () => {
   if (!state.donors) { showToast('Нет донатов'); return; }
 
-  // Спрашиваем, из какого списка
   const useWeekly = confirm(
     'Импортировать из какого списка?\n\n' +
     'ОК — Донатеры (неделя)\n' +
@@ -946,10 +980,8 @@ function renderTickets() {
 }
 
 // ============================================================
-//  DONORS — два списка (weekly + stream)
+//  DONORS — два списка
 // ============================================================
-
-// --- WEEKLY ---
 const donorsWeeklyList = document.getElementById('donorsWeeklyList');
 const donorsWeeklyCount = document.getElementById('donorsWeeklyCount');
 const donorsWeeklyName = document.getElementById('donorsWeeklyName');
@@ -994,7 +1026,6 @@ function renderDonorsWeekly() {
   });
 }
 
-// --- STREAM ---
 const donorsStreamList = document.getElementById('donorsStreamList');
 const donorsStreamCount = document.getElementById('donorsStreamCount');
 const donorsStreamName = document.getElementById('donorsStreamName');
@@ -1039,14 +1070,76 @@ function renderDonorsStream() {
   });
 }
 
-// --- Общий рендер донатеров ---
 function renderDonors() {
   renderDonorsWeekly();
   renderDonorsStream();
 }
 
 // ============================================================
-//  DJ (Диджей дня)
+//  TOPS
+// ============================================================
+const topsDailyList = document.getElementById('topsDailyList');
+const topsDailyLeader = document.getElementById('topsDailyLeader');
+const topsDailyCount = document.getElementById('topsDailyCount');
+const topsMonthlyList = document.getElementById('topsMonthlyList');
+const topsMonthlyLeader = document.getElementById('topsMonthlyLeader');
+const topsMonthlyCount = document.getElementById('topsMonthlyCount');
+
+function renderTops() {
+  const t = state.tops;
+  if (!t) return;
+
+  const dailyList = [...(t.daily?.participants || [])].sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
+  topsDailyCount.textContent = dailyList.length;
+  if (t.daily?.leader) {
+    topsDailyLeader.textContent = `${t.daily.leader.name} — ${t.daily.leader.totalAmount || 0} ₽`;
+  } else {
+    topsDailyLeader.textContent = '—';
+  }
+
+  if (dailyList.length === 0) {
+    topsDailyList.innerHTML = `<div class="list-empty">Пока нет донатов за день</div>`;
+  } else {
+    topsDailyList.innerHTML = dailyList.map((p, i) => `
+      <div class="list-chip donor">
+        ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '•'}
+        ${escapeHtml(p.name)}
+        <span class="amount">${p.totalAmount || 0} ${p.currency || '₽'}</span>
+      </div>
+    `).join('');
+  }
+
+  const monthlyList = [...(t.monthly?.participants || [])].sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
+  topsMonthlyCount.textContent = monthlyList.length;
+  if (t.monthly?.leader) {
+    topsMonthlyLeader.textContent = `${t.monthly.leader.name} — ${t.monthly.leader.totalAmount || 0} ₽`;
+  } else {
+    topsMonthlyLeader.textContent = '—';
+  }
+
+  if (monthlyList.length === 0) {
+    topsMonthlyList.innerHTML = `<div class="list-empty">Пока нет донатов за месяц</div>`;
+  } else {
+    topsMonthlyList.innerHTML = monthlyList.map((p, i) => `
+      <div class="list-chip donor">
+        ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '•'}
+        ${escapeHtml(p.name)}
+        <span class="amount">${p.totalAmount || 0} ${p.currency || '₽'}</span>
+      </div>
+    `).join('');
+  }
+}
+
+document.getElementById('topsResetDaily').addEventListener('click', () => {
+  if (confirm('Сбросить Топ дня?')) sendAction('tops:resetDaily');
+});
+
+document.getElementById('topsResetMonthly').addEventListener('click', () => {
+  if (confirm('Сбросить Топ месяца?')) sendAction('tops:resetMonthly');
+});
+
+// ============================================================
+//  DJ
 // ============================================================
 const djRewardsList = document.getElementById('djRewardsList');
 const djLeader = document.getElementById('djLeader');
@@ -1118,7 +1211,7 @@ document.getElementById('djReset').addEventListener('click', () => {
   if (confirm('Обнулить счётчик Диджея дня?')) sendAction('dj:reset');
 });
 
-document.querySelector('[data-tab="tab-dj"]').addEventListener('click', loadDjRewards);
+document.querySelector('[data-tab="tab-tops"]').addEventListener('click', loadDjRewards);
 
 // ============================================================
 //  NICKS
@@ -1374,9 +1467,11 @@ loadHistory();
 loadSettings();
 refreshAuthButtons();
 sendAction('donors:checkWeekly');
+sendAction('tops:checkMonthly');
 setInterval(loadHistory, 10000);
 setInterval(refreshAuthButtons, 15000);
 setInterval(() => sendAction('donors:checkWeekly'), 60000);
+setInterval(() => sendAction('tops:checkMonthly'), 60 * 60 * 1000);
 </script>
 </body>
 </html>
