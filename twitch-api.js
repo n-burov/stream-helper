@@ -1,5 +1,4 @@
 // twitch-api.js
-// Минимальный клиент Helix API для операций с наградами
 
 async function getCustomRewards({ token, clientId, broadcasterId }) {
   const url = `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${broadcasterId}&only_manageable_rewards=false`;
@@ -11,10 +10,10 @@ async function getCustomRewards({ token, clientId, broadcasterId }) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Get rewards failed: ${res.status} ${text}`);
+    throw new Error(`Get rewards failed: ${res.status} ${text.slice(0, 200)}`);
   }
   const data = await res.json();
-  return data.data || []; // [{ id, title, cost, prompt, ... }]
+  return data.data || [];
 }
 
 async function findRewardByTitle({ token, clientId, broadcasterId, title }) {
@@ -24,4 +23,31 @@ async function findRewardByTitle({ token, clientId, broadcasterId, title }) {
   return found || null;
 }
 
-module.exports = { getCustomRewards, findRewardByTitle };
+// Отправка announcement через Helix API
+async function sendAnnouncement({ token, clientId, broadcasterId, moderatorId, message, color = 'primary' }) {
+  const url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=${broadcasterId}&moderator_id=${moderatorId}`;
+
+  const body = {
+    message: String(message || '').slice(0, 500),
+    color,
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Client-Id': clientId,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Announcement failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+
+  return { ok: true };
+}
+
+module.exports = { getCustomRewards, findRewardByTitle, sendAnnouncement };
