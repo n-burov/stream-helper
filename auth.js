@@ -9,6 +9,7 @@ const REDIRECT_URI = 'http://localhost:3000/auth/callback';
 const SCOPES = [
   'chat:read',
   'chat:edit',
+  'moderator:manage:announcements',   // ← добавили для announce
   'moderator:read:followers',
   'channel:read:redemptions',
   'channel:read:vips',
