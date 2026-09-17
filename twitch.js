@@ -1,11 +1,18 @@
 // twitch.js
 const tmi = require('tmi.js');
 const EventEmitter = require('events');
+const { sendAnnouncement } = require('./twitch-api');
 
 class TwitchService extends EventEmitter {
-  constructor({ username, token, channel }) {
+  constructor({ username, token, channel, userId, clientId }) {
     super();
+
     this.channel = channel;
+    this.username = username;
+    this.accessToken = token;
+    this.userId = userId || null;
+    this.clientId = clientId || null;
+
     this.client = new tmi.Client({
       options: { debug: false },
       identity: {
@@ -42,8 +49,38 @@ class TwitchService extends EventEmitter {
     try { await this.client.disconnect(); } catch {}
   }
 
+  // Обычное сообщение в чат (через IRC)
   async sendMessage(text) {
-    return this.client.say(this.channel, text);
+    const safe = String(text || '').slice(0, 500);
+    return this.client.say(this.channel, safe);
+  }
+
+  // Выделенный анонс через Helix API.
+  // Требует scope: moderator:manage:announcements
+  // Требует: userId и clientId (передаются в конструктор из server.js)
+  async sendAnnounce(text, color = 'primary') {
+    if (!this.userId || !this.clientId) {
+      console.warn('[twitch] sendAnnounce: нет userId/clientId — команда пропущена');
+      return;
+    }
+
+    const validColors = ['primary', 'blue', 'green', 'orange', 'purple'];
+    const c = validColors.includes(color) ? color : 'primary';
+
+    try {
+      // broadcaster_id = канал, moderator_id = тот, кто отправляет (у нас — сам стример)
+      return await sendAnnouncement({
+        token: this.accessToken,
+        clientId: this.clientId,
+        broadcasterId: this.userId,
+        moderatorId: this.userId,
+        message: text,
+        color: c,
+      });
+    } catch (e) {
+      console.warn('[twitch] sendAnnounce error:', e.message);
+      throw e;
+    }
   }
 }
 
