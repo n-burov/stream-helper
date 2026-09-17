@@ -5,8 +5,7 @@ const path = require('path');
 const isPkg = typeof process.pkg !== 'undefined';
 const EXE_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
 
-// Если exe запущен из папки versions/ — используем data.json из родительской папки.
-// Это позволяет любой старой версии работать с общими данными.
+// Если exe запущен из папки versions/ — используем data.json из родительской папки
 let BASE_DIR = EXE_DIR;
 if (path.basename(EXE_DIR).toLowerCase() === 'versions') {
   BASE_DIR = path.dirname(EXE_DIR);
@@ -33,27 +32,14 @@ const DEFAULT_DATA = {
   },
 
   donors: {
-    // «полоска» — очистка только вручную
     stream: {
       participants: [],
     },
-    // недельный — автоочистка в понедельник
     weekly: {
       participants: [],
-      lastResetAt: null, // timestamp последнего сброса
+      lastResetAt: null,
     },
   },
-  
-  tops: {
-	  daily: {
-		participants: [],
-		lastResetAt: null,
-	  },
-	  monthly: {
-		participants: [],
-		lastResetAt: null,
-	  },
-	},
 
   nicks: {},
 
@@ -85,6 +71,18 @@ const DEFAULT_DATA = {
     scores: {},
     leader: null,
   },
+
+  tops: {
+    daily: { participants: [], lastResetAt: null },
+    monthly: { participants: [], lastResetAt: null },
+  },
+
+  announcements: {
+    enabled: false,
+    intervalMin: 10,
+    messagesGapMs: 500,
+    list: [],
+  },
 };
 
 let dataCache = null;
@@ -99,12 +97,57 @@ function loadData() {
   try {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     dataCache = { ...DEFAULT_DATA, ...raw };
-    // Мержим вложенные объекты, чтобы новые поля из DEFAULT_DATA подтягивались
+
+    // Мерж вложенных объектов
     dataCache.settings = { ...DEFAULT_DATA.settings, ...(raw.settings || {}) };
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
-	dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
+    dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
+    dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
+
+    if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
+      dataCache.announcements.list = [
+        {
+          id: 'default_roz',
+          title: 'Розыгрыши',
+          enabled: true,
+          messages: [
+            {
+              type: 'announce',
+              text: 'Пиши кодовое слово в чат, регистрируйся командой !ник и участвуй! Подробности о розыгрышах и призах в описании канала.',
+              color: 'orange',
+            },
+          ],
+        },
+        {
+          id: 'default_dj',
+          title: 'Диджей дня',
+          enabled: true,
+          messages: [
+            {
+              type: 'announce',
+              text: 'Стань DJ дня и получи 1 111 голды! Подробности о розыгрышах и призах - в описании канала.',
+              color: 'orange',
+            },
+          ],
+        },
+        {
+          id: 'default_links',
+          title: 'Ссылки',
+          enabled: true,
+          messages: [
+            { type: 'announce', text: 'Полезные ссылки:', color: 'orange' },
+            { type: 'message', text: 'Подавай заявки в гильдию "The Best"' },
+            { type: 'message', text: 'TG: t.me/+ATRh6Lw-nv0wMzJi' },
+            { type: 'message', text: 'Discord: discord.gg/F8aYp6Y5a' },
+            { type: 'message', text: 'Запись на рейды: guild-raid-time-sirus.vercel.app' },
+          ],
+        },
+      ];
+      saveData();
+    }
+
     if (!dataCache.nicks || typeof dataCache.nicks !== 'object') {
       dataCache.nicks = {};
     }
