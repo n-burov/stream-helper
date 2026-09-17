@@ -73,21 +73,21 @@ async function startApp() {
 
   mechanics.initAll(ctx);
 
-  // Проверка недельного сброса донатеров при старте
+  // Проверка недельного сброса донатеров
   try {
     mechanics.donors.checkWeeklyReset();
   } catch (e) {
     console.warn('⚠️ Ошибка weekly-сброса:', e.message);
   }
 
-  // Проверка месячного сброса топов при старте
+  // Проверка месячного сброса топов
   try {
     mechanics.tops.checkMonthlyReset();
   } catch (e) {
     console.warn('⚠️ Ошибка monthly-сброса топов:', e.message);
   }
 
-  // Раз в час проверяем смену месяца — если стрим идёт очень долго
+  // Раз в час проверяем смену месяца
   setInterval(() => {
     try { mechanics.tops.checkMonthlyReset(); } catch {}
   }, 60 * 60 * 1000);
@@ -272,6 +272,8 @@ async function startApp() {
       username: data.tokens.login,
       token: data.tokens.access_token,
       channel: data.settings.channel,
+      userId: data.tokens.user_id,     // ← добавили
+      clientId: auth.CLIENT_ID,         // ← добавили
     });
 
     twitch.on('chat', (msg) => {
@@ -395,13 +397,9 @@ async function startApp() {
     donationAlerts.on('error', (msg) => console.warn('⚠️ DonationAlerts:', msg));
 
     donationAlerts.on('donation', (donation) => {
-      // 1. Добавляем донатера в оба списка
       mechanics.donors.addDonor(donation);
-
-      // 2. Добавляем донат в топы (день + месяц)
       mechanics.tops.addDonation(donation);
 
-      // 3. Автокрутка колеса при донате от 200 ₽
       const AMOUNT_THRESHOLD = 200;
       const currency = (donation.currency || 'RUB').toUpperCase();
       const amount = Number(donation.amount) || 0;
