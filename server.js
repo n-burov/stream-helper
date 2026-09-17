@@ -80,6 +80,18 @@ async function startApp() {
     console.warn('⚠️ Ошибка weekly-сброса:', e.message);
   }
 
+  // Проверка месячного сброса топов при старте
+  try {
+    mechanics.tops.checkMonthlyReset();
+  } catch (e) {
+    console.warn('⚠️ Ошибка monthly-сброса топов:', e.message);
+  }
+
+  // Раз в час проверяем смену месяца — если стрим идёт очень долго
+  setInterval(() => {
+    try { mechanics.tops.checkMonthlyReset(); } catch {}
+  }, 60 * 60 * 1000);
+
   // === WebSocket ===
   wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'state', payload: mechanics.getFullState() }));
@@ -320,13 +332,15 @@ async function startApp() {
       }
 
       if (type === 'stream.offline') {
-        console.log('📴 Стрим завершён — сбрасываю Диджея дня');
+        console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
         mechanics.dj.reset();
+        mechanics.tops.resetDaily();
       }
 
       if (type === 'stream.online') {
-        console.log('📺 Стрим начался — сбрасываю Диджея дня');
+        console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
         mechanics.dj.reset();
+        mechanics.tops.resetDaily();
       }
     });
 
@@ -384,7 +398,10 @@ async function startApp() {
       // 1. Добавляем донатера в оба списка
       mechanics.donors.addDonor(donation);
 
-      // 2. Автокрутка колеса при донате от 200 ₽
+      // 2. Добавляем донат в топы (день + месяц)
+      mechanics.tops.addDonation(donation);
+
+      // 3. Автокрутка колеса при донате от 200 ₽
       const AMOUNT_THRESHOLD = 200;
       const currency = (donation.currency || 'RUB').toUpperCase();
       const amount = Number(donation.amount) || 0;
@@ -428,7 +445,7 @@ async function startApp() {
     console.log('   Оверлей wheel:     http://localhost:3000/overlay-wheel.html');
     console.log('   Оверлей sniper:    http://localhost:3000/overlay-sniper.html');
     console.log('   Оверлей winner:    http://localhost:3000/overlay-winner.html');
-    console.log('   Оверлей DJ:        http://localhost:3000/overlay-dj.html');
+    console.log('   Оверлей Топы:      http://localhost:3000/overlay-dj.html');
     await open('http://localhost:3000');
   });
 }
