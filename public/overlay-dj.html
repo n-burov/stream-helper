@@ -5,6 +5,7 @@
 <title>Оверлей | Топы</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: transparent !important;
@@ -18,9 +19,9 @@
 
   .tops-card {
     background: linear-gradient(135deg,
-      rgba(13, 10, 36, 0.72) 0%,
-      rgba(26, 18, 64, 0.72) 50%,
-      rgba(13, 10, 36, 0.72) 100%);
+      rgba(28, 8, 8, 0.72) 0%,
+      rgba(58, 12, 14, 0.72) 50%,
+      rgba(28, 8, 8, 0.72) 100%);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 16px;
@@ -34,12 +35,13 @@
     /* Золотая обводка */
     border: 2px solid rgba(249, 202, 36, 0.75);
 
-    /* Свечение наружу + направленное внутрь */
+    /* Свечение наружу + направленное внутрь + красное свечение изнутри */
     box-shadow:
       0 0 20px rgba(249, 202, 36, 0.35),
       0 0 40px rgba(249, 202, 36, 0.15),
       inset 0 0 24px rgba(249, 202, 36, 0.15),
-      inset 0 0 4px rgba(249, 202, 36, 0.4);
+      inset 0 0 4px rgba(249, 202, 36, 0.4),
+      inset 0 0 60px rgba(180, 20, 20, 0.18);
 
     position: relative;
   }
@@ -64,15 +66,9 @@
     transition: background 0.3s;
   }
 
-  .row.dj {
-    background: rgba(145, 70, 255, 0.10);
-  }
-  .row.daily {
-    background: rgba(249, 202, 36, 0.08);
-  }
-  .row.monthly {
-    background: rgba(255, 215, 0, 0.08);
-  }
+  .row.dj { background: rgba(180, 30, 40, 0.12); }
+  .row.daily { background: rgba(249, 202, 36, 0.08); }
+  .row.monthly { background: rgba(220, 40, 50, 0.10); }
 
   .row .emoji {
     font-size: 18px;
@@ -109,9 +105,10 @@
 
   .row .value .points {
     font-size: 12px;
-    color: #00d4ff;
+    color: #f9ca24;
     margin-left: 6px;
     font-weight: 600;
+    text-shadow: 0 0 6px rgba(249, 202, 36, 0.4);
   }
 
   .row .empty-value {
@@ -160,7 +157,6 @@
 </div>
 
 <script>
-const card = document.getElementById('card');
 const dailyValue = document.getElementById('dailyValue');
 const monthlyValue = document.getElementById('monthlyValue');
 const djValue = document.getElementById('djValue');
@@ -168,19 +164,15 @@ const rowDaily = document.getElementById('rowDaily');
 const rowMonthly = document.getElementById('rowMonthly');
 const rowDj = document.getElementById('rowDj');
 
+// === Единый кэш состояния ===
+const cache = {
+  tops: null,
+  dj: null,
+};
+
 let lastDailyName = null;
 let lastMonthlyName = null;
 let lastDjName = null;
-
-function renderText(el, name, value, suffix = '₽') {
-  if (!name) {
-    el.classList.add('empty-value');
-    el.textContent = 'нет данных';
-    return;
-  }
-  el.classList.remove('empty-value');
-  el.innerHTML = `${escapeHtml(name)}<span class="points">${value} ${suffix}</span>`;
-}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -192,38 +184,53 @@ function bumpRow(row) {
   row.classList.add('bump');
 }
 
-function render(tops, dj) {
-  // --- Monthly ---
-  const monthlyLeader = tops?.monthly?.leader;
-  if (monthlyLeader) {
-    renderText(monthlyValue, monthlyLeader.name, monthlyLeader.totalAmount || 0);
-    if (lastMonthlyName && lastMonthlyName !== monthlyLeader.name) bumpRow(rowMonthly);
-    lastMonthlyName = monthlyLeader.name;
-  } else {
-    renderText(monthlyValue, null);
-    lastMonthlyName = null;
+function renderText(el, name, value, suffix = '₽') {
+  if (!name) {
+    el.classList.add('empty-value');
+    el.textContent = 'нет данных';
+    return;
   }
+  el.classList.remove('empty-value');
+  el.innerHTML = `${escapeHtml(name)}<span class="points">${value} ${suffix}</span>`;
+}
 
-  // --- Daily ---
-  const dailyLeader = tops?.daily?.leader;
-  if (dailyLeader) {
-    renderText(dailyValue, dailyLeader.name, dailyLeader.totalAmount || 0);
-    if (lastDailyName && lastDailyName !== dailyLeader.name) bumpRow(rowDaily);
-    lastDailyName = dailyLeader.name;
-  } else {
-    renderText(dailyValue, null);
-    lastDailyName = null;
+// === Рендер всей карточки из кэша ===
+function renderAll() {
+  // --- Monthly ---
+  if (cache.tops) {
+    const monthlyLeader = cache.tops.monthly?.leader;
+    if (monthlyLeader) {
+      renderText(monthlyValue, monthlyLeader.name, monthlyLeader.totalAmount || 0);
+      if (lastMonthlyName && lastMonthlyName !== monthlyLeader.name) bumpRow(rowMonthly);
+      lastMonthlyName = monthlyLeader.name;
+    } else {
+      renderText(monthlyValue, null);
+      lastMonthlyName = null;
+    }
+
+    // --- Daily ---
+    const dailyLeader = cache.tops.daily?.leader;
+    if (dailyLeader) {
+      renderText(dailyValue, dailyLeader.name, dailyLeader.totalAmount || 0);
+      if (lastDailyName && lastDailyName !== dailyLeader.name) bumpRow(rowDaily);
+      lastDailyName = dailyLeader.name;
+    } else {
+      renderText(dailyValue, null);
+      lastDailyName = null;
+    }
   }
 
   // --- DJ ---
-  const djLeader = dj?.leader;
-  if (djLeader) {
-    renderText(djValue, djLeader.username, djLeader.points || 0, 'баллов');
-    if (lastDjName && lastDjName !== djLeader.username) bumpRow(rowDj);
-    lastDjName = djLeader.username;
-  } else {
-    renderText(djValue, null);
-    lastDjName = null;
+  if (cache.dj) {
+    const djLeader = cache.dj.leader;
+    if (djLeader) {
+      renderText(djValue, djLeader.username, djLeader.points || 0, 'баллов');
+      if (lastDjName && lastDjName !== djLeader.username) bumpRow(rowDj);
+      lastDjName = djLeader.username;
+    } else {
+      renderText(djValue, null);
+      lastDjName = null;
+    }
   }
 }
 
@@ -233,15 +240,22 @@ function connect() {
     const { type, payload } = JSON.parse(e.data);
 
     if (type === 'state') {
-      render(payload.tops, payload.dj);
+      cache.tops = payload.tops || null;
+      cache.dj = payload.dj || null;
+      renderAll();
+      return;
     }
+
     if (type === 'tops:state') {
-      // сохраняем dj из текущего стейта
-      render(payload, window._lastDj);
+      cache.tops = payload;
+      renderAll();
+      return;
     }
+
     if (type === 'dj:state') {
-      window._lastDj = payload;
-      render(window._lastTops, payload);
+      cache.dj = payload;
+      renderAll();
+      return;
     }
   };
   ws.onclose = () => setTimeout(connect, 1000);
