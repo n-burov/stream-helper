@@ -169,10 +169,13 @@ class DonationAlertsService extends EventEmitter {
         this.processedDonations.delete(first);
       }
 
-      const donation = {
+      const rawAmount = parseFloat(data.amount_in_user_currency ?? data.amount) || 0;
+      const roundedAmount = Math.round(rawAmount * 100) / 100;
+	  
+	  const donation = {
         id: data.id,
         name: data.username || 'Аноним',
-        amount: parseFloat(data.amount) || 0,
+        amount: roundedAmount,
         currency: data.currency || 'RUB',
         message: data.message || '',
         at: Date.now(),
