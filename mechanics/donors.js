@@ -13,13 +13,21 @@ function getState() {
   };
 }
 
-// Проверка: не пора ли сбросить недельный список?
-// Сбрасываем, если с прошлого сброса прошёл понедельник 00:00.
+// Единая рассылка: обновляем и список, и полоску доната
+function broadcastAll() {
+  ctxRef.broadcast('donors:state', getState());
+  try {
+    require('./donationBar').refresh();
+  } catch (e) {
+    // donationBar ещё не подключён — это не критично
+  }
+}
+
+// Проверка недельного сброса
 function checkWeeklyReset() {
   const d = db.loadData();
   const last = d.donors?.weekly?.lastResetAt || 0;
 
-  // Находим начало текущей недели (понедельник 00:00 по локальному времени)
   const now = new Date();
   const day = now.getDay(); // 0 = вс, 1 = пн, ..., 6 = сб
   const diff = day === 0 ? 6 : day - 1;
@@ -29,12 +37,11 @@ function checkWeeklyReset() {
   const mondayTs = monday.getTime();
 
   if (last < mondayTs) {
-    // С прошлого сброса не было текущего понедельника — чистим
     db.update(dd => {
       dd.donors.weekly.participants = [];
       dd.donors.weekly.lastResetAt = Date.now();
     });
-    ctxRef.broadcast('donors:state', getState());
+    broadcastAll();
     return true;
   }
   return false;
@@ -47,7 +54,6 @@ function addDonor({ name, amount, currency, message, at }) {
   const ts = at || Date.now();
 
   db.update(d => {
-    // Убеждаемся, что структура есть
     if (!d.donors) d.donors = {};
     if (!d.donors.stream) d.donors.stream = { participants: [] };
     if (!d.donors.weekly) d.donors.weekly = { participants: [], lastResetAt: null };
@@ -56,7 +62,7 @@ function addDonor({ name, amount, currency, message, at }) {
     addTo(d.donors.weekly.participants, trimmed, sum, currency, message, ts);
   });
 
-  ctxRef.broadcast('donors:state', getState());
+  broadcastAll();
   return { ok: true };
 }
 
@@ -106,7 +112,7 @@ function addManual(listName, name) {
     });
   });
 
-  ctxRef.broadcast('donors:state', getState());
+  broadcastAll();
   return { ok: true };
 }
 
@@ -121,7 +127,7 @@ function removeAt(listName, index) {
     }
   });
 
-  ctxRef.broadcast('donors:state', getState());
+  broadcastAll();
   return { ok: true };
 }
 
@@ -135,7 +141,7 @@ function reset(listName) {
     }
   });
 
-  ctxRef.broadcast('donors:state', getState());
+  broadcastAll();
   return { ok: true };
 }
 
