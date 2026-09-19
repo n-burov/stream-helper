@@ -76,6 +76,12 @@ const DEFAULT_DATA = {
     daily: { participants: [], lastResetAt: null },
     monthly: { participants: [], lastResetAt: null },
   },
+  
+  donationBar: {
+    goalName: 'Розыгрыш 55.555 голды',
+    goalAmount: 15000,
+    manualBase: 0,
+  },
 
   announcements: {
     enabled: false,
@@ -105,6 +111,7 @@ function loadData() {
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
     dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
+	dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
 
     if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
       dataCache.announcements.list = [
