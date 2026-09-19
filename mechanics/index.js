@@ -9,6 +9,7 @@ const dj = require('./dj');
 const nicks = require('./nicks');
 const tops = require('./tops');
 const announcements = require('./announcements');
+const donationBar = require('./donationBar');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -21,6 +22,7 @@ function initAll(ctx) {
   nicks.init(ctx);
   tops.init(ctx);
   announcements.init(ctx);
+  donationBar.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -69,6 +71,9 @@ function handleCommand(action, data) {
     case 'announcements:remove':      return announcements.removeAnnouncement(data?.id);
     case 'announcements:sendNow':     return announcements.sendNow(data?.id);
 
+    case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
+    case 'donationBar:resetBar': return donationBar.resetBar();
+
     default:
       return { error: 'Unknown action: ' + action };
   }
@@ -86,6 +91,7 @@ function getFullState() {
     nicks: nicks.getState(),
     tops: tops.getState(),
     announcements: announcements.getState(),
+    donationBar: donationBar.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -97,5 +103,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel, tops, announcements,
+  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar,
 };
