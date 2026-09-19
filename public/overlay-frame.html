@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Рамка</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: transparent !important;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+  }
+
+  :root {
+    --red: #d62828;
+    --red-bright: #ff2e2e;
+
+    --bg-dark: rgba(24, 4, 4, 0.95);
+    --bg-mid: rgba(48, 8, 8, 0.95);
+
+    --gold: #f9ca24;
+
+    /* ==== ГЕОМЕТРИЯ РАМКИ ====
+       Подогнано под камеру W=737, H=415. */
+    --stage-x: 610px;
+    --stage-y: 100px;
+    --stage-w: 797px;      /* 737 + 30*2 */
+    --stage-h: 675px;      /* 415 + 30*2 + 100 + 100 */
+    --edge: 30px;
+    --top-h: 100px;
+    --bottom-h: 100px;
+    --corner: 40px;
+    --corner-size: 40px;
+  }
+
+  .stage {
+    position: absolute;
+    left: var(--stage-x);
+    top: var(--stage-y);
+    width: var(--stage-w);
+    height: var(--stage-h);
+
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
+
+    clip-path: polygon(
+      var(--corner) 0,
+      calc(100% - var(--corner)) 0,
+      100% var(--corner),
+      100% calc(100% - var(--corner)),
+      calc(100% - var(--corner)) 100%,
+      var(--corner) 100%,
+      0 calc(100% - var(--corner)),
+      0 var(--corner),
+      var(--corner) 0
+    );
+
+    -webkit-mask:
+      linear-gradient(#000 0 0) top left / 100% var(--top-h) no-repeat,
+      linear-gradient(#000 0 0) bottom left / 100% var(--bottom-h) no-repeat,
+      linear-gradient(#000 0 0) left center / var(--edge) calc(100% - var(--top-h) - var(--bottom-h)) no-repeat,
+      linear-gradient(#000 0 0) right center / var(--edge) calc(100% - var(--top-h) - var(--bottom-h)) no-repeat;
+
+    mask:
+      linear-gradient(#000 0 0) top left / 100% var(--top-h) no-repeat,
+      linear-gradient(#000 0 0) bottom left / 100% var(--bottom-h) no-repeat,
+      linear-gradient(#000 0 0) left center / var(--edge) calc(100% - var(--top-h) - var(--bottom-h)) no-repeat,
+      linear-gradient(#000 0 0) right center / var(--edge) calc(100% - var(--top-h) - var(--bottom-h)) no-repeat;
+
+    filter:
+      drop-shadow(0 0 12px rgba(214, 40, 40, 0.7))
+      drop-shadow(0 0 28px rgba(214, 40, 40, 0.35))
+      drop-shadow(0 0 50px rgba(140, 10, 10, 0.25));
+  }
+
+  .stage::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    pointer-events: none;
+    border: 2px solid var(--red);
+    clip-path: polygon(
+      calc(var(--corner) - 2px) 0,
+      calc(100% - var(--corner) + 2px) 0,
+      100% calc(var(--corner) - 2px),
+      100% calc(100% - var(--corner) + 2px),
+      calc(100% - var(--corner) + 2px) 100%,
+      calc(var(--corner) - 2px) 100%,
+      0 calc(100% - var(--corner) + 2px),
+      0 calc(var(--corner) - 2px),
+      calc(var(--corner) - 2px) 0
+    );
+  }
+
+  .stage::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    left: var(--edge);
+    top: var(--top-h);
+    right: var(--edge);
+    bottom: var(--bottom-h);
+    border: 2px solid var(--red);
+    box-shadow:
+      inset 0 0 14px rgba(214, 40, 40, 0.35),
+      0 0 12px rgba(214, 40, 40, 0.3);
+  }
+
+  /* УГЛОВЫЕ ЗАГЛУШКИ */
+  .corner-mask {
+    position: absolute;
+    width: var(--corner-size);
+    height: var(--corner-size);
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .corner-mask.tl {
+    left: calc(var(--stage-x) + var(--edge));
+    top: calc(var(--stage-y) + var(--top-h));
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  .corner-mask.tr {
+    left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size));
+    top: calc(var(--stage-y) + var(--top-h));
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .corner-mask.bl {
+    left: calc(var(--stage-x) + var(--edge));
+    top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size));
+    clip-path: polygon(0 0, 0 100%, 100% 100%);
+  }
+  .corner-mask.br {
+    left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size));
+    top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size));
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  }
+
+  .corner-mask.tl::after {
+    content: ''; position: absolute; left: 0; top: 0;
+    width: 141%; height: 1px; background: var(--red);
+    transform-origin: top left; transform: rotate(45deg);
+  }
+  .corner-mask.tr::after {
+    content: ''; position: absolute; right: 0; top: 0;
+    width: 141%; height: 1px; background: var(--red);
+    transform-origin: top right; transform: rotate(-45deg);
+  }
+  .corner-mask.bl::after {
+    content: ''; position: absolute; left: 0; bottom: 0;
+    width: 141%; height: 1px; background: var(--red);
+    transform-origin: bottom left; transform: rotate(-45deg);
+  }
+  .corner-mask.br::after {
+    content: ''; position: absolute; right: 0; bottom: 0;
+    width: 141%; height: 1px; background: var(--red);
+    transform-origin: bottom right; transform: rotate(45deg);
+  }
+
+  /* ============================================================
+     ВЕРХНЯЯ ЗОНА
+     ============================================================ */
+  .top-zone {
+    position: absolute;
+    top: 12px;
+    left: 60px;
+    right: 60px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .kw-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 4px;
+  }
+
+  .kw-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .kw-icon { font-size: 20px; line-height: 1; }
+
+  .kw-word {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-shadow:
+      0 0 12px rgba(249, 202, 36, 0.7),
+      0 0 24px rgba(249, 202, 36, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: opacity 0.4s;
+    opacity: 0.55;
+  }
+  .kw-word.active { opacity: 1; }
+
+  .kw-cta {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s, opacity 0.4s;
+    opacity: 0.6;
+  }
+  .kw-cta.active { color: #ff5a5a; opacity: 1; }
+
+  .kw-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .kw-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+  .kw-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff2e2e; flex-shrink: 0;
+  }
+  .kw-status.collecting { color: #ff5a5a; }
+  .kw-status.collecting .dot {
+    background: #ff5a5a;
+    animation: pulseDot 1.2s infinite;
+  }
+  .kw-status.locked { color: var(--gold); }
+  .kw-status.locked .dot { background: var(--gold); }
+
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .kw-participants {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .kw-participants .num {
+    color: var(--gold);
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1;
+    transition: color 0.2s, transform 0.2s;
+    display: inline-block;
+    text-shadow: 0 0 10px rgba(249, 202, 36, 0.5);
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(214, 40, 40, 0.7) 10%,
+      rgba(214, 40, 40, 0.7) 90%,
+      transparent 100%);
+    margin: 0 4px;
+  }
+
+  .donate-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 4px;
+  }
+
+  .donate-label {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 90, 90, 0.9);
+    font-weight: 700;
+    white-space: nowrap;
+    transform: translateY(2px);
+  }
+
+  .donate-goal {
+    font-size: 18px;
+    color: #fff;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .donate-track {
+    flex: 1;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.7);
+    position: relative;
+    transform: translateY(2px);
+    clip-path: polygon(
+      6px 0, 100% 0,
+      100% calc(100% - 6px),
+      calc(100% - 6px) 100%,
+      0 100%, 0 6px
+    );
+  }
+
+  .donate-fill {
+    height: 100%;
+    width: 50%;
+    background: linear-gradient(90deg, #8b0000 0%, #d62828 60%, #ff2e2e 100%);
+    box-shadow: 0 0 12px rgba(214, 40, 40, 0.7);
+    transition: width 0.5s ease;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(
+      6px 0, 100% 0,
+      100% calc(100% - 6px),
+      calc(100% - 6px) 100%,
+      0 100%, 0 6px
+    );
+  }
+
+  .donate-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 200, 200, 0.45), transparent);
+    animation: shine 2.5s linear infinite;
+  }
+
+  @keyframes shine {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ============================================================
+     НИЖНЯЯ ЗОНА
+     ============================================================ */
+  .bottom-zone {
+    position: absolute;
+    bottom: 12px;
+    left: 60px;
+    right: 60px;
+    height: 80px;
+    display: flex;
+  }
+
+  .leader-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 14px;
+    position: relative;
+  }
+
+  .leader-col:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 10%; bottom: 10%;
+    width: 1px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(214, 40, 40, 0.65) 20%,
+      rgba(214, 40, 40, 0.65) 80%,
+      transparent 100%);
+  }
+
+  .leader-col .icon-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255, 90, 90, 0.9);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .leader-col .icon-title .em { font-size: 17px; line-height: 1; }
+
+  .leader-col .leader-name {
+    font-size: 19px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.15;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  }
+
+  .leader-col .leader-name.empty {
+    color: rgba(255, 255, 255, 0.28);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 15px;
+    text-shadow: none;
+  }
+
+  .leader-col .leader-value {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow: 0 0 8px rgba(249, 202, 36, 0.5);
+    line-height: 1;
+  }
+
+  .leader-col .leader-value .unit {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+    margin-left: 3px;
+  }
+
+  .leader-col.bump { animation: colBump 0.7s ease; }
+  @keyframes colBump {
+    0%   { transform: scale(1); filter: brightness(1); }
+    50%  { transform: scale(1.03); filter: brightness(1.3); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="corner-mask tl"></div>
+<div class="corner-mask tr"></div>
+<div class="corner-mask bl"></div>
+<div class="corner-mask br"></div>
+
+<div class="stage">
+
+  <div class="top-zone">
+
+    <div class="kw-line">
+      <div class="kw-left">
+        <span class="kw-icon">🎯</span>
+        <span class="kw-word" id="kwWord">Голда</span>
+        <span class="kw-cta" id="kwCta">— пиши кодовое слово в чат</span>
+      </div>
+      <div class="kw-right">
+        <span class="kw-status" id="kwStatus">
+          <span class="dot"></span>
+          <span class="kw-status-text">Ожидание</span>
+        </span>
+        <span class="kw-participants">
+          👥 <span class="num" id="kwCount">0</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="donate-line">
+      <span class="donate-label" id="donateGoalName">Цель донатов</span>
+      <div class="donate-track">
+        <div class="donate-fill" id="donateFill"></div>
+      </div>
+      <span class="donate-goal" id="donateGoalText">5 000 ₽ / 10 000 ₽</span>
+    </div>
+
+  </div>
+
+  <div class="bottom-zone">
+
+    <div class="leader-col" id="cardDj">
+      <div class="icon-title"><span class="em">🎧</span> Диджей дня</div>
+      <div class="leader-name empty" id="djName">нет данных</div>
+      <div class="leader-value" id="djValue" style="display:none;"></div>
+    </div>
+
+    <div class="leader-col" id="cardMonthly">
+      <div class="icon-title"><span class="em">👑</span> Легенда месяца</div>
+      <div class="leader-name empty" id="monthlyName">нет данных</div>
+      <div class="leader-value" id="monthlyValue" style="display:none;"></div>
+    </div>
+
+    <div class="leader-col" id="cardDaily">
+      <div class="icon-title"><span class="em">🌟</span> Легенда дня</div>
+      <div class="leader-name empty" id="dailyName">нет данных</div>
+      <div class="leader-value" id="dailyValue" style="display:none;"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const kwWord = document.getElementById('kwWord');
+const kwStatus = document.getElementById('kwStatus');
+const kwStatusText = kwStatus.querySelector('.kw-status-text');
+const kwCount = document.getElementById('kwCount');
+
+const donateFill = document.getElementById('donateFill');
+const donateGoalText = document.getElementById('donateGoalText');
+
+const djName = document.getElementById('djName');
+const djValue = document.getElementById('djValue');
+const cardDj = document.getElementById('cardDj');
+
+const monthlyName = document.getElementById('monthlyName');
+const monthlyValue = document.getElementById('monthlyValue');
+const cardMonthly = document.getElementById('cardMonthly');
+
+const dailyName = document.getElementById('dailyName');
+const dailyValue = document.getElementById('dailyValue');
+const cardDaily = document.getElementById('cardDaily');
+
+const cache = { keyword: null, tops: null, dj: null, donationBar: null };
+let lastDjLeader = null;
+let lastMonthlyLeader = null;
+let lastDailyLeader = null;
+
+function bumpCol(col) {
+  col.classList.remove('bump');
+  void col.offsetWidth;
+  col.classList.add('bump');
+}
+
+function renderKeyword() {
+  const k = cache.keyword;
+  if (!k) return;
+
+  const kwCta = document.getElementById('kwCta');
+
+  kwWord.textContent = k.word || '—';
+  kwCount.textContent = k.participants.length;
+
+  kwStatus.classList.remove('collecting', 'locked');
+
+  if (k.status === 'collecting') {
+    kwStatus.classList.add('collecting');
+    kwStatusText.textContent = 'Сбор идёт';
+    kwWord.classList.add('active');
+    if (kwCta) { kwCta.classList.add('active'); kwCta.textContent = '— пиши кодовое слово в чат'; }
+  } else if (k.status === 'locked') {
+    kwStatus.classList.add('locked');
+    kwStatusText.textContent = 'Сбор завершён';
+    kwWord.classList.add('active');
+    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = '— сбор завершён'; }
+  } else {
+    kwStatusText.textContent = 'Ожидание';
+    kwWord.classList.remove('active');
+    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = '— пиши кодовое слово в чат'; }
+  }
+}
+
+function renderLeaders() {
+  if (cache.dj) {
+    const l = cache.dj.leader;
+    if (l && l.username) {
+      djName.textContent = l.username;
+      djName.classList.remove('empty');
+      djValue.style.display = 'block';
+      djValue.innerHTML = `${l.points || 0}<span class="unit">баллов</span>`;
+      if (lastDjLeader && lastDjLeader !== l.username) bumpCol(cardDj);
+      lastDjLeader = l.username;
+    } else {
+      djName.textContent = 'нет данных';
+      djName.classList.add('empty');
+      djValue.style.display = 'none';
+      lastDjLeader = null;
+    }
+  }
+
+  if (cache.tops) {
+    const lm = cache.tops.monthly?.leader;
+    if (lm && lm.name) {
+      monthlyName.textContent = lm.name;
+      monthlyName.classList.remove('empty');
+      monthlyValue.style.display = 'block';
+      monthlyValue.innerHTML = `${lm.totalAmount || 0}<span class="unit">₽</span>`;
+      if (lastMonthlyLeader && lastMonthlyLeader !== lm.name) bumpCol(cardMonthly);
+      lastMonthlyLeader = lm.name;
+    } else {
+      monthlyName.textContent = 'нет данных';
+      monthlyName.classList.add('empty');
+      monthlyValue.style.display = 'none';
+      lastMonthlyLeader = null;
+    }
+
+    const ld = cache.tops.daily?.leader;
+    if (ld && ld.name) {
+      dailyName.textContent = ld.name;
+      dailyName.classList.remove('empty');
+      dailyValue.style.display = 'block';
+      dailyValue.innerHTML = `${ld.totalAmount || 0}<span class="unit">₽</span>`;
+      if (lastDailyLeader && lastDailyLeader !== ld.name) bumpCol(cardDaily);
+      lastDailyLeader = ld.name;
+    } else {
+      dailyName.textContent = 'нет данных';
+      dailyName.classList.add('empty');
+      dailyValue.style.display = 'none';
+      lastDailyLeader = null;
+    }
+  }
+}
+
+function renderDonateBar() {
+  const b = cache.donationBar;
+  if (!b) return;
+
+  const current = b.current || 0;
+  const goal = b.goalAmount || 0;
+  const percent = goal > 0 ? Math.min(100, (current / goal) * 100) : 0;
+
+  donateFill.style.width = percent + '%';
+  donateGoalText.textContent =
+    `${current.toLocaleString('ru-RU')} ₽ / ${goal.toLocaleString('ru-RU')} ₽`;
+
+  const labelEl = document.getElementById('donateGoalName');
+  if (labelEl) labelEl.textContent = b.goalName || 'Цель донатов';
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+  ws.onmessage = (e) => {
+    const { type, payload } = JSON.parse(e.data);
+
+    if (type === 'state') {
+      cache.keyword = payload.keyword;
+      cache.tops = payload.tops;
+      cache.dj = payload.dj;
+      cache.donationBar = payload.donationBar;
+      renderKeyword();
+      renderLeaders();
+      renderDonateBar();
+      return;
+    }
+
+    if (type === 'donationBar:state') {
+      cache.donationBar = payload;
+      renderDonateBar();
+      return;
+    }
+
+    if (type === 'keyword:state') {
+      cache.keyword = payload;
+      renderKeyword();
+      return;
+    }
+    if (type === 'keyword:participant') {
+      if (cache.keyword) {
+        cache.keyword.participants.push(payload);
+        kwCount.textContent = cache.keyword.participants.length;
+        kwCount.style.transform = 'scale(1.4)';
+        kwCount.style.color = '#ff5a5a';
+        setTimeout(() => {
+          kwCount.style.transform = 'scale(1)';
+          kwCount.style.color = '#f9ca24';
+        }, 300);
+      }
+      return;
+    }
+
+    if (type === 'tops:state') {
+      cache.tops = payload;
+      renderLeaders();
+      return;
+    }
+    if (type === 'dj:state') {
+      cache.dj = payload;
+      renderLeaders();
+      return;
+    }
+  };
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>
