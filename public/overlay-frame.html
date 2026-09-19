@@ -25,14 +25,14 @@
     --gold: #f9ca24;
     --white: #ffffff;
 
-    /* Геометрия — размеры не трогаем */
+    /* Геометрия */
     --stage-x: 610px;
     --stage-y: 100px;
     --stage-w: 797px;
-    --stage-h: 675px;
+    --stage-h: 675px;      /* было 675, +20 под нижний ряд */
     --edge: 30px;
     --top-h: 100px;
-    --bottom-h: 100px;
+    --bottom-h: 100px;     /* было 100, +20 */
     --corner: 40px;
     --corner-size: 40px;
   }
@@ -130,7 +130,7 @@
   .corner-mask.br::after { content: ''; position: absolute; right: 0; bottom: 0; width: 141%; height: 1px; background: var(--red); transform-origin: bottom right; transform: rotate(45deg); }
 
   /* ============================================================
-     ВЕРХНЯЯ ЗОНА — карусель из двух слайдов
+     ВЕРХНЯЯ ЗОНА
      ============================================================ */
   .top-zone {
     position: absolute;
@@ -168,18 +168,23 @@
   .kw-slide {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 20px;
+    gap: 14px;
     width: 100%;
-    padding: 0 10px;
+    padding: 0 6px;
   }
 
   .kw-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
     flex: 1;
+  }
+
+  .kw-icon {
+    font-size: 52px;
+    line-height: 1;
+    flex-shrink: 0;
   }
 
   .kw-text {
@@ -187,7 +192,33 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
   }
+  
+  .kw-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  .kw-cta {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s, opacity 0.4s;
+    opacity: 0.95;
+    line-height: 1.1;
+    text-shadow:
+      0 0 8px rgba(0, 0, 0, 0.8),
+      0 0 16px rgba(214, 40, 40, 0.4);
+  }
+  .kw-cta.active { color: #ffffff; opacity: 1; }
 
   .kw-word {
     font-size: 34px;
@@ -204,52 +235,31 @@
     transition: opacity 0.4s;
     opacity: 0.55;
     line-height: 1.1;
-  }
-  .kw-word.active { opacity: 1; }
-
-  .kw-cta {
-    font-size: 28px;
-    font-weight: 600;
-    color: #ffffff;
-    letter-spacing: 0.4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: color 0.3s, opacity 0.4s;
-    opacity: 0.95;
-    line-height: 1.1;
-    text-shadow:
-      0 0 8px rgba(0, 0, 0, 0.8),
-      0 0 16px rgba(214, 40, 40, 0.4);
-  }
-  .kw-cta.active { color: #ffffff; opacity: 1; }
-  
-  .kw-icon {
-    font-size: 30px;
-    line-height: 1;
     flex-shrink: 0;
   }
+  .kw-word.active { opacity: 1; }
 
   .kw-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 14px;
     flex-shrink: 0;
   }
 
   .kw-status {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 22px;
+    gap: 8px;
+    font-size: 18px;
     font-weight: 800;
     color: rgba(255, 255, 255, 0.85);
     white-space: nowrap;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+    flex-shrink: 0;
   }
   .kw-status .dot {
-    width: 14px; height: 14px; border-radius: 50%;
+    width: 12px; height: 12px; border-radius: 50%;
     background: #ff2e2e; flex-shrink: 0;
   }
   .kw-status.collecting { color: #ff8c8c; }
@@ -265,16 +275,17 @@
   .kw-participants {
     display: flex;
     align-items: baseline;
-    gap: 8px;
-    font-size: 22px;
+    gap: 6px;
+    font-size: 18px;
     color: rgba(255, 255, 255, 0.85);
     font-weight: 800;
     white-space: nowrap;
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+    flex-shrink: 0;
   }
   .kw-participants .num {
     color: var(--gold);
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 900;
     line-height: 1;
     transition: color 0.2s, transform 0.2s;
@@ -302,19 +313,20 @@
     font-size: 24px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.75);
-    font-weight: 700;
+    color: #ffffff;
+    font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   }
 
   .donate-goal {
-    font-size: 22px;
+    font-size: 26px;
     color: var(--gold);
     font-weight: 800;
     white-space: nowrap;
-    text-shadow: 0 0 10px rgba(249, 202, 36, 0.4);
+    text-shadow: 0 0 10px rgba(249, 202, 36, 0.5);
   }
 
   .donate-track {
@@ -362,6 +374,7 @@
 
   /* ============================================================
      НИЖНЯЯ ЗОНА — карусель из трёх топов
+     Каждый слайд: заголовок + одна строка (имя + сумма)
      ============================================================ */
   .bottom-zone {
     position: absolute;
@@ -392,30 +405,41 @@
   .leader-slide .icon-title {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 19px;
-    letter-spacing: 2.5px;
+    gap: 10px;
+    font-size: 17px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--gold);
     font-weight: 800;
     white-space: nowrap;
     text-shadow: 0 0 10px rgba(249, 202, 36, 0.4);
-  }
-
-  .leader-slide .icon-title .em {
-    font-size: 26px;
     line-height: 1;
   }
 
+  .leader-slide .icon-title .em {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  /* Строка с именем и суммой */
+  .leader-slide .leader-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
   .leader-slide .leader-name {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 900;
     color: var(--white);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.1;
-    max-width: 100%;
     text-shadow:
       0 0 12px rgba(0, 0, 0, 0.8),
       0 0 24px rgba(214, 40, 40, 0.4);
@@ -425,23 +449,24 @@
     color: rgba(255, 255, 255, 0.3);
     font-style: italic;
     font-weight: 400;
-    font-size: 22px;
+    font-size: 20px;
     text-shadow: none;
   }
 
   .leader-slide .leader-value {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
     color: var(--gold);
     text-shadow: 0 0 12px rgba(249, 202, 36, 0.6);
     line-height: 1;
+    flex-shrink: 0;
   }
 
   .leader-slide .leader-value .unit {
-    font-size: 18px;
+    font-size: 16px;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
-    margin-left: 6px;
+    margin-left: 5px;
   }
 
   /* Точки-индикаторы снизу */
@@ -481,29 +506,25 @@
   <div class="top-zone">
     <div class="top-slides">
 
-      <!-- Слайд 1: Ключевое слово -->
       <div class="slide active" id="slideKey">
         <div class="kw-slide">
-          <div class="kw-left">
-            <span class="kw-icon">🎯</span>
-            <div class="kw-text">
-              <span class="kw-cta" id="kwCta">Пиши кодовое слово в чат</span>
+          <span class="kw-icon">🎯</span>
+          <div class="kw-text">
+            <span class="kw-cta" id="kwCta">Пиши кодовое слово в чат</span>
+            <div class="kw-row">
               <span class="kw-word" id="kwWord">Голда</span>
+              <span class="kw-status" id="kwStatus">
+                <span class="dot"></span>
+                <span class="kw-status-text">Ожидание</span>
+              </span>
+              <span class="kw-participants">
+                👥 <span class="num" id="kwCount">0</span>
+              </span>
             </div>
-          </div>
-          <div class="kw-right">
-            <span class="kw-status" id="kwStatus">
-              <span class="dot"></span>
-              <span class="kw-status-text">Ожидание</span>
-            </span>
-            <span class="kw-participants">
-              👥 <span class="num" id="kwCount">0</span>
-            </span>
           </div>
         </div>
       </div>
 
-      <!-- Слайд 2: Донаты -->
       <div class="slide" id="slideDonate">
         <div class="donate-slide">
           <div class="donate-head">
@@ -523,30 +544,32 @@
   <div class="bottom-zone">
     <div class="bottom-slides">
 
-      <!-- Топ 1: Диджей дня -->
       <div class="slide active leader-slide" id="slideDj">
         <div class="icon-title"><span class="em">🎧</span> Диджей дня</div>
-        <div class="leader-name empty" id="djName">нет данных</div>
-        <div class="leader-value" id="djValue" style="display:none;"></div>
+        <div class="leader-line">
+          <span class="leader-name empty" id="djName">нет данных</span>
+          <span class="leader-value" id="djValue" style="display:none;"></span>
+        </div>
       </div>
 
-      <!-- Топ 2: Легенда месяца -->
       <div class="slide leader-slide" id="slideMonthly">
         <div class="icon-title"><span class="em">👑</span> Легенда месяца</div>
-        <div class="leader-name empty" id="monthlyName">нет данных</div>
-        <div class="leader-value" id="monthlyValue" style="display:none;"></div>
+        <div class="leader-line">
+          <span class="leader-name empty" id="monthlyName">нет данных</span>
+          <span class="leader-value" id="monthlyValue" style="display:none;"></span>
+        </div>
       </div>
 
-      <!-- Топ 3: Легенда дня -->
       <div class="slide leader-slide" id="slideDaily">
         <div class="icon-title"><span class="em">🌟</span> Легенда дня</div>
-        <div class="leader-name empty" id="dailyName">нет данных</div>
-        <div class="leader-value" id="dailyValue" style="display:none;"></div>
+        <div class="leader-line">
+          <span class="leader-name empty" id="dailyName">нет данных</span>
+          <span class="leader-value" id="dailyValue" style="display:none;"></span>
+        </div>
       </div>
 
     </div>
 
-    <!-- Индикаторы снизу -->
     <div class="dots">
       <span class="dot-indicator active" data-slide="0"></span>
       <span class="dot-indicator" data-slide="1"></span>
@@ -588,7 +611,7 @@ setInterval(() => {
   setBottomSlide((bottomIndex + 1) % bottomSlides.length);
 }, 5000);
 
-// === Элементы для рендера ===
+// === Элементы ===
 const kwWord = document.getElementById('kwWord');
 const kwStatus = document.getElementById('kwStatus');
 const kwStatusText = kwStatus.querySelector('.kw-status-text');
@@ -643,7 +666,7 @@ function renderLeaders() {
     if (l && l.username) {
       djName.textContent = l.username;
       djName.classList.remove('empty');
-      djValue.style.display = 'block';
+      djValue.style.display = 'inline';
       djValue.innerHTML = `${l.points || 0}<span class="unit">баллов</span>`;
     } else {
       djName.textContent = 'нет данных';
@@ -657,7 +680,7 @@ function renderLeaders() {
     if (lm && lm.name) {
       monthlyName.textContent = lm.name;
       monthlyName.classList.remove('empty');
-      monthlyValue.style.display = 'block';
+      monthlyValue.style.display = 'inline';
       monthlyValue.innerHTML = `${lm.totalAmount || 0}<span class="unit">₽</span>`;
     } else {
       monthlyName.textContent = 'нет данных';
@@ -669,7 +692,7 @@ function renderLeaders() {
     if (ld && ld.name) {
       dailyName.textContent = ld.name;
       dailyName.classList.remove('empty');
-      dailyValue.style.display = 'block';
+      dailyValue.style.display = 'inline';
       dailyValue.innerHTML = `${ld.totalAmount || 0}<span class="unit">₽</span>`;
     } else {
       dailyName.textContent = 'нет данных';
