@@ -23,13 +23,13 @@
     --bg-mid: rgba(48, 8, 8, 0.95);
 
     --gold: #f9ca24;
+    --white: #ffffff;
 
-    /* ==== ГЕОМЕТРИЯ РАМКИ ====
-       Подогнано под камеру W=737, H=415. */
+    /* Геометрия — размеры не трогаем */
     --stage-x: 610px;
     --stage-y: 100px;
-    --stage-w: 797px;      /* 737 + 30*2 */
-    --stage-h: 675px;      /* 415 + 30*2 + 100 + 100 */
+    --stage-w: 797px;
+    --stage-h: 675px;
     --edge: 30px;
     --top-h: 100px;
     --bottom-h: 100px;
@@ -109,7 +109,7 @@
       0 0 12px rgba(214, 40, 40, 0.3);
   }
 
-  /* УГЛОВЫЕ ЗАГЛУШКИ */
+  /* Углы */
   .corner-mask {
     position: absolute;
     width: var(--corner-size);
@@ -119,136 +119,141 @@
     pointer-events: none;
   }
 
-  .corner-mask.tl {
-    left: calc(var(--stage-x) + var(--edge));
-    top: calc(var(--stage-y) + var(--top-h));
-    clip-path: polygon(0 0, 100% 0, 0 100%);
-  }
-  .corner-mask.tr {
-    left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size));
-    top: calc(var(--stage-y) + var(--top-h));
-    clip-path: polygon(0 0, 100% 0, 100% 100%);
-  }
-  .corner-mask.bl {
-    left: calc(var(--stage-x) + var(--edge));
-    top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size));
-    clip-path: polygon(0 0, 0 100%, 100% 100%);
-  }
-  .corner-mask.br {
-    left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size));
-    top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size));
-    clip-path: polygon(100% 0, 100% 100%, 0 100%);
-  }
+  .corner-mask.tl { left: calc(var(--stage-x) + var(--edge)); top: calc(var(--stage-y) + var(--top-h)); clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .corner-mask.tr { left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size)); top: calc(var(--stage-y) + var(--top-h)); clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .corner-mask.bl { left: calc(var(--stage-x) + var(--edge)); top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size)); clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  .corner-mask.br { left: calc(var(--stage-x) + var(--stage-w) - var(--edge) - var(--corner-size)); top: calc(var(--stage-y) + var(--stage-h) - var(--bottom-h) - var(--corner-size)); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
 
-  .corner-mask.tl::after {
-    content: ''; position: absolute; left: 0; top: 0;
-    width: 141%; height: 1px; background: var(--red);
-    transform-origin: top left; transform: rotate(45deg);
-  }
-  .corner-mask.tr::after {
-    content: ''; position: absolute; right: 0; top: 0;
-    width: 141%; height: 1px; background: var(--red);
-    transform-origin: top right; transform: rotate(-45deg);
-  }
-  .corner-mask.bl::after {
-    content: ''; position: absolute; left: 0; bottom: 0;
-    width: 141%; height: 1px; background: var(--red);
-    transform-origin: bottom left; transform: rotate(-45deg);
-  }
-  .corner-mask.br::after {
-    content: ''; position: absolute; right: 0; bottom: 0;
-    width: 141%; height: 1px; background: var(--red);
-    transform-origin: bottom right; transform: rotate(45deg);
-  }
+  .corner-mask.tl::after { content: ''; position: absolute; left: 0; top: 0; width: 141%; height: 1px; background: var(--red); transform-origin: top left; transform: rotate(45deg); }
+  .corner-mask.tr::after { content: ''; position: absolute; right: 0; top: 0; width: 141%; height: 1px; background: var(--red); transform-origin: top right; transform: rotate(-45deg); }
+  .corner-mask.bl::after { content: ''; position: absolute; left: 0; bottom: 0; width: 141%; height: 1px; background: var(--red); transform-origin: bottom left; transform: rotate(-45deg); }
+  .corner-mask.br::after { content: ''; position: absolute; right: 0; bottom: 0; width: 141%; height: 1px; background: var(--red); transform-origin: bottom right; transform: rotate(45deg); }
 
   /* ============================================================
-     ВЕРХНЯЯ ЗОНА
+     ВЕРХНЯЯ ЗОНА — карусель из двух слайдов
      ============================================================ */
   .top-zone {
     position: absolute;
-    top: 12px;
-    left: 60px;
-    right: 60px;
-    height: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
+    top: 8px;
+    left: 50px;
+    right: 50px;
+    height: calc(var(--top-h) - 16px);
+    overflow: hidden;
   }
 
-  .kw-line {
+  .top-slides {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    pointer-events: none;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* --- Слайд «Ключевое слово» --- */
+  .kw-slide {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    padding: 0 4px;
+    gap: 20px;
+    width: 100%;
+    padding: 0 10px;
   }
 
   .kw-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .kw-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     min-width: 0;
   }
 
-  .kw-icon { font-size: 20px; line-height: 1; }
-
   .kw-word {
-    font-size: 22px;
+    font-size: 34px;
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--gold);
     text-shadow:
-      0 0 12px rgba(249, 202, 36, 0.7),
-      0 0 24px rgba(249, 202, 36, 0.4);
+      0 0 14px rgba(249, 202, 36, 0.7),
+      0 0 28px rgba(249, 202, 36, 0.4);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: opacity 0.4s;
     opacity: 0.55;
+    line-height: 1.1;
   }
   .kw-word.active { opacity: 1; }
 
   .kw-cta {
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.55);
-    letter-spacing: 0.3px;
+    font-size: 28px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: color 0.3s, opacity 0.4s;
-    opacity: 0.6;
+    opacity: 0.95;
+    line-height: 1.1;
+    text-shadow:
+      0 0 8px rgba(0, 0, 0, 0.8),
+      0 0 16px rgba(214, 40, 40, 0.4);
   }
-  .kw-cta.active { color: #ff5a5a; opacity: 1; }
+  .kw-cta.active { color: #ffffff; opacity: 1; }
+  
+  .kw-icon {
+    font-size: 30px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
 
   .kw-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
     flex-shrink: 0;
   }
 
   .kw-status {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.5);
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.85);
     white-space: nowrap;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   }
   .kw-status .dot {
-    width: 8px; height: 8px; border-radius: 50%;
+    width: 14px; height: 14px; border-radius: 50%;
     background: #ff2e2e; flex-shrink: 0;
   }
-  .kw-status.collecting { color: #ff5a5a; }
-  .kw-status.collecting .dot {
-    background: #ff5a5a;
-    animation: pulseDot 1.2s infinite;
-  }
+  .kw-status.collecting { color: #ff8c8c; }
+  .kw-status.collecting .dot { background: #ff8c8c; animation: pulseDot 1.2s infinite; }
   .kw-status.locked { color: var(--gold); }
   .kw-status.locked .dot { background: var(--gold); }
 
@@ -260,84 +265,85 @@
   .kw-participants {
     display: flex;
     align-items: baseline;
-    gap: 5px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 600;
+    gap: 8px;
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 800;
     white-space: nowrap;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
   }
   .kw-participants .num {
     color: var(--gold);
-    font-size: 20px;
+    font-size: 32px;
     font-weight: 900;
     line-height: 1;
     transition: color 0.2s, transform 0.2s;
     display: inline-block;
-    text-shadow: 0 0 10px rgba(249, 202, 36, 0.5);
+    text-shadow: 0 0 14px rgba(249, 202, 36, 0.6);
   }
 
-  .divider {
-    height: 1px;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(214, 40, 40, 0.7) 10%,
-      rgba(214, 40, 40, 0.7) 90%,
-      transparent 100%);
-    margin: 0 4px;
-  }
-
-  .donate-line {
+  /* --- Слайд «Донаты» --- */
+  .donate-slide {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 4px;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .donate-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
   }
 
   .donate-label {
-    font-size: 15px;
+    font-size: 24px;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: rgba(255, 90, 90, 0.9);
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.75);
     font-weight: 700;
     white-space: nowrap;
-    transform: translateY(2px);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .donate-goal {
-    font-size: 18px;
-    color: #fff;
-    font-weight: 700;
+    font-size: 22px;
+    color: var(--gold);
+    font-weight: 800;
     white-space: nowrap;
+    text-shadow: 0 0 10px rgba(249, 202, 36, 0.4);
   }
 
   .donate-track {
-    flex: 1;
-    height: 18px;
-    background: rgba(0, 0, 0, 0.55);
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.7);
+    width: 100%;
+    height: 26px;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
     position: relative;
-    transform: translateY(2px);
     clip-path: polygon(
-      6px 0, 100% 0,
-      100% calc(100% - 6px),
-      calc(100% - 6px) 100%,
-      0 100%, 0 6px
+      8px 0, 100% 0,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      0 100%, 0 8px
     );
   }
 
   .donate-fill {
     height: 100%;
-    width: 50%;
+    width: 0%;
     background: linear-gradient(90deg, #8b0000 0%, #d62828 60%, #ff2e2e 100%);
-    box-shadow: 0 0 12px rgba(214, 40, 40, 0.7);
-    transition: width 0.5s ease;
+    box-shadow: 0 0 16px rgba(214, 40, 40, 0.7);
+    transition: width 0.6s ease;
     position: relative;
     overflow: hidden;
     clip-path: polygon(
-      6px 0, 100% 0,
-      100% calc(100% - 6px),
-      calc(100% - 6px) 100%,
-      0 100%, 0 6px
+      8px 0, 100% 0,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      0 100%, 0 8px
     );
   }
 
@@ -345,7 +351,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 200, 200, 0.45), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
     animation: shine 2.5s linear infinite;
   }
 
@@ -355,92 +361,110 @@
   }
 
   /* ============================================================
-     НИЖНЯЯ ЗОНА
+     НИЖНЯЯ ЗОНА — карусель из трёх топов
      ============================================================ */
   .bottom-zone {
     position: absolute;
-    bottom: 12px;
-    left: 60px;
-    right: 60px;
-    height: 80px;
-    display: flex;
+    bottom: 8px;
+    left: 50px;
+    right: 50px;
+    height: calc(var(--bottom-h) - 16px);
+    overflow: hidden;
   }
 
-  .leader-col {
-    flex: 1;
+  .bottom-slides {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .leader-slide {
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;
-    gap: 2px;
-    padding: 0 14px;
-    position: relative;
+    gap: 6px;
+    width: 100%;
+    padding: 0 10px;
+    text-align: center;
   }
 
-  .leader-col:not(:first-child)::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 10%; bottom: 10%;
-    width: 1px;
-    background: linear-gradient(180deg,
-      transparent 0%,
-      rgba(214, 40, 40, 0.65) 20%,
-      rgba(214, 40, 40, 0.65) 80%,
-      transparent 100%);
-  }
-
-  .leader-col .icon-title {
+  .leader-slide .icon-title {
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: rgba(255, 90, 90, 0.9);
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .leader-col .icon-title .em { font-size: 17px; line-height: 1; }
-
-  .leader-col .leader-name {
+    gap: 12px;
     font-size: 19px;
-    font-weight: 800;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.15;
-    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
-  }
-
-  .leader-col .leader-name.empty {
-    color: rgba(255, 255, 255, 0.28);
-    font-style: italic;
-    font-weight: 400;
-    font-size: 15px;
-    text-shadow: none;
-  }
-
-  .leader-col .leader-value {
-    font-size: 17px;
-    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
     color: var(--gold);
-    text-shadow: 0 0 8px rgba(249, 202, 36, 0.5);
+    font-weight: 800;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(249, 202, 36, 0.4);
+  }
+
+  .leader-slide .icon-title .em {
+    font-size: 26px;
     line-height: 1;
   }
 
-  .leader-col .leader-value .unit {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    font-weight: 400;
-    margin-left: 3px;
+  .leader-slide .leader-name {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
+    max-width: 100%;
+    text-shadow:
+      0 0 12px rgba(0, 0, 0, 0.8),
+      0 0 24px rgba(214, 40, 40, 0.4);
   }
 
-  .leader-col.bump { animation: colBump 0.7s ease; }
-  @keyframes colBump {
-    0%   { transform: scale(1); filter: brightness(1); }
-    50%  { transform: scale(1.03); filter: brightness(1.3); }
-    100% { transform: scale(1); filter: brightness(1); }
+  .leader-slide .leader-name.empty {
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 22px;
+    text-shadow: none;
+  }
+
+  .leader-slide .leader-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(249, 202, 36, 0.6);
+    line-height: 1;
+  }
+
+  .leader-slide .leader-value .unit {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    margin-left: 6px;
+  }
+
+  /* Точки-индикаторы снизу */
+  .dots {
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .dots .dot-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dots .dot-indicator.active {
+    background: var(--gold);
+    transform: scale(1.3);
   }
 </style>
 </head>
@@ -453,62 +477,118 @@
 
 <div class="stage">
 
+  <!-- ВЕРХНЯЯ ЗОНА -->
   <div class="top-zone">
+    <div class="top-slides">
 
-    <div class="kw-line">
-      <div class="kw-left">
-        <span class="kw-icon">🎯</span>
-        <span class="kw-word" id="kwWord">Голда</span>
-        <span class="kw-cta" id="kwCta">— пиши кодовое слово в чат</span>
+      <!-- Слайд 1: Ключевое слово -->
+      <div class="slide active" id="slideKey">
+        <div class="kw-slide">
+          <div class="kw-left">
+            <span class="kw-icon">🎯</span>
+            <div class="kw-text">
+              <span class="kw-cta" id="kwCta">Пиши кодовое слово в чат</span>
+              <span class="kw-word" id="kwWord">Голда</span>
+            </div>
+          </div>
+          <div class="kw-right">
+            <span class="kw-status" id="kwStatus">
+              <span class="dot"></span>
+              <span class="kw-status-text">Ожидание</span>
+            </span>
+            <span class="kw-participants">
+              👥 <span class="num" id="kwCount">0</span>
+            </span>
+          </div>
+        </div>
       </div>
-      <div class="kw-right">
-        <span class="kw-status" id="kwStatus">
-          <span class="dot"></span>
-          <span class="kw-status-text">Ожидание</span>
-        </span>
-        <span class="kw-participants">
-          👥 <span class="num" id="kwCount">0</span>
-        </span>
+
+      <!-- Слайд 2: Донаты -->
+      <div class="slide" id="slideDonate">
+        <div class="donate-slide">
+          <div class="donate-head">
+            <span class="donate-label" id="donateGoalName">Цель донатов</span>
+            <span class="donate-goal" id="donateGoalText">5 000 ₽ / 10 000 ₽</span>
+          </div>
+          <div class="donate-track">
+            <div class="donate-fill" id="donateFill"></div>
+          </div>
+        </div>
       </div>
+
     </div>
-
-    <div class="divider"></div>
-
-    <div class="donate-line">
-      <span class="donate-label" id="donateGoalName">Цель донатов</span>
-      <div class="donate-track">
-        <div class="donate-fill" id="donateFill"></div>
-      </div>
-      <span class="donate-goal" id="donateGoalText">5 000 ₽ / 10 000 ₽</span>
-    </div>
-
   </div>
 
+  <!-- НИЖНЯЯ ЗОНА -->
   <div class="bottom-zone">
+    <div class="bottom-slides">
 
-    <div class="leader-col" id="cardDj">
-      <div class="icon-title"><span class="em">🎧</span> Диджей дня</div>
-      <div class="leader-name empty" id="djName">нет данных</div>
-      <div class="leader-value" id="djValue" style="display:none;"></div>
+      <!-- Топ 1: Диджей дня -->
+      <div class="slide active leader-slide" id="slideDj">
+        <div class="icon-title"><span class="em">🎧</span> Диджей дня</div>
+        <div class="leader-name empty" id="djName">нет данных</div>
+        <div class="leader-value" id="djValue" style="display:none;"></div>
+      </div>
+
+      <!-- Топ 2: Легенда месяца -->
+      <div class="slide leader-slide" id="slideMonthly">
+        <div class="icon-title"><span class="em">👑</span> Легенда месяца</div>
+        <div class="leader-name empty" id="monthlyName">нет данных</div>
+        <div class="leader-value" id="monthlyValue" style="display:none;"></div>
+      </div>
+
+      <!-- Топ 3: Легенда дня -->
+      <div class="slide leader-slide" id="slideDaily">
+        <div class="icon-title"><span class="em">🌟</span> Легенда дня</div>
+        <div class="leader-name empty" id="dailyName">нет данных</div>
+        <div class="leader-value" id="dailyValue" style="display:none;"></div>
+      </div>
+
     </div>
 
-    <div class="leader-col" id="cardMonthly">
-      <div class="icon-title"><span class="em">👑</span> Легенда месяца</div>
-      <div class="leader-name empty" id="monthlyName">нет данных</div>
-      <div class="leader-value" id="monthlyValue" style="display:none;"></div>
+    <!-- Индикаторы снизу -->
+    <div class="dots">
+      <span class="dot-indicator active" data-slide="0"></span>
+      <span class="dot-indicator" data-slide="1"></span>
+      <span class="dot-indicator" data-slide="2"></span>
     </div>
-
-    <div class="leader-col" id="cardDaily">
-      <div class="icon-title"><span class="em">🌟</span> Легенда дня</div>
-      <div class="leader-name empty" id="dailyName">нет данных</div>
-      <div class="leader-value" id="dailyValue" style="display:none;"></div>
-    </div>
-
   </div>
 
 </div>
 
 <script>
+// === Слайды ===
+const topSlides = [document.getElementById('slideKey'), document.getElementById('slideDonate')];
+const bottomSlides = [
+  document.getElementById('slideDj'),
+  document.getElementById('slideMonthly'),
+  document.getElementById('slideDaily'),
+];
+const dotIndicators = document.querySelectorAll('.dot-indicator');
+
+let topIndex = 0;
+let bottomIndex = 0;
+
+function setTopSlide(idx) {
+  topSlides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  topIndex = idx;
+}
+
+function setBottomSlide(idx) {
+  bottomSlides.forEach((s, i) => s.classList.toggle('active', i === idx));
+  dotIndicators.forEach((d, i) => d.classList.toggle('active', i === idx));
+  bottomIndex = idx;
+}
+
+setInterval(() => {
+  setTopSlide((topIndex + 1) % topSlides.length);
+}, 5000);
+
+setInterval(() => {
+  setBottomSlide((bottomIndex + 1) % bottomSlides.length);
+}, 5000);
+
+// === Элементы для рендера ===
 const kwWord = document.getElementById('kwWord');
 const kwStatus = document.getElementById('kwStatus');
 const kwStatusText = kwStatus.querySelector('.kw-status-text');
@@ -516,29 +596,18 @@ const kwCount = document.getElementById('kwCount');
 
 const donateFill = document.getElementById('donateFill');
 const donateGoalText = document.getElementById('donateGoalText');
+const donateGoalName = document.getElementById('donateGoalName');
 
 const djName = document.getElementById('djName');
 const djValue = document.getElementById('djValue');
-const cardDj = document.getElementById('cardDj');
 
 const monthlyName = document.getElementById('monthlyName');
 const monthlyValue = document.getElementById('monthlyValue');
-const cardMonthly = document.getElementById('cardMonthly');
 
 const dailyName = document.getElementById('dailyName');
 const dailyValue = document.getElementById('dailyValue');
-const cardDaily = document.getElementById('cardDaily');
 
 const cache = { keyword: null, tops: null, dj: null, donationBar: null };
-let lastDjLeader = null;
-let lastMonthlyLeader = null;
-let lastDailyLeader = null;
-
-function bumpCol(col) {
-  col.classList.remove('bump');
-  void col.offsetWidth;
-  col.classList.add('bump');
-}
 
 function renderKeyword() {
   const k = cache.keyword;
@@ -555,16 +624,16 @@ function renderKeyword() {
     kwStatus.classList.add('collecting');
     kwStatusText.textContent = 'Сбор идёт';
     kwWord.classList.add('active');
-    if (kwCta) { kwCta.classList.add('active'); kwCta.textContent = '— пиши кодовое слово в чат'; }
+    if (kwCta) { kwCta.classList.add('active'); kwCta.textContent = 'Пиши кодовое слово в чат'; }
   } else if (k.status === 'locked') {
     kwStatus.classList.add('locked');
     kwStatusText.textContent = 'Сбор завершён';
     kwWord.classList.add('active');
-    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = '— сбор завершён'; }
+    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = 'Сбор завершён'; }
   } else {
     kwStatusText.textContent = 'Ожидание';
     kwWord.classList.remove('active');
-    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = '— пиши кодовое слово в чат'; }
+    if (kwCta) { kwCta.classList.remove('active'); kwCta.textContent = 'Пиши кодовое слово в чат'; }
   }
 }
 
@@ -576,13 +645,10 @@ function renderLeaders() {
       djName.classList.remove('empty');
       djValue.style.display = 'block';
       djValue.innerHTML = `${l.points || 0}<span class="unit">баллов</span>`;
-      if (lastDjLeader && lastDjLeader !== l.username) bumpCol(cardDj);
-      lastDjLeader = l.username;
     } else {
       djName.textContent = 'нет данных';
       djName.classList.add('empty');
       djValue.style.display = 'none';
-      lastDjLeader = null;
     }
   }
 
@@ -593,13 +659,10 @@ function renderLeaders() {
       monthlyName.classList.remove('empty');
       monthlyValue.style.display = 'block';
       monthlyValue.innerHTML = `${lm.totalAmount || 0}<span class="unit">₽</span>`;
-      if (lastMonthlyLeader && lastMonthlyLeader !== lm.name) bumpCol(cardMonthly);
-      lastMonthlyLeader = lm.name;
     } else {
       monthlyName.textContent = 'нет данных';
       monthlyName.classList.add('empty');
       monthlyValue.style.display = 'none';
-      lastMonthlyLeader = null;
     }
 
     const ld = cache.tops.daily?.leader;
@@ -608,13 +671,10 @@ function renderLeaders() {
       dailyName.classList.remove('empty');
       dailyValue.style.display = 'block';
       dailyValue.innerHTML = `${ld.totalAmount || 0}<span class="unit">₽</span>`;
-      if (lastDailyLeader && lastDailyLeader !== ld.name) bumpCol(cardDaily);
-      lastDailyLeader = ld.name;
     } else {
       dailyName.textContent = 'нет данных';
       dailyName.classList.add('empty');
       dailyValue.style.display = 'none';
-      lastDailyLeader = null;
     }
   }
 }
@@ -630,9 +690,7 @@ function renderDonateBar() {
   donateFill.style.width = percent + '%';
   donateGoalText.textContent =
     `${current.toLocaleString('ru-RU')} ₽ / ${goal.toLocaleString('ru-RU')} ₽`;
-
-  const labelEl = document.getElementById('donateGoalName');
-  if (labelEl) labelEl.textContent = b.goalName || 'Цель донатов';
+  if (donateGoalName) donateGoalName.textContent = b.goalName || 'Цель донатов';
 }
 
 function connect() {
@@ -667,7 +725,7 @@ function connect() {
         cache.keyword.participants.push(payload);
         kwCount.textContent = cache.keyword.participants.length;
         kwCount.style.transform = 'scale(1.4)';
-        kwCount.style.color = '#ff5a5a';
+        kwCount.style.color = '#ff8c8c';
         setTimeout(() => {
           kwCount.style.transform = 'scale(1)';
           kwCount.style.color = '#f9ca24';
