@@ -74,12 +74,13 @@
   .btn-reset   { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
   .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
   .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-  input[type="text"], input[type="number"], select {
+  input[type="text"], input[type="number"], select, textarea {
     padding: 12px 18px; border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.05); color: #fff; font-size: 16px;
+    font-family: inherit;
   }
-  input:focus, select:focus { outline: none; border-color: #9146ff; box-shadow: 0 0 20px rgba(145,70,255,0.15); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #9146ff; box-shadow: 0 0 20px rgba(145,70,255,0.15); }
   select { cursor: pointer; }
   select option { background: #1a1f35; color: #fff; }
 
@@ -222,10 +223,11 @@
   <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
   <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
   <button class="tab-btn" data-tab="tab-lists">🎟️ Списки на розыгрыши</button>
+  <button class="tab-btn" data-tab="tab-donation-bar">📊 Полоска доната</button>
   <button class="tab-btn" data-tab="tab-tops">🏆 Топы</button>
   <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
-  <button class="tab-btn" data-tab="tab-history">📜 История</button>
   <button class="tab-btn" data-tab="tab-announcements">📢 Анонсы</button>
+  <button class="tab-btn" data-tab="tab-history">📜 История</button>
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
 </nav>
 
@@ -243,6 +245,7 @@
     <div class="counter-bar">
       <span>Участников: <strong id="kwCount">0</strong></span>
       <span>Статус: <span id="kwStatus" style="color:#ff4757;">Остановлен</span></span>
+      <span>Победителей: <strong id="kwWinnersCount">0</strong></span>
       <span>Слово: <strong id="kwWordDisplay">—</strong></span>
     </div>
     <div class="list-grid" id="kwList"><div class="list-empty">Пока никого нет 😴</div></div>
@@ -335,6 +338,7 @@
     <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
       Список автоматически очищается каждый понедельник.
       Один человек — одна плашка, суммы складываются.
+      Этот список питает полоску доната.
     </p>
     <div class="row">
       <input type="text" id="donorsWeeklyName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
@@ -365,6 +369,51 @@
     <div class="list-grid" id="donorsStreamList"><div class="list-empty">Пусто</div></div>
   </div>
 
+</div>
+
+<!-- ============ DONATION BAR ============ -->
+<div class="tab-content" id="tab-donation-bar">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">📊</span> Полоска доната
+      <button class="btn btn-sm btn-danger" id="dbarReset" style="margin-left:auto;">🔄 Обнулить</button>
+    </div>
+    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+      Текущий прогресс считается по всем донатам из вкладки «Списки на розыгрыши» → «Донатеры (неделя)».
+      Кнопка «Обнулить» очищает и полоску, и этот список.
+    </p>
+
+    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Название цели</label>
+      <input type="text" id="dbarGoalName" placeholder="Например, «Новый микрофон»" />
+
+      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Сумма цели, ₽</label>
+      <input type="number" id="dbarGoalAmount" min="0" placeholder="20000" />
+
+      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Стартовая сумма вручную, ₽</label>
+      <input type="number" id="dbarManualBase" min="0" placeholder="0" />
+
+      <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
+        Стартовая сумма прибавляется к донатам из списка «Донатеры (неделя)».
+        Например: цель 15000, старт 7000 → полоска сразу покажет 7000, а новые донаты пойдут сверху.
+      </div>
+
+      <button class="btn btn-success" id="dbarSave" style="margin-top:16px;">💾 Сохранить цель</button>
+    </div>
+
+    <div style="margin-top:24px; padding:16px; background:rgba(0,0,0,0.25); border-radius:10px;">
+      <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-bottom:8px;">
+        Текущий прогресс: <strong id="dbarCurrent" style="color:#fff;">0</strong> ₽ из
+        <strong id="dbarGoalDisplay" style="color:#fff;">0</strong> ₽
+      </div>
+      <div style="width:100%; height:14px; background:rgba(0,0,0,0.5); border-radius:7px; overflow:hidden;">
+        <div id="dbarFill" style="height:100%; width:0%; background:linear-gradient(90deg, #f9ca24 0%, #f0932b 60%, #ff4757 100%); transition: width 0.4s;"></div>
+      </div>
+      <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:8px;">
+        Выполнено: <strong id="dbarPercent" style="color:#f9ca24;">0</strong>%
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ TOPS ============ -->
@@ -475,7 +524,7 @@
       </div>
       <div>
         <label style="font-size:13px; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">Пауза между сообщениями, мс</label>
-        <input type="number" id="annMessagesGap" min="500" step="100" value="1500" style="width:160px;" />
+        <input type="number" id="annMessagesGap" min="100" step="100" value="300" style="width:160px;" />
       </div>
       <button class="btn btn-success btn-sm" id="annSaveSettings" style="align-self:flex-end;">💾 Применить</button>
     </div>
@@ -498,7 +547,7 @@
         Строка, начинающаяся с <code style="color:#f9ca24;">!</code>, отправится как выделенный анонс.<br>
         Можно указать цвет: <code style="color:#f9ca24;">!purple Текст</code> (blue / green / orange / purple).
       </div>
-      <textarea id="annNewMessages" rows="5" placeholder="!Наши соц. сети:&#10;TG - https://t.me/...&#10;Запись на рейды - https://...&#10;Дискорд - https://discord.gg/..." style="padding:12px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:15px; font-family:inherit; resize:vertical; min-height:120px;"></textarea>
+      <textarea id="annNewMessages" rows="5" placeholder="!Наши соц. сети:&#10;TG - https://t.me/...&#10;Запись на рейды - https://...&#10;Дискорд - https://discord.gg/..." style="resize:vertical; min-height:120px;"></textarea>
 
       <button class="btn btn-primary" id="annAddBtn" style="margin-top:12px; align-self:flex-start;">➕ Добавить анонс</button>
     </div>
@@ -514,7 +563,6 @@
   </div>
 
 </div>
-
 
 <!-- ============ HISTORY ============ -->
 <div class="tab-content" id="tab-history">
@@ -565,7 +613,7 @@
   <div class="card">
     <div class="card-title"><span class="icon">📺</span> URL оверлеев для OBS</div>
     <div class="row" style="flex-direction:column; align-items:stretch;">
-      <label style="font-size:13px; color:rgba(255,255,255,0.5);">🎯 Ключевое слово</label>
+      <label style="font-size:13px; color:rgba(255,255,255,0.5);">🎯 Ключевое слово (отдельный)</label>
       <input type="text" readonly value="http://localhost:3000/overlay-keyword.html" onclick="this.select()" />
       <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎡 Колесо</label>
       <input type="text" readonly value="http://localhost:3000/overlay-wheel.html" onclick="this.select()" />
@@ -573,8 +621,10 @@
       <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
       <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
       <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Топы</label>
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎧 Топы (отдельный)</label>
       <input type="text" readonly value="http://localhost:3000/overlay-dj.html" onclick="this.select()" />
+      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🖼️ Рамка (объединяет всё)</label>
+      <input type="text" readonly value="http://localhost:3000/overlay-frame.html" onclick="this.select()" />
     </div>
   </div>
 </div>
@@ -597,7 +647,8 @@
 let ws;
 const state = {
   keyword: null, wheel: null, sniper: null, tickets: null,
-  donors: null, dj: null, nicks: null, tops: null, announcements: null,
+  donors: null, dj: null, nicks: null, tops: null,
+  announcements: null, donationBar: null,
   wheelQueueSize: 0,
 };
 
@@ -624,9 +675,11 @@ function handleMessage(type, payload) {
       state.nicks = payload.nicks;
       state.tops = payload.tops;
       state.announcements = payload.announcements;
+      state.donationBar = payload.donationBar;
       state.wheelQueueSize = payload.wheelQueueSize || 0;
       renderKeyword(); renderWheel(); renderSniper(); renderTickets();
-      renderDonors(); renderDj(); renderNicks(); renderTops(); renderAnnouncements();
+      renderDonors(); renderDj(); renderNicks(); renderTops();
+      renderAnnouncements(); renderDonationBar();
       renderWheelQueue();
       break;
 
@@ -662,12 +715,13 @@ function handleMessage(type, payload) {
     case 'nicks:state':    state.nicks = payload; renderNicks(); break;
     case 'nicks:updated':  renderNicks(); break;
     case 'tops:state':     state.tops = payload; renderTops(); break;
+    case 'announcements:state': state.announcements = payload; renderAnnouncements(); break;
+    case 'donationBar:state': state.donationBar = payload; renderDonationBar(); break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
     case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
     case 'donationAlertsStatus': updateDAStatus(payload.connected); break;
-    case 'announcements:state': state.announcements = payload; renderAnnouncements(); break;
 
     case 'error': showToast(payload.message); break;
   }
@@ -736,6 +790,7 @@ const kwList = document.getElementById('kwList');
 const kwCount = document.getElementById('kwCount');
 const kwStatus = document.getElementById('kwStatus');
 const kwWordDisplay = document.getElementById('kwWordDisplay');
+const kwWinnersCount = document.getElementById('kwWinnersCount');
 
 kwStart.addEventListener('click', () => sendAction('keyword:start', { word: kwWord.value }));
 kwStop.addEventListener('click', () => sendAction('keyword:stop'));
@@ -747,6 +802,7 @@ function renderKeyword() {
   if (!k) return;
   kwWordDisplay.textContent = k.word || '—';
   kwCount.textContent = k.participants.length;
+  kwWinnersCount.textContent = (k.winners || []).length;
 
   if (k.status === 'collecting') { kwStatus.textContent = '🟢 Сбор...'; kwStatus.style.color = '#00ff64'; }
   else if (k.status === 'locked') { kwStatus.textContent = '⏸️ Зафиксирован'; kwStatus.style.color = '#f9ca24'; }
@@ -1043,7 +1099,7 @@ function renderTickets() {
 }
 
 // ============================================================
-//  DONORS — два списка
+//  DONORS
 // ============================================================
 const donorsWeeklyList = document.getElementById('donorsWeeklyList');
 const donorsWeeklyCount = document.getElementById('donorsWeeklyCount');
@@ -1139,6 +1195,51 @@ function renderDonors() {
 }
 
 // ============================================================
+//  DONATION BAR
+// ============================================================
+const dbarGoalName = document.getElementById('dbarGoalName');
+const dbarGoalAmount = document.getElementById('dbarGoalAmount');
+const dbarManualBase = document.getElementById('dbarManualBase');
+const dbarCurrent = document.getElementById('dbarCurrent');
+const dbarGoalDisplay = document.getElementById('dbarGoalDisplay');
+const dbarFill = document.getElementById('dbarFill');
+const dbarPercent = document.getElementById('dbarPercent');
+
+function renderDonationBar() {
+  const b = state.donationBar;
+  if (!b) return;
+
+  dbarGoalName.value = b.goalName || '';
+  dbarGoalAmount.value = b.goalAmount || 0;
+  dbarManualBase.value = b.manualBase || 0;
+
+  dbarCurrent.textContent = (b.current || 0).toLocaleString('ru-RU');
+  dbarGoalDisplay.textContent = (b.goalAmount || 0).toLocaleString('ru-RU');
+  dbarPercent.textContent = b.percent || 0;
+  dbarFill.style.width = (b.percent || 0) + '%';
+}
+
+document.getElementById('dbarSave').addEventListener('click', () => {
+  const goalName = dbarGoalName.value.trim();
+  const goalAmount = parseInt(dbarGoalAmount.value) || 0;
+  const manualBase = parseInt(dbarManualBase.value) || 0;
+
+  if (!goalName) { showToast('Укажи название цели'); dbarGoalName.focus(); return; }
+  if (goalAmount <= 0) { showToast('Укажи сумму цели'); dbarGoalAmount.focus(); return; }
+  if (manualBase < 0) { showToast('Стартовая сумма не может быть меньше 0'); dbarManualBase.focus(); return; }
+
+  sendAction('donationBar:setGoal', { goalName, goalAmount, manualBase });
+  showToast('✅ Цель сохранена', 'success');
+});
+
+document.getElementById('dbarReset').addEventListener('click', () => {
+  if (confirm('Обнулить полоску и список «Донатеры (неделя)»?')) {
+    sendAction('donationBar:resetBar');
+    showToast('🔄 Обнулено', 'success');
+  }
+});
+
+// ============================================================
 //  TOPS
 // ============================================================
 const topsDailyList = document.getElementById('topsDailyList');
@@ -1199,220 +1300,6 @@ document.getElementById('topsResetDaily').addEventListener('click', () => {
 
 document.getElementById('topsResetMonthly').addEventListener('click', () => {
   if (confirm('Сбросить Топ месяца?')) sendAction('tops:resetMonthly');
-});
-
-// ============================================================
-//  ANNOUNCEMENTS
-// ============================================================
-const annGlobalEnabled = document.getElementById('annGlobalEnabled');
-const annIntervalMin = document.getElementById('annIntervalMin');
-const annMessagesGap = document.getElementById('annMessagesGap');
-const annNewTitle = document.getElementById('annNewTitle');
-const annNewMessages = document.getElementById('annNewMessages');
-const annList = document.getElementById('annList');
-
-// ID анонса, который сейчас в режиме редактирования (или null)
-let annEditingId = null;
-
-function parseAnnouncementLines(text) {
-  return String(text || '')
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      if (line.startsWith('!')) {
-        const rest = line.slice(1).trim();
-        const colorMatch = rest.match(/^(blue|green|orange|purple)\s+(.+)$/i);
-        if (colorMatch) {
-          return { type: 'announce', color: colorMatch[1].toLowerCase(), text: colorMatch[2].trim() };
-        }
-        return { type: 'announce', color: 'primary', text: rest };
-      }
-      return { type: 'message', text: line };
-    });
-}
-
-function renderAnnouncements() {
-  const a = state.announcements;
-  if (!a) return;
-
-  annGlobalEnabled.checked = !!a.enabled;
-  annIntervalMin.value = a.intervalMin || 10;
-  annMessagesGap.value = a.messagesGapMs || 1500;
-
-  const list = a.list || [];
-  if (list.length === 0) {
-    annList.innerHTML = `<div class="list-empty">Анонсов пока нет</div>`;
-    return;
-  }
-
-  // Если редактируемый анонс был удалён — сбрасываем режим
-  if (annEditingId && !list.some(x => x.id === annEditingId)) {
-    annEditingId = null;
-  }
-
-  annList.innerHTML = list.map(item => {
-    if (item.id === annEditingId) {
-      // === РЕЖИМ РЕДАКТИРОВАНИЯ ===
-      const lines = item.messages.map(m =>
-        m.type === 'announce'
-          ? (m.color && m.color !== 'primary' ? `!${m.color} ${m.text}` : `!${m.text}`)
-          : m.text
-      ).join('\n');
-
-      return `
-        <div style="background:rgba(145,70,255,0.08); border:1px solid rgba(145,70,255,0.3); border-radius:12px; padding:14px 18px;">
-          <div style="margin-bottom:10px; font-weight:600;">✏️ Редактирование: ${escapeHtml(item.title)}</div>
-
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <input type="text" data-edit-title="${escapeAttr(item.id)}" value="${escapeAttr(item.title)}"
-                   style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:15px;" />
-
-            <div style="font-size:12px; color:rgba(255,255,255,0.4);">
-              Сообщения (одно на строку). <code style="color:#f9ca24;">!</code> в начале — выделенный анонс.
-            </div>
-
-            <textarea data-edit-messages="${escapeAttr(item.id)}" rows="5"
-                      style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:14px; font-family:inherit; resize:vertical; min-height:100px;">${escapeHtml(lines)}</textarea>
-
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-sm btn-success" data-ann-save="${escapeAttr(item.id)}">💾 Сохранить</button>
-              <button class="btn btn-sm btn-reset" data-ann-cancel="${escapeAttr(item.id)}">✕ Отмена</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // === ОБЫЧНЫЙ РЕЖИМ ===
-    return `
-      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px;">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" ${item.enabled ? 'checked' : ''} data-ann-toggle="${escapeAttr(item.id)}" style="width:16px; height:16px; accent-color:#9146ff;" />
-            <span style="font-weight:600;">${escapeHtml(item.title)}</span>
-          </label>
-          <span style="color:rgba(255,255,255,0.3); font-size:12px;">${item.messages.length} сообщ.</span>
-          <div style="margin-left:auto; display:flex; gap:8px;">
-            <button class="btn btn-sm btn-success" data-ann-send="${escapeAttr(item.id)}">📤 Отправить</button>
-            <button class="btn btn-sm btn-primary" data-ann-edit="${escapeAttr(item.id)}">✏️</button>
-            <button class="btn btn-sm btn-danger" data-ann-remove="${escapeAttr(item.id)}">✕</button>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:4px; padding-left:24px;">
-          ${item.messages.map((m, i) => `
-            <div style="font-size:13px; color:rgba(255,255,255,0.6);">
-              <span style="color:rgba(255,255,255,0.3); margin-right:6px;">${i + 1}.</span>
-              ${m.type === 'announce'
-                ? `<span style="color:#f9ca24; font-weight:600;">📢</span> ${escapeHtml(m.text)}`
-                : `<span style="color:rgba(255,255,255,0.4);">💬</span> ${escapeHtml(m.text)}`
-              }
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // === Обработчики ===
-
-  // Чекбокс "включён"
-  annList.querySelectorAll('[data-ann-toggle]').forEach(cb => {
-    cb.addEventListener('change', () => {
-      sendAction('announcements:update', {
-        id: cb.dataset.annToggle,
-        patch: { enabled: cb.checked },
-      });
-    });
-  });
-
-  // Отправить сейчас
-  annList.querySelectorAll('[data-ann-send]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sendAction('announcements:sendNow', { id: btn.dataset.annSend });
-      showToast('📤 Отправка анонса...', 'success');
-    });
-  });
-
-  // Войти в режим редактирования
-  annList.querySelectorAll('[data-ann-edit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      annEditingId = btn.dataset.annEdit;
-      renderAnnouncements();
-      setTimeout(() => {
-        const input = annList.querySelector(`[data-edit-title="${annEditingId}"]`);
-        if (input) input.focus();
-      }, 50);
-    });
-  });
-
-  // Сохранить редактирование
-  annList.querySelectorAll('[data-ann-save]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.annSave;
-      const titleInput = annList.querySelector(`[data-edit-title="${id}"]`);
-      const messagesInput = annList.querySelector(`[data-edit-messages="${id}"]`);
-
-      if (!titleInput || !messagesInput) return;
-
-      const title = titleInput.value.trim();
-      const messages = parseAnnouncementLines(messagesInput.value);
-
-      if (!title) { showToast('Укажи название'); titleInput.focus(); return; }
-      if (messages.length === 0) { showToast('Нужно хотя бы одно сообщение'); messagesInput.focus(); return; }
-
-      sendAction('announcements:update', {
-        id,
-        patch: { title, messages },
-      });
-
-      annEditingId = null;
-      showToast('✅ Анонс сохранён', 'success');
-    });
-  });
-
-  // Отмена редактирования
-  annList.querySelectorAll('[data-ann-cancel]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      annEditingId = null;
-      renderAnnouncements();
-    });
-  });
-
-  // Удалить
-  annList.querySelectorAll('[data-ann-remove]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (confirm('Удалить анонс?')) {
-        sendAction('announcements:remove', { id: btn.dataset.annRemove });
-      }
-    });
-  });
-}
-
-// Глобальный выключатель
-annGlobalEnabled.addEventListener('change', () => {
-  sendAction('announcements:setEnabled', { enabled: annGlobalEnabled.checked });
-});
-
-// Применить интервал и паузу
-document.getElementById('annSaveSettings').addEventListener('click', () => {
-  sendAction('announcements:setInterval', { minutes: parseInt(annIntervalMin.value) || 10 });
-  sendAction('announcements:setGap', { ms: parseInt(annMessagesGap.value) || 1500 });
-  showToast('✅ Настройки применены', 'success');
-});
-
-// Добавить анонс
-document.getElementById('annAddBtn').addEventListener('click', () => {
-  const title = annNewTitle.value.trim();
-  const messages = parseAnnouncementLines(annNewMessages.value);
-
-  if (!title) { showToast('Укажи название'); annNewTitle.focus(); return; }
-  if (messages.length === 0) { showToast('Добавь хотя бы одно сообщение'); annNewMessages.focus(); return; }
-
-  sendAction('announcements:add', { title, messages, enabled: true });
-  annNewTitle.value = '';
-  annNewMessages.value = '';
-  showToast('✅ Анонс добавлен', 'success');
 });
 
 // ============================================================
@@ -1565,6 +1452,205 @@ nicksTwitchInput.addEventListener('keydown', e => {
 
 document.getElementById('nicksReset').addEventListener('click', () => {
   if (confirm('Очистить все ники?')) sendAction('nicks:reset');
+});
+
+// ============================================================
+//  ANNOUNCEMENTS
+// ============================================================
+const annGlobalEnabled = document.getElementById('annGlobalEnabled');
+const annIntervalMin = document.getElementById('annIntervalMin');
+const annMessagesGap = document.getElementById('annMessagesGap');
+const annNewTitle = document.getElementById('annNewTitle');
+const annNewMessages = document.getElementById('annNewMessages');
+const annList = document.getElementById('annList');
+
+let annEditingId = null;
+
+function parseAnnouncementLines(text) {
+  return String(text || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => {
+      if (line.startsWith('!')) {
+        const rest = line.slice(1).trim();
+        const colorMatch = rest.match(/^(blue|green|orange|purple)\s+(.+)$/i);
+        if (colorMatch) {
+          return { type: 'announce', color: colorMatch[1].toLowerCase(), text: colorMatch[2].trim() };
+        }
+        return { type: 'announce', color: 'primary', text: rest };
+      }
+      return { type: 'message', text: line };
+    });
+}
+
+function renderAnnouncements() {
+  const a = state.announcements;
+  if (!a) return;
+
+  annGlobalEnabled.checked = !!a.enabled;
+  annIntervalMin.value = a.intervalMin || 10;
+  annMessagesGap.value = a.messagesGapMs || 300;
+
+  const list = a.list || [];
+  if (list.length === 0) {
+    annList.innerHTML = `<div class="list-empty">Анонсов пока нет</div>`;
+    return;
+  }
+
+  if (annEditingId && !list.some(x => x.id === annEditingId)) {
+    annEditingId = null;
+  }
+
+  annList.innerHTML = list.map(item => {
+    if (item.id === annEditingId) {
+      const lines = item.messages.map(m =>
+        m.type === 'announce'
+          ? (m.color && m.color !== 'primary' ? `!${m.color} ${m.text}` : `!${m.text}`)
+          : m.text
+      ).join('\n');
+
+      return `
+        <div style="background:rgba(145,70,255,0.08); border:1px solid rgba(145,70,255,0.3); border-radius:12px; padding:14px 18px;">
+          <div style="margin-bottom:10px; font-weight:600;">✏️ Редактирование: ${escapeHtml(item.title)}</div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <input type="text" data-edit-title="${escapeAttr(item.id)}" value="${escapeAttr(item.title)}"
+                   style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:15px;" />
+
+            <div style="font-size:12px; color:rgba(255,255,255,0.4);">
+              Сообщения (одно на строку). <code style="color:#f9ca24;">!</code> в начале — выделенный анонс.
+            </div>
+
+            <textarea data-edit-messages="${escapeAttr(item.id)}" rows="5"
+                      style="padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:#fff; font-size:14px; font-family:inherit; resize:vertical; min-height:100px;">${escapeHtml(lines)}</textarea>
+
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm btn-success" data-ann-save="${escapeAttr(item.id)}">💾 Сохранить</button>
+              <button class="btn btn-sm btn-reset" data-ann-cancel="${escapeAttr(item.id)}">✕ Отмена</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" ${item.enabled ? 'checked' : ''} data-ann-toggle="${escapeAttr(item.id)}" style="width:16px; height:16px; accent-color:#9146ff;" />
+            <span style="font-weight:600;">${escapeHtml(item.title)}</span>
+          </label>
+          <span style="color:rgba(255,255,255,0.3); font-size:12px;">${item.messages.length} сообщ.</span>
+          <div style="margin-left:auto; display:flex; gap:8px;">
+            <button class="btn btn-sm btn-success" data-ann-send="${escapeAttr(item.id)}">📤 Отправить</button>
+            <button class="btn btn-sm btn-primary" data-ann-edit="${escapeAttr(item.id)}">✏️</button>
+            <button class="btn btn-sm btn-danger" data-ann-remove="${escapeAttr(item.id)}">✕</button>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px; padding-left:24px;">
+          ${item.messages.map((m, i) => `
+            <div style="font-size:13px; color:rgba(255,255,255,0.6);">
+              <span style="color:rgba(255,255,255,0.3); margin-right:6px;">${i + 1}.</span>
+              ${m.type === 'announce'
+                ? `<span style="color:#f9ca24; font-weight:600;">📢</span> ${escapeHtml(m.text)}`
+                : `<span style="color:rgba(255,255,255,0.4);">💬</span> ${escapeHtml(m.text)}`
+              }
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  annList.querySelectorAll('[data-ann-toggle]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      sendAction('announcements:update', {
+        id: cb.dataset.annToggle,
+        patch: { enabled: cb.checked },
+      });
+    });
+  });
+
+  annList.querySelectorAll('[data-ann-send]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sendAction('announcements:sendNow', { id: btn.dataset.annSend });
+      showToast('📤 Отправка анонса...', 'success');
+    });
+  });
+
+  annList.querySelectorAll('[data-ann-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      annEditingId = btn.dataset.annEdit;
+      renderAnnouncements();
+      setTimeout(() => {
+        const input = annList.querySelector(`[data-edit-title="${annEditingId}"]`);
+        if (input) input.focus();
+      }, 50);
+    });
+  });
+
+  annList.querySelectorAll('[data-ann-save]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.annSave;
+      const titleInput = annList.querySelector(`[data-edit-title="${id}"]`);
+      const messagesInput = annList.querySelector(`[data-edit-messages="${id}"]`);
+
+      if (!titleInput || !messagesInput) return;
+
+      const title = titleInput.value.trim();
+      const messages = parseAnnouncementLines(messagesInput.value);
+
+      if (!title) { showToast('Укажи название'); titleInput.focus(); return; }
+      if (messages.length === 0) { showToast('Нужно хотя бы одно сообщение'); messagesInput.focus(); return; }
+
+      sendAction('announcements:update', {
+        id,
+        patch: { title, messages },
+      });
+
+      annEditingId = null;
+      showToast('✅ Анонс сохранён', 'success');
+    });
+  });
+
+  annList.querySelectorAll('[data-ann-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      annEditingId = null;
+      renderAnnouncements();
+    });
+  });
+
+  annList.querySelectorAll('[data-ann-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('Удалить анонс?')) {
+        sendAction('announcements:remove', { id: btn.dataset.annRemove });
+      }
+    });
+  });
+}
+
+annGlobalEnabled.addEventListener('change', () => {
+  sendAction('announcements:setEnabled', { enabled: annGlobalEnabled.checked });
+});
+
+document.getElementById('annSaveSettings').addEventListener('click', () => {
+  sendAction('announcements:setInterval', { minutes: parseInt(annIntervalMin.value) || 10 });
+  sendAction('announcements:setGap', { ms: parseInt(annMessagesGap.value) || 300 });
+  showToast('✅ Настройки применены', 'success');
+});
+
+document.getElementById('annAddBtn').addEventListener('click', () => {
+  const title = annNewTitle.value.trim();
+  const messages = parseAnnouncementLines(annNewMessages.value);
+
+  if (!title) { showToast('Укажи название'); annNewTitle.focus(); return; }
+  if (messages.length === 0) { showToast('Добавь хотя бы одно сообщение'); annNewMessages.focus(); return; }
+
+  sendAction('announcements:add', { title, messages, enabled: true });
+  annNewTitle.value = '';
+  annNewMessages.value = '';
+  showToast('✅ Анонс добавлен', 'success');
 });
 
 // ============================================================
