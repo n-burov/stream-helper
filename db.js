@@ -81,6 +81,7 @@ const DEFAULT_DATA = {
     goalName: 'Розыгрыш 55.555 голды',
     goalAmount: 15000,
     manualBase: 0,
+	accumulated: 0,
   },
 
   announcements: {
