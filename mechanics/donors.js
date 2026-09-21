@@ -13,14 +13,8 @@ function getState() {
   };
 }
 
-// Единая рассылка: обновляем и список, и полоску доната
 function broadcastAll() {
   ctxRef.broadcast('donors:state', getState());
-  try {
-    require('./donationBar').refresh();
-  } catch (e) {
-    // donationBar ещё не подключён — это не критично
-  }
 }
 
 // Проверка недельного сброса
