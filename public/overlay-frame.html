@@ -428,58 +428,6 @@
     font-weight: 500;
     margin-left: 4px;
   }
-  
-  /* ============================================================
-     НИК СТРИМЕРА — «язычок» сверху по центру выреза
-     ============================================================ */
-  .name-badge {
-    position: absolute;
-    left: calc(var(--stage-x) + var(--stage-w) / 2);
-    top: calc(var(--stage-y) + var(--top-h));   /* верх бейджа ровно на границе выреза */
-    transform: translateX(-50%);
-
-    min-width: 220px;
-    max-width: 420px;
-    height: 34px;
-    padding: 0 22px;
-
-    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
-    border: 2px solid var(--red);
-    border-top: none;
-    box-shadow:
-      0 0 12px rgba(214, 40, 40, 0.6),
-      0 0 24px rgba(214, 40, 40, 0.3);
-
-    /* Скошенные нижние углы — свисает вниз в вырез */
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% calc(100% - 12px),
-      calc(100% - 12px) 100%,
-      12px 100%,
-      0 calc(100% - 12px)
-    );
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 11;
-    pointer-events: none;
-  }
-  .name-badge-text {
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gold);
-    text-shadow:
-      0 0 10px rgba(249, 202, 36, 0.7),
-      0 0 20px rgba(249, 202, 36, 0.4);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
 </style>
 </head>
 <body>
@@ -489,9 +437,6 @@
 <div class="corner-mask bl"></div>
 <div class="corner-mask br"></div>
 
-<div class="name-badge" id="nameBadge">
-  <span class="name-badge-text">GepardmaN</span>
-</div>
 
 <div class="stage">
 
