@@ -139,7 +139,7 @@
     height: calc(var(--top-h) - 24px);
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 8px;
   }
 
@@ -207,15 +207,15 @@
   .kw-status {
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 14px;
+    gap: 8px;
+    font-size: 17px;
     font-weight: 800;
     color: rgba(255, 255, 255, 0.85);
     white-space: nowrap;
     flex-shrink: 0;
   }
   .kw-status .dot {
-    width: 10px; height: 10px; border-radius: 50%;
+    width: 12px; height: 12px; border-radius: 50%;
     background: #ff2e2e; flex-shrink: 0;
   }
   .kw-status.collecting { color: #ff8c8c; }
@@ -259,7 +259,7 @@
   .donate-track {
     position: relative;
     flex: 1;
-    height: 26px;
+    height: 34px;
     background: rgba(0, 0, 0, 0.55);
     box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
     clip-path: polygon(
@@ -306,7 +306,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 800;
     color: #fff;
     text-shadow:
@@ -319,12 +319,12 @@
   .donate-text .goal-name {
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    font-size: 13px;
+    font-size: 18px;
     color: rgba(255, 255, 255, 0.85);
   }
   .donate-text .amounts {
     color: var(--gold);
-    font-size: 16px;
+    font-size: 22px;
     font-weight: 900;
   }
 
@@ -428,6 +428,58 @@
     font-weight: 500;
     margin-left: 4px;
   }
+  
+  /* ============================================================
+     НИК СТРИМЕРА — «язычок» сверху по центру выреза
+     ============================================================ */
+  .name-badge {
+    position: absolute;
+    left: calc(var(--stage-x) + var(--stage-w) / 2);
+    top: calc(var(--stage-y) + var(--top-h));   /* верх бейджа ровно на границе выреза */
+    transform: translateX(-50%);
+
+    min-width: 220px;
+    max-width: 420px;
+    height: 34px;
+    padding: 0 22px;
+
+    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-mid) 100%);
+    border: 2px solid var(--red);
+    border-top: none;
+    box-shadow:
+      0 0 12px rgba(214, 40, 40, 0.6),
+      0 0 24px rgba(214, 40, 40, 0.3);
+
+    /* Скошенные нижние углы — свисает вниз в вырез */
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 12px),
+      calc(100% - 12px) 100%,
+      12px 100%,
+      0 calc(100% - 12px)
+    );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 11;
+    pointer-events: none;
+  }
+  .name-badge-text {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-shadow:
+      0 0 10px rgba(249, 202, 36, 0.7),
+      0 0 20px rgba(249, 202, 36, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
 </style>
 </head>
 <body>
@@ -437,6 +489,10 @@
 <div class="corner-mask bl"></div>
 <div class="corner-mask br"></div>
 
+<div class="name-badge" id="nameBadge">
+  <span class="name-badge-text">GepardmaN</span>
+</div>
+
 <div class="stage">
 
   <!-- ВЕРХНЯЯ ЗОНА -->
@@ -445,7 +501,7 @@
     <div class="kw-slide">
       <span class="kw-icon">🎯</span>
       <div class="kw-text">
-        <span class="kw-cta" id="kwCta">пиши кодовое слово в чат</span>
+        <span class="kw-cta" id="kwCta">Пиши кодовое слово в чат</span>
         <div class="kw-row">
           <span class="kw-word" id="kwWord">Голда</span>
           <span class="kw-status" id="kwStatus">
@@ -531,16 +587,16 @@ function renderKeyword() {
     kwStatus.classList.add('collecting');
     kwStatusText.textContent = 'Сбор идёт';
     kwWord.classList.add('active');
-    kwCta.textContent = 'пиши кодовое слово в чат';
+    kwCta.textContent = 'Пиши кодовое слово в чат';
   } else if (k.status === 'locked') {
     kwStatus.classList.add('locked');
     kwStatusText.textContent = 'Сбор завершён';
     kwWord.classList.add('active');
-    kwCta.textContent = 'сбор завершён';
+    kwCta.textContent = 'Сбор завершён';
   } else {
     kwStatusText.textContent = 'Ожидание';
     kwWord.classList.remove('active');
-    kwCta.textContent = 'пиши кодовое слово в чат';
+    kwCta.textContent = 'Пиши кодовое слово в чат';
   }
 }
 
