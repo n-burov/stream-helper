@@ -399,6 +399,7 @@ async function startApp() {
     donationAlerts.on('donation', (donation) => {
       mechanics.donors.addDonor(donation);
       mechanics.tops.addDonation(donation);
+	  mechanics.donationBar.addToBar(donation.amount);
 
       const AMOUNT_THRESHOLD = 200;
       const currency = (donation.currency || 'RUB').toUpperCase();
