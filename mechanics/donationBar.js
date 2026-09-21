@@ -9,20 +9,16 @@ function getState() {
   const goalName = d.donationBar?.goalName || '';
   const goalAmount = Number(d.donationBar?.goalAmount) || 0;
   const manualBase = Number(d.donationBar?.manualBase) || 0;
+  const accumulated = Number(d.donationBar?.accumulated) || 0;
 
-  const weekly = d.donors?.weekly?.participants || [];
-  const weeklySum = weekly.reduce((sum, p) => sum + (Number(p.totalAmount) || 0), 0);
-
-  // Итоговая сумма = ручная база + всё, что накопилось в weekly
-  const current = manualBase + weeklySum;
-
+  const current = manualBase + accumulated;
   const percent = goalAmount > 0 ? Math.min(100, (current / goalAmount) * 100) : 0;
 
   return {
     goalName,
     goalAmount,
     manualBase,
-    weeklySum,
+    accumulated,
     current,
     percent: Math.round(percent * 10) / 10,
   };
@@ -66,4 +62,17 @@ function resetBar() {
   return { ok: true };
 }
 
-module.exports = { init, getState, setGoal, refresh, resetBar };
+function addToBar(amount) {
+  const sum = Number(amount) || 0;
+  if (sum <= 0) return { ok: true, skipped: true };
+
+  db.update(d => {
+    if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0, accumulated: 0 };
+    d.donationBar.accumulated = (Number(d.donationBar.accumulated) || 0) + sum;
+  });
+
+  ctxRef.broadcast('donationBar:state', getState());
+  return { ok: true };
+}
+
+module.exports = { init, getState, setGoal, refresh, resetBar, addToBar };
