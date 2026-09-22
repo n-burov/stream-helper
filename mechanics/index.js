@@ -34,6 +34,7 @@ function handleCommand(action, data) {
 
     case 'wheel:setSectors': return wheel.setSectors(data?.sectors);
     case 'wheel:spin':       return wheel.spin();
+	case 'wheel:forceQueue': return wheel.forceProcessQueue();
     case 'wheel:reset':      return wheel.resetAll();
 
     case 'sniper:add':       return sniper.addParticipant(data?.name);
