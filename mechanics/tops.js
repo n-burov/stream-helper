@@ -28,7 +28,6 @@ function pickLeader(list) {
   return [...list].sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0))[0];
 }
 
-// Проверка сброса месяца
 function checkMonthlyReset() {
   const d = db.loadData();
   const last = d.tops?.monthly?.lastResetAt || 0;
@@ -47,7 +46,6 @@ function checkMonthlyReset() {
   return false;
 }
 
-// Сброс дня — вызывается при stream.online/offline
 function resetDaily() {
   db.update(d => {
     d.tops.daily.participants = [];
@@ -57,7 +55,19 @@ function resetDaily() {
   return { ok: true };
 }
 
-// Добавление доната в оба топа
+function resetDailyManual() {
+  return resetDaily();
+}
+
+function resetMonthlyManual() {
+  db.update(d => {
+    d.tops.monthly.participants = [];
+    d.tops.monthly.lastResetAt = Date.now();
+  });
+  ctxRef.broadcast('tops:state', getState());
+  return { ok: true };
+}
+
 function addDonation({ name, amount, currency, at }) {
   const trimmed = String(name || 'Аноним').trim() || 'Аноним';
   const sum = Number(amount) || 0;
@@ -79,7 +89,7 @@ function addTo(list, name, amount, currency, ts) {
 
   if (existing) {
     existing.totalAmount = (existing.totalAmount || 0) + amount;
-    existing.count = (existing.count || 1) + 1;
+    existing.count = (existing.count || 0) + 1;
     existing.lastAt = ts;
     if (currency) existing.currency = currency;
   } else {
@@ -93,23 +103,10 @@ function addTo(list, name, amount, currency, ts) {
   }
 }
 
-// Ручной сброс обоих топов
-function resetDailyManual() {
-  db.update(d => {
-    d.tops.daily.participants = [];
-    d.tops.daily.lastResetAt = Date.now();
-  });
-  ctxRef.broadcast('tops:state', getState());
-  return { ok: true };
-}
-
-function resetMonthlyManual() {
-  db.update(d => {
-    d.tops.monthly.participants = [];
-    d.tops.monthly.lastResetAt = Date.now();
-  });
-  ctxRef.broadcast('tops:state', getState());
-  return { ok: true };
-}
-
-module.exports = { init, getState, checkMonthlyReset, resetDaily, resetMonthlyManual, addDonation };
+module.exports = {
+  init, getState,
+  checkMonthlyReset,
+  resetDaily, resetDailyManual,
+  resetMonthlyManual,
+  addDonation,
+};
