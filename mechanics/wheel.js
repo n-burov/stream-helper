@@ -192,6 +192,38 @@ function startSpin(opts = {}) {
   return { ok: true, spinId };
 }
 
+function forceProcessQueue() {
+  const d = db.loadData();
+
+  // Сбрасываем текущее состояние спина
+  db.update(dd => {
+    dd.wheel.isSpinning = false;
+  });
+
+  // Чистим все таймеры
+  for (const t of timers.values()) clearTimeout(t);
+  timers.clear();
+
+  if (spinQueue.length === 0) {
+    ctxRef.broadcast('wheel:state', getState());
+    broadcastQueue();
+    console.log('[wheel] очередь пуста, нечего подталкивать');
+    return { ok: true, message: 'Очередь пуста', queueSize: 0 };
+  }
+
+  // Берём следующий спин из очереди и запускаем
+  const nextOpts = spinQueue.shift();
+  console.log(`[wheel] принудительный запуск из очереди, осталось: ${spinQueue.length}`);
+  broadcastQueue();
+
+  // Запускаем следующий спин
+  setTimeout(() => {
+    startSpin(nextOpts);
+  }, 300);
+
+  return { ok: true, message: 'Запущен следующий спин', queueSize: spinQueue.length };
+}
+
 function resetAll() {
   for (const t of timers.values()) clearTimeout(t);
   timers.clear();
@@ -210,4 +242,7 @@ function resetAll() {
   return { ok: true };
 }
 
-module.exports = { init, getState, setSectors, spin, resetAll, getQueueSize };
+module.exports = {
+  init, getState, setSectors, spin, resetAll, getQueueSize,
+  forceProcessQueue,
+};
