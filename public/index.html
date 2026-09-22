@@ -261,6 +261,7 @@
     </div>
     <div class="row" style="justify-content:center; margin-top:20px;">
       <button class="btn btn-gold" id="wheelSpin">🎡 Запустить</button>
+      <button class="btn btn-success" id="wheelForceQueue">⏩ Подтолкнуть очередь</button>
       <button class="btn btn-danger" id="wheelReset">🗑️ Сбросить всё</button>
     </div>
     <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5); gap:16px;">
@@ -835,6 +836,10 @@ const defaultColors = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27c
 let localRotation = 0, animating = false;
 
 wheelSpin.addEventListener('click', () => sendAction('wheel:spin'));
+document.getElementById('wheelForceQueue').addEventListener('click', () => {
+  sendAction('wheel:forceQueue');
+  showToast('⏩ Подталкиваю очередь...', 'success');
+});
 wheelReset.addEventListener('click', () => {
   if (confirm('Удалить все сектора?')) sendAction('wheel:reset');
 });
