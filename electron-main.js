@@ -1,79 +1,58 @@
-// electron-main.js
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
-const { fork } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
+const fs = require('fs');
 
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
 
 let mainWindow = null;
-let serverProcess = null;
 
+// ============================================================
+//  СЕРВЕР (в-process, не fork)
+// ============================================================
 function startServer() {
-  serverProcess = fork(path.join(__dirname, 'server.js'), [], {
-    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-    env: { ...process.env, ELECTRON_MODE: '1' },
-  });
-
-  serverProcess.stdout.on('data', (d) => log.info('[server]', d.toString().trim()));
-  serverProcess.stderr.on('data', (d) => log.error('[server]', d.toString().trim()));
+  try {
+    require('./server.js');
+    log.info('[server] started in-process');
+  } catch (e) {
+    log.error('[server] failed:', e.message);
+    log.error(e.stack);
+  }
 }
 
 // ============================================================
-//  КНОПКА «НА ГЛАВНУЮ» — внедряется на каждую страницу
+//  КНОПКА «НА ГЛАВНУЮ»
 // ============================================================
 function injectHomeButton() {
   if (!mainWindow) return;
-
   const js = `
     (function() {
       if (document.getElementById('__electron_home_btn')) return;
-
       const btn = document.createElement('div');
       btn.id = '__electron_home_btn';
       btn.textContent = '← На главную';
       btn.style.cssText = \`
-        position: fixed;
-        bottom: 16px;
-        right: 16px;
+        position: fixed; bottom: 16px; right: 16px;
         padding: 10px 18px;
         background: linear-gradient(135deg, #9146ff, #7a3bcb);
-        color: #fff;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 14px;
-        font-weight: 700;
-        border-radius: 10px;
-        cursor: pointer;
-        z-index: 2147483647;
-        box-shadow: 0 6px 24px rgba(145, 70, 255, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
+        color: #fff; font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 14px; font-weight: 700; border-radius: 10px;
+        cursor: pointer; z-index: 2147483647;
+        box-shadow: 0 6px 24px rgba(145, 70, 255, 0.5);
         user-select: none;
-        transition: all 0.15s;
-        letter-spacing: 0.3px;
       \`;
-      btn.addEventListener('mouseenter', () => {
-        btn.style.transform = 'translateY(-2px)';
-        btn.style.boxShadow = '0 10px 30px rgba(145, 70, 255, 0.7), 0 0 0 1px rgba(255,255,255,0.15) inset';
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.transform = 'translateY(0)';
-        btn.style.boxShadow = '0 6px 24px rgba(145, 70, 255, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset';
-      });
-      btn.addEventListener('click', () => {
-        // Передаём сигнал в main-процесс через location (простой трюк)
-        window.location.href = 'http://localhost:3000/';
-      });
-
+      btn.addEventListener('click', () => { window.location.href = 'http://localhost:3000/'; });
       document.body.appendChild(btn);
     })();
   `;
-
-  mainWindow.webContents.executeJavaScript(js).catch((err) => {
-    log.warn('[injectHomeButton] error:', err.message);
-  });
+  mainWindow.webContents.executeJavaScript(js).catch(() => {});
 }
 
+// ============================================================
+//  ОКНО
+// ============================================================
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -83,6 +62,7 @@ function createWindow() {
     autoHideMenuBar: true,
     icon: path.join(__dirname, 'assets', 'icon.ico'),
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -95,75 +75,168 @@ function createWindow() {
   };
   tryLoad();
 
-  // Внедряем кнопку после загрузки любой страницы
-  mainWindow.webContents.on('did-finish-load', () => {
-    injectHomeButton();
-  });
+  mainWindow.webContents.on('did-finish-load', () => injectHomeButton());
+  mainWindow.webContents.on('did-navigate', () => injectHomeButton());
 
-  // Внедряем кнопку также при навигации внутри SPA (если будет)
-  mainWindow.webContents.on('did-navigate', () => {
-    injectHomeButton();
-  });
+  // Перехват OAuth — открываем в системном браузере
+  const oauthDomains = ['accounts.google.com', 'id.twitch.tv', 'www.donationalerts.com', 'donationalerts.com'];
 
-  mainWindow.webContents.on('did-navigate-in-page', () => {
-    injectHomeButton();
-  });
-
-  // Перехват OAuth-навигации — открываем в системном браузере
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    const oauthDomains = [
-      'accounts.google.com',
-      'id.twitch.tv',
-      'www.donationalerts.com',
-      'donationalerts.com',
-    ];
-
-    const shouldOpenExternal = oauthDomains.some(domain => url.includes(domain));
-
-    if (shouldOpenExternal) {
+    if (oauthDomains.some(d => url.includes(d))) {
       event.preventDefault();
-      log.info('[auth] opening external browser:', url);
       shell.openExternal(url);
     }
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    const oauthDomains = [
-      'accounts.google.com',
-      'id.twitch.tv',
-      'www.donationalerts.com',
-      'donationalerts.com',
-    ];
-
-    const shouldOpenExternal = oauthDomains.some(domain => url.includes(domain));
-
-    if (shouldOpenExternal) {
-      log.info('[auth] opening external browser (window.open):', url);
-      shell.openExternal(url);
-    } else {
-      shell.openExternal(url);
-    }
+    shell.openExternal(url);
     return { action: 'deny' };
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
+// ============================================================
+//  АВТООБНОВЛЕНИЕ
+// ============================================================
+function sendUpdateStatus(payload) {
+  if (mainWindow) mainWindow.webContents.send('update-status', payload);
+}
+
 function setupUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+
+  // Ставим disableWebInstaller — иначе апдейтер ругается в логах
+  autoUpdater.disableWebInstaller = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    log.info('[update] checking...');
+    sendUpdateStatus({ state: 'checking' });
+  });
 
   autoUpdater.on('update-available', (info) => {
-    log.info('Update available:', info.version);
+    log.info('[update] available:', info.version);
+    sendUpdateStatus({
+      state: 'available',
+      version: info.version,
+      releaseName: info.releaseName || '',
+      releaseNotes: info.releaseNotes || '',
+      releaseDate: info.releaseDate || '',
+    });
   });
-  autoUpdater.on('update-downloaded', (info) => {
-    log.info('Update downloaded:', info.version);
-  });
-  autoUpdater.on('error', (err) => log.error('Update error:', err.message));
 
-  autoUpdater.checkForUpdates();
+  autoUpdater.on('update-not-available', (info) => {
+    log.info('[update] not available');
+    sendUpdateStatus({
+      state: 'up-to-date',
+      version: info?.version || app.getVersion(),
+    });
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    sendUpdateStatus({
+      state: 'downloading',
+      percent: Math.round(progress.percent || 0),
+      bytesPerSecond: progress.bytesPerSecond || 0,
+      transferred: progress.transferred || 0,
+      total: progress.total || 0,
+    });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    log.info('[update] downloaded:', info.version);
+    sendUpdateStatus({
+      state: 'downloaded',
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    log.error('[update] error:', err.message);
+    sendUpdateStatus({ state: 'error', error: err.message });
+  });
+
+  // Первая проверка при старте
+  autoUpdater.checkForUpdates().catch((e) => {
+    log.error('[update] check failed:', e.message);
+    sendUpdateStatus({ state: 'error', error: e.message });
+  });
+
+  // Проверяем каждые 30 минут, пока приложение открыто
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 30 * 60 * 1000);
 }
 
+// ============================================================
+//  IPC для renderer
+// ============================================================
+ipcMain.handle('get-app-version', () => app.getVersion());
+
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { ok: true, version: result?.updateInfo?.version || app.getVersion() };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('install-update', () => {
+  autoUpdater.quitAndInstall();
+});
+
+ipcMain.handle('open-releases-page', () => {
+  shell.openExternal('https://github.com/n-burov/stream-helper/releases');
+});
+
+ipcMain.handle('open-logs-folder', () => {
+  shell.openPath(app.getPath('logs'));
+});
+
+// ============================================================
+//  ЛОГИ
+// ============================================================
+ipcMain.handle('get-logs', () => {
+  try {
+    const logFile = path.join(app.getPath('logs'), 'main.log');
+    if (!fs.existsSync(logFile)) return { ok: true, content: '(лог пуст)' };
+
+    const stat = fs.statSync(logFile);
+    // Если файл больше 2 МБ — читаем последние 100 КБ
+    const MAX_SIZE = 2 * 1024 * 1024;
+    let content;
+    if (stat.size > MAX_SIZE) {
+      const fd = fs.openSync(logFile, 'r');
+      const buffer = Buffer.alloc(100 * 1024);
+      fs.readSync(fd, buffer, 0, buffer.length, stat.size - buffer.length);
+      fs.closeSync(fd);
+      content = '...(показаны последние 100 КБ)...\n\n' + buffer.toString('utf8');
+    } else {
+      content = fs.readFileSync(logFile, 'utf8');
+    }
+    return { ok: true, content };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+ipcMain.handle('clear-logs', () => {
+  try {
+    const logFile = path.join(app.getPath('logs'), 'main.log');
+    if (fs.existsSync(logFile)) fs.writeFileSync(logFile, '');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
+// ============================================================
+//  ЖИЗНЕННЫЙ ЦИКЛ
+// ============================================================
 app.whenReady().then(() => {
   startServer();
   createWindow();
@@ -171,10 +244,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (serverProcess) serverProcess.kill();
   if (process.platform !== 'darwin') app.quit();
-});
-
-app.on('before-quit', () => {
-  if (serverProcess) serverProcess.kill();
 });
