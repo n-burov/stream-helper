@@ -4,7 +4,6 @@ const http = require('http');
 const path = require('path');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
-const open = require('open');
 
 const auth = require('./auth');
 const daAuth = require('./donationalerts-auth');
@@ -14,23 +13,10 @@ const { TwitchService } = require('./twitch');
 const { TwitchEventSub } = require('./twitch-eventsub');
 const { DonationAlertsService } = require('./donationalerts');
 const { getCustomRewards } = require('./twitch-api');
-const { checkForUpdate, CURRENT_VERSION } = require('./updater');
 
-console.log(`📦 Twitch Overlay v${CURRENT_VERSION}`);
+console.log('📦 Stream Helper');
 
-// === Автообновление (до старта сервера) ===
-(async () => {
-  console.log('[boot] Проверяю обновления...');
-  try {
-    const result = await checkForUpdate();
-    console.log('[boot] updater result:', JSON.stringify(result));
-  } catch (e) {
-    console.warn('[boot] updater error:', e.message);
-  }
-
-  console.log('[boot] Запускаю приложение...');
-  await startApp();
-})().catch((e) => {
+startApp().catch((e) => {
   console.error('[boot] FATAL:', e);
   process.exit(1);
 });
@@ -39,7 +25,6 @@ async function startApp() {
   const app = express();
   app.use(express.json());
 
-  // Отключаем Range-запросы — они ломают раздачу видео в OBS
   app.use(express.static(path.join(__dirname, 'public'), {
     acceptRanges: false,
     setHeaders: (res, filePath) => {
@@ -73,21 +58,18 @@ async function startApp() {
 
   mechanics.initAll(ctx);
 
-  // Проверка недельного сброса донатеров
   try {
     mechanics.donors.checkWeeklyReset();
   } catch (e) {
     console.warn('⚠️ Ошибка weekly-сброса:', e.message);
   }
 
-  // Проверка месячного сброса топов
   try {
     mechanics.tops.checkMonthlyReset();
   } catch (e) {
     console.warn('⚠️ Ошибка monthly-сброса топов:', e.message);
   }
 
-  // Раз в час проверяем смену месяца
   setInterval(() => {
     try { mechanics.tops.checkMonthlyReset(); } catch {}
   }, 60 * 60 * 1000);
@@ -272,8 +254,8 @@ async function startApp() {
       username: data.tokens.login,
       token: data.tokens.access_token,
       channel: data.settings.channel,
-      userId: data.tokens.user_id,     // ← добавили
-      clientId: auth.CLIENT_ID,         // ← добавили
+      userId: data.tokens.user_id,
+      clientId: auth.CLIENT_ID,
     });
 
     twitch.on('chat', (msg) => {
@@ -399,7 +381,7 @@ async function startApp() {
     donationAlerts.on('donation', (donation) => {
       mechanics.donors.addDonor(donation);
       mechanics.tops.addDonation(donation);
-	  mechanics.donationBar.addToBar(donation.amount);
+      mechanics.donationBar.addToBar(donation.amount);
 
       const AMOUNT_THRESHOLD = 200;
       const currency = (donation.currency || 'RUB').toUpperCase();
@@ -437,7 +419,7 @@ async function startApp() {
 
   await startDonationAlerts();
 
-  server.listen(3000, async () => {
+  server.listen(3000, () => {
     console.log('🚀 Сервер: http://localhost:3000');
     console.log('   Панель:            http://localhost:3000/');
     console.log('   Оверлей keyword:   http://localhost:3000/overlay-keyword.html');
@@ -445,6 +427,5 @@ async function startApp() {
     console.log('   Оверлей sniper:    http://localhost:3000/overlay-sniper.html');
     console.log('   Оверлей winner:    http://localhost:3000/overlay-winner.html');
     console.log('   Оверлей Топы:      http://localhost:3000/overlay-dj.html');
-    await open('http://localhost:3000');
   });
 }
