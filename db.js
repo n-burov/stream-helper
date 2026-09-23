@@ -2,13 +2,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const isPkg = typeof process.pkg !== 'undefined';
-const EXE_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
+// Определяем, где хранить data.json:
+// - в Electron (упакованном или dev) → userData (%APPDATA%\stream-helper\)
+// - вне Electron → рядом с файлом db.js
+let BASE_DIR;
+try {
+  const { app } = require('electron');
+  BASE_DIR = app.getPath('userData');
+} catch {
+  // Не в Electron — используем директорию файла
+  BASE_DIR = __dirname;
+}
 
-// Если exe запущен из папки versions/ — используем data.json из родительской папки
-let BASE_DIR = EXE_DIR;
-if (path.basename(EXE_DIR).toLowerCase() === 'versions') {
-  BASE_DIR = path.dirname(EXE_DIR);
+if (!fs.existsSync(BASE_DIR)) {
+  fs.mkdirSync(BASE_DIR, { recursive: true });
 }
 
 const DATA_FILE = path.join(BASE_DIR, 'data.json');
