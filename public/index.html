@@ -61,6 +61,46 @@
     font-size: 20px; font-weight: 600; margin-bottom: 20px;
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
+
+  #releaseNotes h1,
+  #releaseNotes h2,
+  #releaseNotes h3,
+  #releaseNotes h4 {
+    color: #f9ca24;
+    margin: 12px 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  #releaseNotes p {
+    margin: 6px 0;
+    line-height: 1.5;
+  }
+  #releaseNotes ul,
+  #releaseNotes ol {
+    margin: 6px 0 6px 20px;
+    padding-left: 20px;
+  }
+  #releaseNotes li {
+    margin: 3px 0;
+    line-height: 1.5;
+  }
+  #releaseNotes a {
+    color: #00d4ff;
+    text-decoration: none;
+  }
+  #releaseNotes a:hover {
+    text-decoration: underline;
+  }
+  #releaseNotes code {
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  #releaseNotes strong {
+    color: #fff;
+  }
+
   .card-title .icon { font-size: 28px; }
   .btn {
     padding: 12px 28px; border: none; border-radius: 12px;
@@ -219,7 +259,8 @@
 </header>
 
 <nav class="tabs">
-  <button class="tab-btn active" data-tab="tab-keyword">🎯 Ключевое слово</button>
+  <button class="tab-btn active" data-tab="tab-updates">🔄 Обновления</button>
+  <button class="tab-btn" data-tab="tab-keyword">🎯 Ключевое слово</button>
   <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
   <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
   <button class="tab-btn" data-tab="tab-lists">🎟️ Списки на розыгрыши</button>
@@ -231,8 +272,68 @@
   <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
 </nav>
 
+<!-- ============ UPDATES ============ -->
+<div class="tab-content active" id="tab-updates">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon">🔄</span> Обновления
+      <button class="btn btn-sm btn-reset" id="checkUpdatesBtn" style="margin-left:auto;">🔍 Проверить</button>
+    </div>
+
+    <div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:20px;">
+      <div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Текущая версия</div>
+        <div style="font-size:28px; font-weight:800; color:#fff;" id="currentVersion">—</div>
+      </div>
+      <div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Доступная версия</div>
+        <div style="font-size:28px; font-weight:800; color:#f9ca24;" id="availableVersion">—</div>
+      </div>
+      <div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Статус</div>
+        <div style="font-size:18px; font-weight:700; margin-top:6px;" id="updateStatus">Проверка...</div>
+      </div>
+    </div>
+
+    <div id="updateProgressWrap" style="display:none; margin-bottom:16px;">
+      <div style="width:100%; height:12px; background:rgba(0,0,0,0.5); border-radius:6px; overflow:hidden;">
+        <div id="updateProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, #9146ff, #00d4ff); transition: width 0.3s;"></div>
+      </div>
+      <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:6px;" id="updateProgressText"></div>
+    </div>
+
+    <div id="updateActions" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-success" id="installUpdateBtn" style="display:none;">🚀 Перезапустить и обновить</button>
+      <button class="btn btn-reset" id="openReleasesBtn">📦 Все релизы на GitHub</button>
+      <button class="btn btn-reset" id="toggleLogsBtn">📜 Показать лог</button>
+    </div>
+
+    <div id="releaseNotesWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+      <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24; margin-bottom:12px;">Что нового</div>
+      <div id="releaseNotes" style="font-size:14px; line-height:1.6; color:rgba(255,255,255,0.8);"></div>
+    </div>
+
+    <div id="logsWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24;">Логи приложения</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-reset" id="reloadLogsBtn">🔄 Обновить</button>
+          <button class="btn btn-sm btn-success" id="copyLogsBtn">📋 Скопировать</button>
+          <button class="btn btn-sm btn-danger" id="clearLogsBtn">🗑️ Очистить</button>
+        </div>
+      </div>
+      <textarea id="logsTextarea" readonly
+                style="width:100%; height:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);
+                       background:rgba(0,0,0,0.5); color:#d0d0d0; font-family:Consolas, monospace; font-size:12px;
+                       line-height:1.5; resize:vertical; white-space:pre; overflow:auto;"
+                placeholder="Логи появятся здесь..."></textarea>
+    </div>
+
+  </div>
+</div>
+
 <!-- ============ KEYWORD ============ -->
-<div class="tab-content active" id="tab-keyword">
+<div class="tab-content" id="tab-keyword">
   <div class="card">
     <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
     <div class="row">
@@ -1840,6 +1941,171 @@ setInterval(loadHistory, 10000);
 setInterval(refreshAuthButtons, 15000);
 setInterval(() => sendAction('donors:checkWeekly'), 60000);
 setInterval(() => sendAction('tops:checkMonthly'), 60 * 60 * 1000);
+
+// ============================================================
+//  UPDATES
+// ============================================================
+const currentVersionEl = document.getElementById('currentVersion');
+const availableVersionEl = document.getElementById('availableVersion');
+const updateStatusEl = document.getElementById('updateStatus');
+const updateProgressWrap = document.getElementById('updateProgressWrap');
+const updateProgressBar = document.getElementById('updateProgressBar');
+const updateProgressText = document.getElementById('updateProgressText');
+const installUpdateBtn = document.getElementById('installUpdateBtn');
+const releaseNotesWrap = document.getElementById('releaseNotesWrap');
+const releaseNotesEl = document.getElementById('releaseNotes');
+
+let latestVersion = null;
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' Б';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+  return (bytes / 1024 / 1024).toFixed(1) + ' МБ';
+}
+
+function formatReleaseNotes(notes) {
+  if (!notes) return '';
+  if (typeof notes === 'string') return notes;
+  if (Array.isArray(notes)) {
+    return notes.map(n => `• ${n.version ? n.version + ': ' : ''}${n.note || ''}`).join('\n');
+  }
+  return String(notes);
+}
+
+function setUpdateStatus(text, color) {
+  updateStatusEl.textContent = text;
+  updateStatusEl.style.color = color || '#fff';
+}
+
+async function initUpdates() {
+  if (!window.electronAPI) {
+    // Открыто в браузере, не в Electron — показываем заглушку
+    currentVersionEl.textContent = 'web';
+    setUpdateStatus('Веб-режим', 'rgba(255,255,255,0.5)');
+    return;
+  }
+
+  const version = await window.electronAPI.getAppVersion();
+  currentVersionEl.textContent = 'v' + version;
+
+  window.electronAPI.onUpdateStatus((data) => {
+    switch (data.state) {
+      case 'checking':
+        setUpdateStatus('Проверка обновлений...', '#00d4ff');
+        updateProgressWrap.style.display = 'none';
+        installUpdateBtn.style.display = 'none';
+        break;
+
+      case 'available':
+        latestVersion = data.version;
+        availableVersionEl.textContent = 'v' + data.version;
+        setUpdateStatus('Найдено обновление, скачивается...', '#f9ca24');
+        updateProgressWrap.style.display = 'block';
+        installUpdateBtn.style.display = 'none';
+        if (data.releaseNotes) {
+          releaseNotesWrap.style.display = 'block';
+          releaseNotesEl.innerHTML = formatReleaseNotes(data.releaseNotes);
+        }
+        break;
+
+      case 'downloading':
+        setUpdateStatus(`Скачивание: ${data.percent}%`, '#f9ca24');
+        updateProgressWrap.style.display = 'block';
+        updateProgressBar.style.width = data.percent + '%';
+        updateProgressText.textContent = `${formatBytes(data.transferred)} / ${formatBytes(data.total)} (${formatBytes(data.bytesPerSecond)}/с)`;
+        break;
+
+      case 'downloaded':
+        setUpdateStatus('Обновление готово к установке', '#00ff64');
+        updateProgressWrap.style.display = 'none';
+        installUpdateBtn.style.display = 'inline-block';
+        break;
+
+      case 'up-to-date':
+        availableVersionEl.textContent = 'v' + (data.version || version);
+        setUpdateStatus('У вас последняя версия', '#00ff64');
+        updateProgressWrap.style.display = 'none';
+        installUpdateBtn.style.display = 'none';
+        break;
+
+      case 'error':
+        setUpdateStatus('Ошибка: ' + data.error, '#ff4757');
+        updateProgressWrap.style.display = 'none';
+        installUpdateBtn.style.display = 'none';
+        break;
+    }
+  });
+}
+
+document.getElementById('checkUpdatesBtn').addEventListener('click', async () => {
+  if (!window.electronAPI) return;
+  setUpdateStatus('Проверка...', '#00d4ff');
+  const result = await window.electronAPI.checkForUpdates();
+  if (!result.ok) {
+    setUpdateStatus('Ошибка: ' + result.error, '#ff4757');
+  }
+});
+
+installUpdateBtn.addEventListener('click', () => {
+  if (window.electronAPI) window.electronAPI.installUpdate();
+});
+
+document.getElementById('openReleasesBtn').addEventListener('click', () => {
+  if (window.electronAPI) window.electronAPI.openReleasesPage();
+});
+
+// === Логи ===
+const logsWrap = document.getElementById('logsWrap');
+const logsTextarea = document.getElementById('logsTextarea');
+let logsVisible = false;
+
+async function loadLogs() {
+  if (!window.electronAPI) {
+    logsTextarea.value = 'Логи доступны только в Electron-приложении';
+    return;
+  }
+  const result = await window.electronAPI.getLogs();
+  if (result.ok) {
+    logsTextarea.value = result.content || '(лог пуст)';
+    logsTextarea.scrollTop = logsTextarea.scrollHeight;
+  } else {
+    logsTextarea.value = 'Ошибка: ' + result.error;
+  }
+}
+
+document.getElementById('toggleLogsBtn').addEventListener('click', async () => {
+  logsVisible = !logsVisible;
+  logsWrap.style.display = logsVisible ? 'block' : 'none';
+  document.getElementById('toggleLogsBtn').textContent = logsVisible ? '📜 Скрыть лог' : '📜 Показать лог';
+  if (logsVisible) await loadLogs();
+});
+
+document.getElementById('reloadLogsBtn').addEventListener('click', loadLogs);
+
+document.getElementById('copyLogsBtn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(logsTextarea.value);
+    document.getElementById('copyLogsBtn').textContent = '✅ Скопировано';
+    setTimeout(() => {
+      document.getElementById('copyLogsBtn').textContent = '📋 Скопировать';
+    }, 1500);
+  } catch (e) {
+    // Fallback для старых случаев
+    logsTextarea.select();
+    document.execCommand('copy');
+  }
+});
+
+document.getElementById('clearLogsBtn').addEventListener('click', async () => {
+  if (!window.electronAPI) return;
+  if (!confirm('Очистить лог?')) return;
+  const result = await window.electronAPI.clearLogs();
+  if (result.ok) {
+    logsTextarea.value = '(лог очищен)';
+  }
+});
+
+initUpdates();
 </script>
 </body>
 </html>
