@@ -108,7 +108,6 @@ function getFullState() {
 function handleChat(msg) {
   keyword.handleChat(msg);
   nicks.handleChat(msg);
-  announcements.handleChat(msg);
   debts.handleChat(msg);
 }
 
