@@ -8,7 +8,6 @@ function getState() {
   const d = db.loadData();
   const list = (d.debts?.list || []).map(x => ({
     ...x,
-    // Сразу посчитаем срок, чтобы UI не занимался арифметикой
     daysSince: Math.floor((Date.now() - x.createdAt) / (24 * 60 * 60 * 1000)),
   }));
   return { list };
@@ -19,9 +18,14 @@ function normalize(name) {
   return String(name || '').trim().toLowerCase();
 }
 
+// Убираем ведущую @ у ника, если её кто-то напишет
+function cleanNick(name) {
+  return String(name || '').trim().replace(/^@+/, '');
+}
+
 // Добавить долг (или увеличить сумму, если ник уже есть)
 function add({ username, amount }) {
-  const trimmedName = String(username || '').trim();
+  const trimmedName = cleanNick(username);
   if (!trimmedName) return { error: 'Пустое имя' };
 
   const sum = Number(amount);
@@ -53,7 +57,7 @@ function add({ username, amount }) {
   return { ok: true, created };
 }
 
-// Ручная корректировка суммы (задать точное значение)
+// Ручная корректировка суммы
 function setAmount(username, amount) {
   const lower = normalize(username);
   const sum = Number(amount);
@@ -96,38 +100,80 @@ function findByUsername(username) {
   return (d.debts?.list || []).find(x => normalize(x.username) === lower) || null;
 }
 
-// Обработка чат-команды !долг
-function handleChat(msg) {
-  const text = String(msg.message || '').trim().toLowerCase();
-  if (text !== '!долг' && text !== '!долги' && text !== '!debt') return;
+// Отправить сообщение в чат (если Twitch подключён)
+function say(text) {
+  if (!ctxRef?.twitch) return;
+  ctxRef.twitch.sendMessage(text).catch(e => {
+    console.warn('[debts] ошибка отправки в чат:', e.message);
+  });
+}
 
-  // Антиспам — не чаще раза в 30 секунд на один ник
+// Обработка чат-команды !долг / !долги / !debt [ник]
+function handleChat(msg) {
+  const raw = String(msg.message || '').trim();
+
+  // Регулярка: команда + опциональный аргумент
+  // Поддерживаем !долг, !долги, !debt — с аргументом или без
+  const match = raw.match(/^!(долг|долги|debt)\b\s*(.*)$/i);
+  if (!match) return;
+
+  // Антиспам — по тому, кто спрашивает
   if (isRateLimited(msg.username)) return;
 
-  const debt = findByUsername(msg.username);
-  if (!debt) {
-    // Раскомментируй, если хочешь ответ для тех, у кого долгов нет
-    // if (ctxRef.twitch) {
-    //   ctxRef.twitch.sendMessage(`@${msg.username}, у тебя нет долгов`).catch(() => {});
-    // }
+  const argRaw = match[2].trim();
+
+  // === Вариант 1: спросили про себя ===
+  if (!argRaw) {
+    const debt = findByUsername(msg.username);
+
+    if (!debt) {
+      say(`@${msg.username}, у тебя нет долгов 🎉`);
+      return;
+    }
+
+    say(formatDebtReply(msg.username, debt));
     return;
   }
 
+  // === Вариант 2: спросили про другого ===
+  // Может быть несколько ников через запятую или пробел — берём первый
+  // (если хочешь поддержать несколько — скажи, допилю)
+  const targetRaw = argRaw.split(/[\s,]+/)[0];
+  const target = cleanNick(targetRaw);
+
+  if (!target) {
+    say(`@${msg.username}, укажи ник: !долг ник`);
+    return;
+  }
+
+  // Проверяем, что цель запроса существует в базе
+  const debt = findByUsername(target);
+
+  if (!debt) {
+    say(`@${msg.username}, у @${target} нет долгов`);
+    return;
+  }
+
+  // Отвечаем про чужой долг с упоминанием, кто спросил
+  say(`@${msg.username}, долг @${debt.username}: ${formatDebtBody(debt)}`);
+}
+
+// Форматирование ответа про свой долг
+function formatDebtReply(asker, debt) {
+  return `@${asker}, твой долг: ${formatDebtBody(debt)}`;
+}
+
+// Тело ответа (сумма + срок + дата)
+function formatDebtBody(debt) {
   const days = Math.floor((Date.now() - debt.createdAt) / (24 * 60 * 60 * 1000));
   const date = new Date(debt.createdAt).toLocaleDateString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
-
-  const reply = `@${msg.username}, твой долг: ${debt.amount.toLocaleString('ru-RU')} голды. Срок: ${days} ${pluralDays(days)} (с ${date})`;
-
-  if (ctxRef.twitch) {
-    ctxRef.twitch.sendMessage(reply).catch(e => {
-      console.warn('[debts] ошибка отправки в чат:', e.message);
-    });
-  }
+  const amount = Number(debt.amount || 0).toLocaleString('ru-RU');
+  return `${amount} голды. Срок: ${days} ${pluralDays(days)} (с ${date})`;
 }
 
-// Простой антиспам — не чаще раза в 30 секунд на один ник
+// Антиспам — не чаще раза в 30 секунд на один ник того, кто пишет
 const lastAnswer = new Map();
 function isRateLimited(username) {
   const key = normalize(username);
