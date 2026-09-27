@@ -32,34 +32,48 @@ function setGoal({ goalName, goalAmount, manualBase }) {
   if (manualBase !== undefined) patch.manualBase = Math.max(0, Number(manualBase) || 0);
 
   db.update(d => {
-    if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0 };
+    if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0, accumulated: 0 };
     Object.assign(d.donationBar, patch);
   });
 
-  ctxRef.broadcast('donationBar:state', getState());
+  if (ctxRef) ctxRef.broadcast('donationBar:state', getState());
   return { ok: true };
 }
 
 function refresh() {
-  ctxRef.broadcast('donationBar:state', getState());
+  if (ctxRef) ctxRef.broadcast('donationBar:state', getState());
   return { ok: true };
 }
 
 function resetBar() {
   db.update(d => {
-    // Сбрасываем полоску
+    // Инициализируем на всякий случай
     if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0, accumulated: 0 };
     d.donationBar.manualBase = 0;
     d.donationBar.accumulated = 0;
 
-    // Чистим "Донатеры (полоска)" — это stream, не weekly
-    if (!d.donors) d.donors = { stream: { participants: [] }, weekly: { participants: [], lastResetAt: null } };
+    // Чистим "Донатеры (полоска)" — это stream
+    if (!d.donors) d.donors = {};
     if (!d.donors.stream) d.donors.stream = { participants: [] };
     d.donors.stream.participants = [];
   });
 
-  ctxRef.broadcast('donors:state', require('./donors').getState());
-  ctxRef.broadcast('donationBar:state', getState());
+  // Ленивый require, но с защитой от исключений
+  let donorsState = null;
+  try {
+    const donorsModule = require('./donors');
+    donorsState = donorsModule.getState();
+  } catch (e) {
+    console.warn('[donationBar] не удалось получить состояние донатеров:', e.message);
+  }
+
+  if (ctxRef) {
+    if (donorsState) {
+      ctxRef.broadcast('donors:state', donorsState);
+    }
+    ctxRef.broadcast('donationBar:state', getState());
+  }
+
   return { ok: true };
 }
 
@@ -72,7 +86,7 @@ function addToBar(amount) {
     d.donationBar.accumulated = (Number(d.donationBar.accumulated) || 0) + sum;
   });
 
-  ctxRef.broadcast('donationBar:state', getState());
+  if (ctxRef) ctxRef.broadcast('donationBar:state', getState());
   return { ok: true };
 }
 
