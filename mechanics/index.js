@@ -10,6 +10,7 @@ const nicks = require('./nicks');
 const tops = require('./tops');
 const announcements = require('./announcements');
 const donationBar = require('./donationBar');
+const debts = require('./debts');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -23,6 +24,7 @@ function initAll(ctx) {
   tops.init(ctx);
   announcements.init(ctx);
   donationBar.init(ctx);
+  debts.init(ctx);
 }
 
 function handleCommand(action, data) {
