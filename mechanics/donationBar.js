@@ -45,16 +45,17 @@ function refresh() {
   return { ok: true };
 }
 
-// Обнуление полоски = сброс weekly + ручная база = 0
 function resetBar() {
   db.update(d => {
-    if (!d.donors) d.donors = { stream: { participants: [] }, weekly: { participants: [], lastResetAt: null } };
-    if (!d.donors.weekly) d.donors.weekly = { participants: [], lastResetAt: null };
-    d.donors.weekly.participants = [];
-    d.donors.weekly.lastResetAt = Date.now();
-
-    if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0 };
+    // Сбрасываем полоску
+    if (!d.donationBar) d.donationBar = { goalName: '', goalAmount: 0, manualBase: 0, accumulated: 0 };
     d.donationBar.manualBase = 0;
+    d.donationBar.accumulated = 0;
+
+    // Чистим "Донатеры (полоска)" — это stream, не weekly
+    if (!d.donors) d.donors = { stream: { participants: [] }, weekly: { participants: [], lastResetAt: null } };
+    if (!d.donors.stream) d.donors.stream = { participants: [] };
+    d.donors.stream.participants = [];
   });
 
   ctxRef.broadcast('donors:state', require('./donors').getState());
