@@ -36,7 +36,7 @@ function handleCommand(action, data) {
 
     case 'wheel:setSectors': return wheel.setSectors(data?.sectors);
     case 'wheel:spin':       return wheel.spin();
-	case 'wheel:forceQueue': return wheel.forceProcessQueue();
+    case 'wheel:forceQueue': return wheel.forceProcessQueue();
     case 'wheel:reset':      return wheel.resetAll();
 
     case 'sniper:add':       return sniper.addParticipant(data?.name);
@@ -77,10 +77,10 @@ function handleCommand(action, data) {
     case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
     case 'donationBar:resetBar': return donationBar.resetBar();
 
-	case 'debts:add':       return debts.add(data || {});
-	case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
-	case 'debts:remove':    return debts.remove(data?.username);
-	case 'debts:reset':     return debts.reset();
+    case 'debts:add':       return debts.add(data || {});
+    case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
+    case 'debts:remove':    return debts.remove(data?.username);
+    case 'debts:reset':     return debts.reset();
 
     default:
       return { error: 'Unknown action: ' + action };
@@ -100,8 +100,8 @@ function getFullState() {
     tops: tops.getState(),
     announcements: announcements.getState(),
     donationBar: donationBar.getState(),
+    debts: debts.getState(),
     wheelQueueSize: wheel.getQueueSize(),
-	debts: debts.getState(),
   };
 }
 
@@ -109,7 +109,7 @@ function handleChat(msg) {
   keyword.handleChat(msg);
   nicks.handleChat(msg);
   announcements.handleChat(msg);
-  debts.handleChat(msg);   // ← добавили
+  debts.handleChat(msg);
 }
 
 module.exports = {
