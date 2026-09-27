@@ -97,6 +97,10 @@ const DEFAULT_DATA = {
     messagesGapMs: 500,
     list: [],
   },
+
+  debts: {
+    list: [],   // [{ userId, username, amount, createdAt, updatedAt }]
+  },
 };
 
 let dataCache = null;
@@ -120,6 +124,7 @@ function loadData() {
     dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
 	dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
+    dataCache.debts = { ...DEFAULT_DATA.debts, ...(raw.debts || {}) };
 
     if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
       dataCache.announcements.list = [
