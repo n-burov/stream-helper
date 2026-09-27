@@ -1,6 +1,5 @@
 // auth.js
-const fs = require('fs');
-const path = require('path');
+const db = require('./db');
 
 const CLIENT_ID = '6r23dqsif3hfl3tnta192qhka2cns1';
 const CLIENT_SECRET = 'eop4kxesklztrkkdlf1k4u3f8jzsen';
@@ -9,37 +8,19 @@ const REDIRECT_URI = 'http://localhost:3000/auth/callback';
 const SCOPES = [
   'chat:read',
   'chat:edit',
-  'moderator:manage:announcements',   // ← добавили для announce
+  'moderator:manage:announcements',
   'moderator:read:followers',
   'channel:read:redemptions',
   'channel:read:vips',
   'channel:read:subscriptions',
 ].join(' ');
 
-const isPkg = typeof process.pkg !== 'undefined';
-const BASE_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
-const DATA_FILE = path.join(BASE_DIR, 'data.json');
-
-const DEFAULT_DATA = {
-  tokens: null,
-  settings: { channel: null },
-  follows: [],
-  redemptions: [],
-};
-
 function loadData() {
-  if (!fs.existsSync(DATA_FILE)) return { ...DEFAULT_DATA };
-  try {
-    return { ...DEFAULT_DATA, ...JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) };
-  } catch {
-    return { ...DEFAULT_DATA };
-  }
+  return db.loadData();
 }
 
 function saveData(data) {
-  const tmp = DATA_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-  fs.renameSync(tmp, DATA_FILE);
+  db.saveData();
 }
 
 function getAuthUrl(state) {
@@ -93,29 +74,37 @@ async function validateToken(access_token) {
 }
 
 async function ensureFreshToken() {
-  const data = loadData();
-  if (!data.tokens) return null;
+  const data = db.loadData();
+  if (!data.tokens || !data.tokens.access_token) return null;
+
   const info = await validateToken(data.tokens.access_token);
   if (info) return data.tokens;
+
+  // Токен протух — пробуем обновить
+  if (!data.tokens.refresh_token) {
+    db.update(d => { d.tokens = null; });
+    return null;
+  }
+
   try {
     const refreshed = await refreshToken(data.tokens.refresh_token);
-    data.tokens = {
-      ...data.tokens,
-      access_token: refreshed.access_token,
-      refresh_token: refreshed.refresh_token,
-      expires_at: Date.now() + refreshed.expires_in * 1000,
-    };
-    saveData(data);
-    return data.tokens;
-  } catch {
-    data.tokens = null;
-    saveData(data);
+    db.update(d => {
+      d.tokens = {
+        ...d.tokens,
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token || d.tokens.refresh_token,
+        expires_at: Date.now() + refreshed.expires_in * 1000,
+      };
+    });
+    return db.loadData().tokens;
+  } catch (e) {
+    console.error('[auth] refresh failed:', e.message);
+    db.update(d => { d.tokens = null; });
     return null;
   }
 }
 
 module.exports = {
-  loadData, saveData,
   getAuthUrl, exchangeCode, refreshToken, validateToken, ensureFreshToken,
-  CLIENT_ID, REDIRECT_URI, BASE_DIR,
+  CLIENT_ID, REDIRECT_URI,
 };
