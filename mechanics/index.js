@@ -77,6 +77,11 @@ function handleCommand(action, data) {
     case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
     case 'donationBar:resetBar': return donationBar.resetBar();
 
+	case 'debts:add':       return debts.add(data || {});
+	case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
+	case 'debts:remove':    return debts.remove(data?.username);
+	case 'debts:reset':     return debts.reset();
+
     default:
       return { error: 'Unknown action: ' + action };
   }
@@ -96,15 +101,18 @@ function getFullState() {
     announcements: announcements.getState(),
     donationBar: donationBar.getState(),
     wheelQueueSize: wheel.getQueueSize(),
+	debts: debts.getState(),
   };
 }
 
 function handleChat(msg) {
   keyword.handleChat(msg);
   nicks.handleChat(msg);
+  announcements.handleChat(msg);
+  debts.handleChat(msg);   // ← добавили
 }
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar,
+  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar, debts,
 };
