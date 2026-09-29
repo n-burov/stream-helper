@@ -74,7 +74,9 @@ async function startApp() {
     try { mechanics.tops.checkMonthlyReset(); } catch {}
   }, 60 * 60 * 1000);
 
-  // === WebSocket ===
+  // ============================================================
+  //  WebSocket
+  // ============================================================
   wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'state', payload: mechanics.getFullState() }));
     ws.send(JSON.stringify({ type: 'twitchStatus', payload: ircState }));
@@ -92,11 +94,15 @@ async function startApp() {
     });
   });
 
-  // === История ===
+  // ============================================================
+  //  История
+  // ============================================================
   app.get('/api/history', (req, res) => res.json(db.loadHistory()));
   app.delete('/api/history', (req, res) => { db.clearHistory(); res.json({ ok: true }); });
 
-  // === Настройки ===
+  // ============================================================
+  //  Настройки
+  // ============================================================
   app.get('/api/settings', (req, res) => {
     const d = db.loadData();
     res.json({
@@ -144,7 +150,55 @@ async function startApp() {
     res.json({ ok: true, ticketRewardId: patch.ticketRewardId || undefined });
   });
 
-  // === Twitch Auth ===
+  // ============================================================
+  //  Страница «Авторизация успешна»
+  // ============================================================
+  app.get('/auth/success', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="ru">
+      <head>
+        <meta charset="UTF-8">
+        <title>Авторизация успешна</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
+            color: #fff; min-height: 100vh; margin: 0;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+          }
+          .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; padding: 60px 80px;
+            backdrop-filter: blur(10px); max-width: 500px;
+          }
+          .icon { font-size: 64px; margin-bottom: 20px; }
+          h1 {
+            font-size: 28px; margin-bottom: 16px; font-weight: 700;
+            background: linear-gradient(135deg, #9146ff, #00d4ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          }
+          p { color: rgba(255,255,255,0.7); line-height: 1.6; margin: 8px 0; }
+          .hint { margin-top: 24px; font-size: 14px; color: rgba(255,255,255,0.4); }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✅</div>
+          <h1>Авторизация успешна</h1>
+          <p>Приложение <strong>Stream Helper</strong> уже подключилось.</p>
+          <p class="hint">Можете закрыть эту вкладку и вернуться в приложение.</p>
+        </div>
+      </body>
+      </html>
+    `);
+  });
+
+  // ============================================================
+  //  Twitch Auth
+  // ============================================================
   app.get('/auth/login', (req, res) => {
     pendingState = crypto.randomBytes(16).toString('hex');
     res.redirect(auth.getAuthUrl(pendingState));
@@ -172,14 +226,16 @@ async function startApp() {
 
       await restartTwitch();
       await restartEventSub();
-      res.redirect('/');
+      res.redirect('/auth/success');
     } catch (err) {
       console.error('Auth error:', err);
       res.status(500).send('Ошибка авторизации: ' + err.message);
     }
   });
 
-  // === DonationAlerts Auth ===
+  // ============================================================
+  //  DonationAlerts Auth
+  // ============================================================
   app.get('/auth/donationalerts/login', (req, res) => {
     pendingDaState = crypto.randomBytes(16).toString('hex');
     res.redirect(daAuth.getAuthUrl(pendingDaState));
@@ -203,7 +259,7 @@ async function startApp() {
 
       console.log('✅ DonationAlerts авторизован');
       await startDonationAlerts();
-      res.redirect('/');
+      res.redirect('/auth/success');
     } catch (err) {
       console.error('DA auth error:', err);
       res.status(500).send('Ошибка авторизации DonationAlerts: ' + err.message);
@@ -244,7 +300,9 @@ async function startApp() {
     res.redirect('/');
   });
 
-  // === Twitch IRC ===
+  // ============================================================
+  //  Twitch IRC
+  // ============================================================
   async function restartTwitch() {
     if (twitch) { await twitch.disconnect(); twitch = null; }
     const data = db.loadData();
@@ -280,7 +338,9 @@ async function startApp() {
     }
   }
 
-  // === EventSub ===
+  // ============================================================
+  //  EventSub
+  // ============================================================
   async function restartEventSub() {
     if (eventSub) { eventSub.disconnect(); eventSub = null; }
     const data = db.loadData();
@@ -331,7 +391,9 @@ async function startApp() {
     eventSub.connect();
   }
 
-  // === DonationAlerts ===
+  // ============================================================
+  //  DonationAlerts
+  // ============================================================
   async function startDonationAlerts() {
     if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
 
@@ -408,7 +470,9 @@ async function startApp() {
     donationAlerts.start();
   }
 
-  // === Подключение к Twitch и запуск сервера ===
+  // ============================================================
+  //  Подключение к Twitch и запуск сервера
+  // ============================================================
   const tokens = await auth.ensureFreshToken();
   if (tokens) {
     await restartTwitch();
@@ -424,6 +488,7 @@ async function startApp() {
     console.log('   Панель:            http://localhost:3000/');
     console.log('   Оверлей keyword:   http://localhost:3000/overlay-keyword.html');
     console.log('   Оверлей wheel:     http://localhost:3000/overlay-wheel.html');
+    console.log('   Оверлей cards:     http://localhost:3000/overlay-cards.html');
     console.log('   Оверлей sniper:    http://localhost:3000/overlay-sniper.html');
     console.log('   Оверлей winner:    http://localhost:3000/overlay-winner.html');
     console.log('   Оверлей Топы:      http://localhost:3000/overlay-dj.html');
