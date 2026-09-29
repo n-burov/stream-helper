@@ -100,31 +100,46 @@ function findByUsername(username) {
   return (d.debts?.list || []).find(x => normalize(x.username) === lower) || null;
 }
 
-// Отправить сообщение в чат (если Twitch подключён)
 function say(text) {
-  if (!ctxRef?.twitch) return;
+  if (!ctxRef?.twitch) {
+    console.warn('[debts] twitch НЕ подключён, пропуск:', text);
+    return;
+  }
+  console.log('[debts] отправляю в чат:', text);
   ctxRef.twitch.sendMessage(text).catch(e => {
     console.warn('[debts] ошибка отправки в чат:', e.message);
   });
 }
 
-// Обработка чат-команды !долг / !долги / !debt [ник]
 function handleChat(msg) {
-  const raw = String(msg.message || '').trim();
+  console.log('[debts] === handleChat вызван ===');
+  console.log('[debts] msg:', JSON.stringify({
+    username: msg?.username,
+    message: msg?.message,
+    userId: msg?.userId,
+  }));
 
-  // Регулярка: команда + опциональный аргумент
-  // Поддерживаем !долг, !долги, !debt — с аргументом или без
-  const match = raw.match(/^!(долг|долги|debt)\b\s*(.*)$/i);
+  const raw = String(msg.message || '').trim();
+  console.log('[debts] raw:', JSON.stringify(raw));
+
+  const match = raw.match(/^!(долг|долги|debt)(?:\s+(.+))?$/i);
+  console.log('[debts] match:', match);
+
   if (!match) return;
 
-  // Антиспам — по тому, кто спрашивает
-  if (isRateLimited(msg.username)) return;
+  if (isRateLimited(msg.username)) {
+    console.log('[debts] rate limited для', msg.username);
+    return;
+  }
 
-  const argRaw = match[2].trim();
+  console.log('[debts] ctxRef:', !!ctxRef, 'twitch:', !!ctxRef?.twitch);
 
-  // === Вариант 1: спросили про себя ===
+  const argRaw = (match[2] || '').trim();
+  console.log('[debts] argRaw:', JSON.stringify(argRaw));
+
   if (!argRaw) {
     const debt = findByUsername(msg.username);
+    console.log('[debts] свой долг:', debt);
 
     if (!debt) {
       say(`@${msg.username}, у тебя нет долгов 🎉`);
@@ -135,26 +150,23 @@ function handleChat(msg) {
     return;
   }
 
-  // === Вариант 2: спросили про другого ===
-  // Может быть несколько ников через запятую или пробел — берём первый
-  // (если хочешь поддержать несколько — скажи, допилю)
   const targetRaw = argRaw.split(/[\s,]+/)[0];
   const target = cleanNick(targetRaw);
+  console.log('[debts] target:', JSON.stringify(target));
 
   if (!target) {
     say(`@${msg.username}, укажи ник: !долг ник`);
     return;
   }
 
-  // Проверяем, что цель запроса существует в базе
   const debt = findByUsername(target);
+  console.log('[debts] долг target:', debt);
 
   if (!debt) {
     say(`@${msg.username}, у @${target} нет долгов`);
     return;
   }
 
-  // Отвечаем про чужой долг с упоминанием, кто спросил
   say(`@${msg.username}, долг @${debt.username}: ${formatDebtBody(debt)}`);
 }
 
