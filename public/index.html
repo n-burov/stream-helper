@@ -6,27 +6,42 @@
 <title>Стример-хаб | Управление</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
+  html, body {
+    height: 100%;
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
-    min-height: 100vh; color: #fff; padding: 20px;
+    color: #fff;
+    overflow: hidden;
   }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ============================================================
+     HEADER
+     ============================================================ */
   .header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 40px; background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(10px); border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.08); margin-bottom: 30px;
-    flex-wrap: wrap; gap: 15px;
+    padding: 16px 32px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-wrap: wrap; gap: 12px;
+    flex-shrink: 0;
+    z-index: 10;
   }
   .logo {
-    font-size: 24px; font-weight: 700;
+    font-size: 22px; font-weight: 700;
     background: linear-gradient(135deg, #9146ff, #00d4ff);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
   .status-badge {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 16px; background: rgba(0,255,100,0.15);
-    border-radius: 20px; border: 1px solid rgba(0,255,100,0.3); font-size: 14px;
+    padding: 6px 14px; background: rgba(0,255,100,0.15);
+    border-radius: 20px; border: 1px solid rgba(0,255,100,0.3); font-size: 13px;
   }
   .status-badge.offline { background: rgba(255,71,87,0.15); border-color: rgba(255,71,87,0.3); }
   .status-badge.donat { background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.3); }
@@ -34,24 +49,91 @@
   .status-dot.red { background: #ff4757; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
   .logout-btn {
-    padding: 8px 20px; background: rgba(255,71,87,0.15);
+    padding: 8px 18px; background: rgba(255,71,87,0.15);
     border: 1px solid rgba(255,71,87,0.2); border-radius: 10px;
-    color: #ff4757; cursor: pointer; font-size: 14px; text-decoration: none;
+    color: #ff4757; cursor: pointer; font-size: 13px; text-decoration: none;
+    display: inline-block;
   }
-  .tabs { display: flex; gap: 12px; margin-bottom: 30px; flex-wrap: wrap; }
+
+  /* ============================================================
+     LAYOUT — САЙДБАР + КОНТЕНТ
+     ============================================================ */
+  .layout {
+    display: flex;
+    flex: 1;
+    min-height: 0; /* важно, чтобы дочерние могли скроллиться */
+  }
+
+  .sidebar {
+    width: 240px;
+    background: rgba(0,0,0,0.25);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-group {
+    margin-bottom: 4px;
+  }
+
+  .sidebar-group-title {
+    padding: 12px 20px 6px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: rgba(255,255,255,0.35);
+  }
+
   .tab-btn {
-    padding: 12px 24px; border: none; border-radius: 12px;
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6);
-    font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s;
-    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .tab-btn:hover {
+    background: rgba(145,70,255,0.1);
+    color: #fff;
   }
   .tab-btn.active {
-    background: linear-gradient(135deg, rgba(145,70,255,0.3), rgba(0,212,255,0.3));
-    border-color: rgba(145,70,255,0.5); color: #fff;
+    background: linear-gradient(90deg, rgba(145,70,255,0.25), rgba(145,70,255,0.05));
+    color: #fff;
+    font-weight: 600;
   }
+  .tab-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #9146ff, #00d4ff);
+  }
+
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px 60px;
+    min-width: 0;
+  }
+
   .tab-content { display: none; }
-  .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ============================================================
+     CARDS
+     ============================================================ */
   .card {
     background: rgba(255,255,255,0.04); backdrop-filter: blur(10px);
     border-radius: 20px; border: 1px solid rgba(255,255,255,0.06);
@@ -61,50 +143,15 @@
     font-size: 20px; font-weight: 600; margin-bottom: 20px;
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
-
-  #releaseNotes h1,
-  #releaseNotes h2,
-  #releaseNotes h3,
-  #releaseNotes h4 {
-    color: #f9ca24;
-    margin: 12px 0 6px;
-    font-size: 15px;
-    font-weight: 700;
-  }
-  #releaseNotes p {
-    margin: 6px 0;
-    line-height: 1.5;
-  }
-  #releaseNotes ul,
-  #releaseNotes ol {
-    margin: 6px 0 6px 20px;
-    padding-left: 20px;
-  }
-  #releaseNotes li {
-    margin: 3px 0;
-    line-height: 1.5;
-  }
-  #releaseNotes a {
-    color: #00d4ff;
-    text-decoration: none;
-  }
-  #releaseNotes a:hover {
-    text-decoration: underline;
-  }
-  #releaseNotes code {
-    background: rgba(0,0,0,0.4);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 13px;
-  }
-  #releaseNotes strong {
-    color: #fff;
-  }
-
   .card-title .icon { font-size: 28px; }
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
   .btn {
     padding: 12px 28px; border: none; border-radius: 12px;
     font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; color: #fff;
+    font-family: inherit;
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-primary { background: linear-gradient(135deg, #9146ff, #7a3bcb); }
@@ -124,6 +171,9 @@
   select { cursor: pointer; }
   select option { background: #1a1f35; color: #fff; }
 
+  /* ============================================================
+     LISTS
+     ============================================================ */
   .list-grid {
     display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0;
     max-height: 400px; overflow-y: auto; padding: 5px;
@@ -236,530 +286,643 @@
   }
   .toast.show { opacity: 1; }
   .toast.success { background: rgba(0,180,80,0.9); }
+
+  #releaseNotes h1,
+  #releaseNotes h2,
+  #releaseNotes h3,
+  #releaseNotes h4 {
+    color: #f9ca24;
+    margin: 12px 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  #releaseNotes p { margin: 6px 0; line-height: 1.5; }
+  #releaseNotes ul,
+  #releaseNotes ol { margin: 6px 0 6px 20px; padding-left: 20px; }
+  #releaseNotes li { margin: 3px 0; line-height: 1.5; }
+  #releaseNotes a { color: #00d4ff; text-decoration: none; }
+  #releaseNotes a:hover { text-decoration: underline; }
+  #releaseNotes code {
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  #releaseNotes strong { color: #fff; }
+
+  /* ============================================================
+     RESPONSIVE — на узких экранах сайдбар сворачивается
+     ============================================================ */
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; }
+    .sidebar-group-title { display: none; }
+    .tab-btn { padding: 12px 0; justify-content: center; font-size: 20px; }
+    .tab-btn span.label { display: none; }
+  }
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="logo">🎮 Стример-хаб</div>
-  <div style="display:flex; gap:12px; flex-wrap:wrap;">
-    <div class="status-badge" id="twitchBadge">
-      <span class="status-dot red" id="twitchDot"></span>
-      <span id="twitchText">Twitch...</span>
-    </div>
-    <div class="status-badge donat" id="daBadge">
-      <span class="status-dot red" id="daDot"></span>
-      <span id="daText">DonationAlerts...</span>
-    </div>
-  </div>
-  <div style="display:flex; gap:8px;">
-    <a class="logout-btn" id="loginBtn" href="/auth/login" style="background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
-    <a class="logout-btn" id="logoutBtn" href="/api/logout" style="display:none;">🚪 Выйти</a>
-  </div>
-</header>
+<div class="app">
 
-<nav class="tabs">
-  <button class="tab-btn active" data-tab="tab-updates">🔄 Обновления</button>
-  <button class="tab-btn" data-tab="tab-keyword">🎯 Ключевое слово</button>
-  <button class="tab-btn" data-tab="tab-wheel">🎡 Колесо</button>
-  <button class="tab-btn" data-tab="tab-sniper">🔫 Снайпер</button>
-  <button class="tab-btn" data-tab="tab-lists">🎟️ Списки на розыгрыши</button>
-  <button class="tab-btn" data-tab="tab-donation-bar">📊 Полоска доната</button>
-  <button class="tab-btn" data-tab="tab-tops">🏆 Топы</button>
-  <button class="tab-btn" data-tab="tab-nicks">🎮 Ники</button>
-  <button class="tab-btn" data-tab="tab-debts">💰 Долги</button>
-  <button class="tab-btn" data-tab="tab-announcements">📢 Анонсы</button>
-  <button class="tab-btn" data-tab="tab-history">📜 История</button>
-  <button class="tab-btn" data-tab="tab-settings">⚙️ Настройки</button>
-</nav>
-
-<!-- ============ UPDATES ============ -->
-<div class="tab-content active" id="tab-updates">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">🔄</span> Обновления
-      <button class="btn btn-sm btn-reset" id="checkUpdatesBtn" style="margin-left:auto;">🔍 Проверить</button>
-    </div>
-
-    <div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:20px;">
-      <div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Текущая версия</div>
-        <div style="font-size:28px; font-weight:800; color:#fff;" id="currentVersion">—</div>
+  <header class="header">
+    <div class="logo">🎮 Стример-хаб</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <div class="status-badge" id="twitchBadge">
+        <span class="status-dot red" id="twitchDot"></span>
+        <span id="twitchText">Twitch...</span>
       </div>
-      <div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Доступная версия</div>
-        <div style="font-size:28px; font-weight:800; color:#f9ca24;" id="availableVersion">—</div>
-      </div>
-      <div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Статус</div>
-        <div style="font-size:18px; font-weight:700; margin-top:6px;" id="updateStatus">Проверка...</div>
+      <div class="status-badge donat" id="daBadge">
+        <span class="status-dot red" id="daDot"></span>
+        <span id="daText">DonationAlerts...</span>
       </div>
     </div>
+    <div style="display:flex; gap:8px;">
+      <a class="logout-btn" id="loginBtn" href="/auth/login" style="background:rgba(0,212,255,0.15); border-color:rgba(0,212,255,0.2); color:#00d4ff;">🔐 Войти через Twitch</a>
+      <a class="logout-btn" id="logoutBtn" href="/api/logout" style="display:none;">🚪 Выйти</a>
+    </div>
+  </header>
 
-    <div id="updateProgressWrap" style="display:none; margin-bottom:16px;">
-      <div style="width:100%; height:12px; background:rgba(0,0,0,0.5); border-radius:6px; overflow:hidden;">
-        <div id="updateProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, #9146ff, #00d4ff); transition: width 0.3s;"></div>
-      </div>
-      <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:6px;" id="updateProgressText"></div>
-    </div>
+  <div class="layout">
 
-    <div id="updateActions" style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-success" id="installUpdateBtn" style="display:none;">🚀 Перезапустить и обновить</button>
-      <button class="btn btn-reset" id="openReleasesBtn">📦 Все релизы на GitHub</button>
-      <button class="btn btn-reset" id="toggleLogsBtn">📜 Показать лог</button>
-    </div>
+    <!-- ============================================================
+         САЙДБАР
+         ============================================================ -->
+    <nav class="sidebar">
 
-    <div id="releaseNotesWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
-      <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24; margin-bottom:12px;">Что нового</div>
-      <div id="releaseNotes" style="font-size:14px; line-height:1.6; color:rgba(255,255,255,0.8);"></div>
-    </div>
-
-    <div id="logsWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-        <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24;">Логи приложения</div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-sm btn-reset" id="reloadLogsBtn">🔄 Обновить</button>
-          <button class="btn btn-sm btn-success" id="copyLogsBtn">📋 Скопировать</button>
-          <button class="btn btn-sm btn-danger" id="clearLogsBtn">🗑️ Очистить</button>
-        </div>
-      </div>
-      <textarea id="logsTextarea" readonly
-                style="width:100%; height:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);
-                       background:rgba(0,0,0,0.5); color:#d0d0d0; font-family:Consolas, monospace; font-size:12px;
-                       line-height:1.5; resize:vertical; white-space:pre; overflow:auto;"
-                placeholder="Логи появятся здесь..."></textarea>
-    </div>
-
-  </div>
-</div>
-
-<!-- ============ KEYWORD ============ -->
-<div class="tab-content" id="tab-keyword">
-  <div class="card">
-    <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
-    <div class="row">
-      <input type="text" id="kwWord" placeholder="Кодовое слово..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="kwStart">▶️ Старт</button>
-      <button class="btn btn-danger" id="kwStop" disabled>⏹️ Стоп</button>
-      <button class="btn btn-gold" id="kwDraw" disabled>🎲 Победитель</button>
-      <button class="btn btn-reset" id="kwReset">🔄 Сброс</button>
-    </div>
-    <div class="counter-bar">
-      <span>Участников: <strong id="kwCount">0</strong></span>
-      <span>Статус: <span id="kwStatus" style="color:#ff4757;">Остановлен</span></span>
-      <span>Победителей: <strong id="kwWinnersCount">0</strong></span>
-      <span>Слово: <strong id="kwWordDisplay">—</strong></span>
-    </div>
-    <div class="list-grid" id="kwList"><div class="list-empty">Пока никого нет 😴</div></div>
-  </div>
-</div>
-
-<!-- ============ WHEEL ============ -->
-<div class="tab-content" id="tab-wheel">
-  <div class="card">
-    <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
-    <div class="wheel-wrapper">
-      <canvas id="wheelCanvas" width="600" height="600"></canvas>
-    </div>
-    <div class="row" style="justify-content:center; margin-top:20px;">
-      <button class="btn btn-gold" id="wheelSpin">🎡 Запустить</button>
-      <button class="btn btn-success" id="wheelForceQueue">⏩ Подтолкнуть очередь</button>
-      <button class="btn btn-danger" id="wheelReset">🗑️ Сбросить всё</button>
-    </div>
-    <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5); gap:16px;">
-      <span id="wheelStatus">⏸️ Ожидание</span>
-      <span id="wheelQueueBadge" style="display:none; padding:4px 12px; background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.3); border-radius:12px; color:#00d4ff; font-weight:600;">
-        ⏳ В очереди: 0
-      </span>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title"><span class="icon">⚙️</span> Сектора</div>
-    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
-      <input type="text" id="secLabel" placeholder="Название сектора..." />
-      <input type="number" id="secWeight" placeholder="Вес" value="1" min="1" />
-      <button class="btn btn-success" id="secAdd">➕ Добавить сектор</button>
-    </div>
-    <div class="sector-list" id="secList"><div class="list-empty">Нет секторов</div></div>
-  </div>
-</div>
-
-<!-- ============ SNIPER ============ -->
-<div class="tab-content" id="tab-sniper">
-  <div class="card">
-    <div class="card-title"><span class="icon">🔫</span> Снайпер</div>
-    <div class="sniper-stats">
-      <span class="alive">🟢 Живых: <strong id="snAlive">0</strong></span>
-      <span class="dead">💀 Выбыло: <strong id="snDead">0</strong></span>
-      <span>👥 Всего: <strong id="snTotal">0</strong></span>
-    </div>
-    <div class="sniper-arena" id="snArena"><div class="list-empty">Добавьте участников</div></div>
-    <div class="row" style="margin-top:16px;">
-      <input type="text" id="snName" placeholder="Имя участника..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="snAdd">➕</button>
-      <button class="btn btn-success" id="snImportTickets">🎟️ Импорт из билетов</button>
-      <button class="btn btn-success" id="snImportDonors">💸 Импорт из донатеров</button>
-      <button class="btn btn-danger" id="snShoot" disabled>🔫 Выстрел!</button>
-      <button class="btn btn-reset" id="snReset">🔄 Сброс</button>
-    </div>
-    <div class="row" style="font-size:14px; color:rgba(255,255,255,0.5);">
-      <span id="snStatus">⏸️ Ожидание</span>
-    </div>
-  </div>
-</div>
-
-<!-- ============ LISTS ============ -->
-<div class="tab-content" id="tab-lists">
-
-  <!-- === БИЛЕТЫ === -->
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">🎟️</span> Билеты на розыгрыш
-      <button class="btn btn-sm btn-danger" id="ticketsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Список пополняется автоматически, когда зритель покупает награду за баллы канала.
-      У одного человека на неделю — один билет. Если нужно передать билет другому — нажмите на число рядом с ником и введите новое значение (0 — удалит).
-    </p>
-    <div class="row">
-      <input type="text" id="ticketsName" placeholder="Ник вручную..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="ticketsAdd">➕ Добавить</button>
-    </div>
-    <div class="counter-bar">
-      <span>Всего билетов: <strong id="ticketsCount">0</strong></span>
-      <span>Участников: <strong id="ticketsUnique">0</strong></span>
-    </div>
-    <div class="list-grid" id="ticketsList"><div class="list-empty">Пусто</div></div>
-  </div>
-
-  <!-- === ДОНАТЕРЫ (НЕДЕЛЯ) === -->
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">💸</span> Донатеры (неделя)
-      <button class="btn btn-sm btn-danger" id="donorsWeeklyReset" style="margin-left:auto;">🗑️ Сбросить</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Список автоматически очищается каждый понедельник.
-      Один человек — одна плашка, суммы складываются.
-      Этот список питает полоску доната.
-    </p>
-    <div class="row">
-      <input type="text" id="donorsWeeklyName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="donorsWeeklyAdd">➕ Добавить</button>
-    </div>
-    <div class="counter-bar">
-      <span>Всего донатеров: <strong id="donorsWeeklyCount">0</strong></span>
-    </div>
-    <div class="list-grid" id="donorsWeeklyList"><div class="list-empty">Пусто</div></div>
-  </div>
-
-  <!-- === ДОНАТЕРЫ (ПОЛОСКА) === -->
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">📊</span> Донатеры (полоска)
-      <button class="btn btn-sm btn-danger" id="donorsStreamReset" style="margin-left:auto;">🗑️ Сбросить</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Список не очищается автоматически. Подходит для длительного розыгрыша (сезон, марафон).
-    </p>
-    <div class="row">
-      <input type="text" id="donorsStreamName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
-      <button class="btn btn-primary" id="donorsStreamAdd">➕ Добавить</button>
-    </div>
-    <div class="counter-bar">
-      <span>Всего донатеров: <strong id="donorsStreamCount">0</strong></span>
-    </div>
-    <div class="list-grid" id="donorsStreamList"><div class="list-empty">Пусто</div></div>
-  </div>
-
-</div>
-
-<!-- ============ DONATION BAR ============ -->
-<div class="tab-content" id="tab-donation-bar">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">📊</span> Полоска доната
-      <button class="btn btn-sm btn-danger" id="dbarReset" style="margin-left:auto;">🔄 Обнулить</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Прогресс копится отдельно: ручная стартовая сумма + все донаты с момента последнего обнуления.
-      Кнопка «Обнулить» очищает и полоску, и список «Донатеры (полоска)» во вкладке «Списки на розыгрыши».
-    </p>
-
-    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
-      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Название цели</label>
-      <input type="text" id="dbarGoalName" placeholder="Например, «Новый микрофон»" />
-
-      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Сумма цели, ₽</label>
-      <input type="number" id="dbarGoalAmount" min="0" placeholder="20000" />
-
-      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Стартовая сумма вручную, ₽</label>
-      <input type="number" id="dbarManualBase" min="0" placeholder="0" />
-
-      <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
-        Стартовая сумма прибавляется к донатам из списка «Донатеры (полоска)».
-        Например: цель 15000, старт 7000 → полоска сразу покажет 7000, а новые донаты пойдут сверху.
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Обзор</div>
+        <button class="tab-btn active" data-tab="tab-updates">🔄 <span class="label">Обновления</span></button>
+        <button class="tab-btn" data-tab="tab-history">📜 <span class="label">История</span></button>
       </div>
 
-      <button class="btn btn-success" id="dbarSave" style="margin-top:16px;">💾 Сохранить цель</button>
-    </div>
-
-    <div style="margin-top:24px; padding:16px; background:rgba(0,0,0,0.25); border-radius:10px;">
-      <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-bottom:8px;">
-        Текущий прогресс: <strong id="dbarCurrent" style="color:#fff;">0</strong> ₽ из
-        <strong id="dbarGoalDisplay" style="color:#fff;">0</strong> ₽
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Розыгрыши</div>
+        <button class="tab-btn" data-tab="tab-keyword">🎯 <span class="label">Ключевое слово</span></button>
+        <button class="tab-btn" data-tab="tab-wheel">🎡 <span class="label">Колесо</span></button>
+        <button class="tab-btn" data-tab="tab-sniper">🔫 <span class="label">Снайпер</span></button>
+        <button class="tab-btn" data-tab="tab-lists">🎟️ <span class="label">Списки на розыгрыши</span></button>
       </div>
-      <div style="width:100%; height:14px; background:rgba(0,0,0,0.5); border-radius:7px; overflow:hidden;">
-        <div id="dbarFill" style="height:100%; width:0%; background:linear-gradient(90deg, #f9ca24 0%, #f0932b 60%, #ff4757 100%); transition: width 0.4s;"></div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Зрители</div>
+        <button class="tab-btn" data-tab="tab-tops">🏆 <span class="label">Топы</span></button>
+        <button class="tab-btn" data-tab="tab-nicks">🎮 <span class="label">Ники</span></button>
+        <button class="tab-btn" data-tab="tab-vips">👑 <span class="label">VIP</span></button>
+        <button class="tab-btn" data-tab="tab-debts">💰 <span class="label">Долги</span></button>
       </div>
-      <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:8px;">
-        Выполнено: <strong id="dbarPercent" style="color:#f9ca24;">0</strong>%
+
+      <div class="sidebar-group">
+        <div class="sidebar-group-title">Прочее</div>
+        <button class="tab-btn" data-tab="tab-donation-bar">📊 <span class="label">Полоска доната</span></button>
+        <button class="tab-btn" data-tab="tab-announcements">📢 <span class="label">Анонсы</span></button>
+        <button class="tab-btn" data-tab="tab-settings">⚙️ <span class="label">Настройки</span></button>
       </div>
-    </div>
-  </div>
-</div>
 
-<!-- ============ TOPS ============ -->
-<div class="tab-content" id="tab-tops">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">🌟</span> Легенда дня
-      <button class="btn btn-sm btn-danger" id="topsResetDaily" style="margin-left:auto;">🔄 Сбросить вручную</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Топ донатер за текущий стрим. Автоматически обнуляется при запуске и завершении стрима.
-    </p>
-    <div class="counter-bar">
-      <span>Лидер: <strong id="topsDailyLeader">—</strong></span>
-      <span>Всего участников: <strong id="topsDailyCount">0</strong></span>
-    </div>
-    <div class="list-grid" id="topsDailyList"><div class="list-empty">Пока нет донатов</div></div>
-  </div>
+    </nav>
 
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">👑</span> Легенда месяца
-      <button class="btn btn-sm btn-danger" id="topsResetMonthly" style="margin-left:auto;">🔄 Сбросить вручную</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Топ донатер месяца. Автоматически обнуляется 1-го числа каждого месяца.
-    </p>
-    <div class="counter-bar">
-      <span>Лидер: <strong id="topsMonthlyLeader">—</strong></span>
-      <span>Всего участников: <strong id="topsMonthlyCount">0</strong></span>
-    </div>
-    <div class="list-grid" id="topsMonthlyList"><div class="list-empty">Пока нет донатов</div></div>
-  </div>
+    <!-- ============================================================
+         КОНТЕНТ
+         ============================================================ -->
+    <main class="main-content">
 
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">🎧</span> Диджей дня
-      <button class="btn btn-sm btn-danger" id="djReset" style="margin-left:auto;">🔄 Сбросить вручную</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
-      Покупки самого стримера не учитываются.
-    </p>
-    <div style="max-width:600px;">
-      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
-      <div id="djRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-        <div class="list-empty">Загрузка наград...</div>
-      </div>
-    </div>
-    <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
-      <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
-      <div id="djLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
-    </div>
-  </div>
-</div>
+      <!-- ============ UPDATES ============ -->
+      <div class="tab-content active" id="tab-updates">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🔄</span> Обновления
+            <button class="btn btn-sm btn-reset" id="checkUpdatesBtn" style="margin-left:auto;">🔍 Проверить</button>
+          </div>
 
-<!-- ============ NICKS ============ -->
-<div class="tab-content" id="tab-nicks">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">🎮</span> Ники зрителей
-      <button class="btn btn-sm btn-danger" id="nicksReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Зрители пишут в чат <strong>!ник &lt;ник&gt;</strong>, чтобы указать свой игровой ник.
-      Если указать другой ник позже — старый заменится новым.
-      Можно добавить вручную через форму ниже.
-    </p>
+          <div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:20px;">
+            <div>
+              <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Текущая версия</div>
+              <div style="font-size:28px; font-weight:800; color:#fff;" id="currentVersion">—</div>
+            </div>
+            <div>
+              <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Доступная версия</div>
+              <div style="font-size:28px; font-weight:800; color:#f9ca24;" id="availableVersion">—</div>
+            </div>
+            <div>
+              <div style="font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px;">Статус</div>
+              <div style="font-size:18px; font-weight:700; margin-top:6px;" id="updateStatus">Проверка...</div>
+            </div>
+          </div>
 
-    <div class="row" style="margin-bottom:8px;">
-      <input type="text" id="nicksTwitchInput" placeholder="Twitch-юзернейм..." style="flex:1; min-width:180px;" />
-      <input type="text" id="nicksNickInput" placeholder="Игровой ник..." style="flex:1; min-width:180px;" />
-      <button class="btn btn-primary" id="nicksAddManual">➕ Добавить</button>
-    </div>
-    <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:16px;">
-      Если такой Twitch-юзернейм уже есть в списке — ник заменится.
-    </div>
+          <div id="updateProgressWrap" style="display:none; margin-bottom:16px;">
+            <div style="width:100%; height:12px; background:rgba(0,0,0,0.5); border-radius:6px; overflow:hidden;">
+              <div id="updateProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, #9146ff, #00d4ff); transition: width 0.3s;"></div>
+            </div>
+            <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-top:6px;" id="updateProgressText"></div>
+          </div>
 
-    <div class="row">
-      <input type="text" id="nicksSearch" placeholder="🔍 Поиск по юзернейму или нику..." style="flex:1; min-width:200px;" />
-    </div>
-    <div class="counter-bar">
-      <span>Всего ников: <strong id="nicksCount">0</strong></span>
-    </div>
-    <div class="list-grid" id="nicksList"><div class="list-empty">Пока никто не указал ник</div></div>
-  </div>
-</div>
+          <div id="updateActions" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-success" id="installUpdateBtn" style="display:none;">🚀 Перезапустить и обновить</button>
+            <button class="btn btn-reset" id="openReleasesBtn">📦 Все релизы на GitHub</button>
+            <button class="btn btn-reset" id="toggleLogsBtn">📜 Показать лог</button>
+          </div>
 
-<!-- ============ ANNOUNCEMENTS ============ -->
-<div class="tab-content" id="tab-announcements">
+          <div id="releaseNotesWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24; margin-bottom:12px;">Что нового</div>
+            <div id="releaseNotes" style="font-size:14px; line-height:1.6; color:rgba(255,255,255,0.8);"></div>
+          </div>
 
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">⚙️</span> Настройки автоанонсов
-    </div>
+          <div id="logsWrap" style="display:none; margin-top:24px; padding:20px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+              <div style="font-size:13px; text-transform:uppercase; letter-spacing:1px; color:#f9ca24;">Логи приложения</div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-sm btn-reset" id="reloadLogsBtn">🔄 Обновить</button>
+                <button class="btn btn-sm btn-success" id="copyLogsBtn">📋 Скопировать</button>
+                <button class="btn btn-sm btn-danger" id="clearLogsBtn">🗑️ Очистить</button>
+              </div>
+            </div>
+            <textarea id="logsTextarea" readonly
+                      style="width:100%; height:400px; padding:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);
+                             background:rgba(0,0,0,0.5); color:#d0d0d0; font-family:Consolas, monospace; font-size:12px;
+                             line-height:1.5; resize:vertical; white-space:pre; overflow:auto;"
+                      placeholder="Логи появятся здесь..."></textarea>
+          </div>
 
-    <div class="row">
-      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-        <input type="checkbox" id="annGlobalEnabled" style="width:18px; height:18px; accent-color:#9146ff;" />
-        <span>Включить автоотправку анонсов</span>
-      </label>
-    </div>
-
-    <div class="row" style="gap:24px;">
-      <div>
-        <label style="font-size:13px; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">Интервал, мин</label>
-        <input type="number" id="annIntervalMin" min="1" value="10" style="width:120px;" />
-      </div>
-      <div>
-        <label style="font-size:13px; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">Пауза между сообщениями, мс</label>
-        <input type="number" id="annMessagesGap" min="100" step="100" value="300" style="width:160px;" />
-      </div>
-      <button class="btn btn-success btn-sm" id="annSaveSettings" style="align-self:flex-end;">💾 Применить</button>
-    </div>
-
-    <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:4px;">
-      Приложение отправляет по одному анонсу за раз, потом ждёт N минут и берёт следующий. Циклично.
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">➕</span> Новый анонс
-    </div>
-
-    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
-      <input type="text" id="annNewTitle" placeholder="Название (например, «Соц. сети»)" />
-
-      <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:8px;">
-        Сообщения (одно на строку).<br>
-        Строка, начинающаяся с <code style="color:#f9ca24;">!</code>, отправится как выделенный анонс.<br>
-        Можно указать цвет: <code style="color:#f9ca24;">!purple Текст</code> (blue / green / orange / purple).
-      </div>
-      <textarea id="annNewMessages" rows="5" placeholder="!Наши соц. сети:&#10;TG - https://t.me/...&#10;Запись на рейды - https://...&#10;Дискорд - https://discord.gg/..." style="resize:vertical; min-height:120px;"></textarea>
-
-      <button class="btn btn-primary" id="annAddBtn" style="margin-top:12px; align-self:flex-start;">➕ Добавить анонс</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">📋</span> Список анонсов
-    </div>
-    <div id="annList" style="display:flex; flex-direction:column; gap:12px;">
-      <div class="list-empty">Анонсов пока нет</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ============ DEBTS ============ -->
-<div class="tab-content" id="tab-debts">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">💰</span> Долги
-      <button class="btn btn-sm btn-danger" id="debtsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
-    </div>
-    <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-      Добавляй ник и сумму долга. Если ник уже есть в списке — сумма прибавится к существующей.
-      Срок отсчитывается с момента первого добавления.
-    </p>
-
-    <div class="row" style="margin-bottom:8px;">
-      <input type="text" id="debtNameInput" placeholder="Ник в чате..." style="flex:2; min-width:200px;" />
-      <input type="number" id="debtAmountInput" placeholder="Сумма" min="1" style="flex:1; min-width:120px;" />
-      <button class="btn btn-primary" id="debtAddBtn">➕ Добавить</button>
-    </div>
-
-    <div class="counter-bar">
-      <span>Всего должников: <strong id="debtsCount">0</strong></span>
-      <span>Общая сумма: <strong id="debtsTotal">0</strong></span>
-    </div>
-
-    <div class="list-grid" id="debtsList" style="max-height:none;">
-      <div class="list-empty">Пока нет долгов</div>
-    </div>
-  </div>
-</div>
- 
-<!-- ============ HISTORY ============ -->
-<div class="tab-content" id="tab-history">
-  <div class="card">
-    <div class="card-title">
-      <span class="icon">📜</span> История розыгрышей
-      <button class="btn btn-sm btn-danger" id="histClear" style="margin-left:auto;">Очистить всё</button>
-    </div>
-    <div class="history-container" id="histList"><div class="history-empty">История пуста</div></div>
-  </div>
-</div>
-
-<!-- ============ SETTINGS ============ -->
-<div class="tab-content" id="tab-settings">
-  <div class="card">
-    <div class="card-title"><span class="icon">⚙️</span> Настройки интеграций</div>
-
-    <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
-      <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награда «Билет на розыгрыш»</label>
-
-      <div id="rewardSelectWrap" style="display:none;">
-        <div class="row" style="margin-bottom:0;">
-          <select id="setRewardSelect" style="flex:1; min-width:220px;">
-            <option value="">— Не выбрано —</option>
-          </select>
-          <button class="btn btn-sm btn-success" id="setLoadRewards">🔄 Обновить</button>
         </div>
       </div>
 
-      <div id="rewardManualWrap" style="display:none;">
-        <input type="text" id="setRewardIdManual" placeholder="Вставь ID награды (GUID)" />
-        <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
-          Награда создаётся в панели Twitch, ID можно посмотреть через DevTools → Network → фильтр <code>gql</code> на странице канала.
+      <!-- ============ KEYWORD ============ -->
+      <div class="tab-content" id="tab-keyword">
+        <div class="card">
+          <div class="card-title"><span class="icon">🎯</span> Розыгрыш по ключевому слову</div>
+          <div class="row">
+            <input type="text" id="kwWord" placeholder="Кодовое слово..." style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" id="kwStart">▶️ Старт</button>
+            <button class="btn btn-danger" id="kwStop" disabled>⏹️ Стоп</button>
+            <button class="btn btn-gold" id="kwDraw" disabled>🎲 Победитель</button>
+            <button class="btn btn-reset" id="kwReset">🔄 Сброс</button>
+          </div>
+          <div class="counter-bar">
+            <span>Участников: <strong id="kwCount">0</strong></span>
+            <span>Статус: <span id="kwStatus" style="color:#ff4757;">Остановлен</span></span>
+            <span>Победителей: <strong id="kwWinnersCount">0</strong></span>
+            <span>Слово: <strong id="kwWordDisplay">—</strong></span>
+          </div>
+          <div class="list-grid" id="kwList"><div class="list-empty">Пока никого нет 😴</div></div>
         </div>
       </div>
 
-      <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
-
-      <button class="btn btn-success" id="setSave" style="margin-top:16px;">💾 Сохранить</button>
-
-      <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:16px;">DonationAlerts</label>
-      <div id="daAuthBlock" style="display:flex; gap:10px; align-items:center; margin-top:8px;">
-        <span style="color:rgba(255,255,255,0.35); font-size:13px;">Загрузка...</span>
+      <!-- ============ WHEEL ============ -->
+      <div class="tab-content" id="tab-wheel">
+        <div class="card">
+          <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
+          <div class="wheel-wrapper">
+            <canvas id="wheelCanvas" width="600" height="600"></canvas>
+          </div>
+          <div class="row" style="justify-content:center; margin-top:20px;">
+            <button class="btn btn-gold" id="wheelSpin">🎡 Запустить</button>
+            <button class="btn btn-success" id="wheelForceQueue">⏩ Подтолкнуть очередь</button>
+            <button class="btn btn-danger" id="wheelReset">🗑️ Сбросить всё</button>
+          </div>
+          <div class="row" style="justify-content:center; font-size:14px; color:rgba(255,255,255,0.5); gap:16px;">
+            <span id="wheelStatus">⏸️ Ожидание</span>
+            <span id="wheelQueueBadge" style="display:none; padding:4px 12px; background:rgba(0,212,255,0.15); border:1px solid rgba(0,212,255,0.3); border-radius:12px; color:#00d4ff; font-weight:600;">
+              ⏳ В очереди: 0
+            </span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">⚙️</span> Сектора</div>
+          <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+            <input type="text" id="secLabel" placeholder="Название сектора..." />
+            <input type="number" id="secWeight" placeholder="Вес" value="1" min="1" />
+            <button class="btn btn-success" id="secAdd">➕ Добавить сектор</button>
+          </div>
+          <div class="sector-list" id="secList"><div class="list-empty">Нет секторов</div></div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-title"><span class="icon">📺</span> URL оверлеев для OBS</div>
-    <div class="row" style="flex-direction:column; align-items:stretch;">
-      <label style="font-size:13px; color:rgba(255,255,255,0.5);">🎯 Ключевое слово (отдельный)</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-keyword.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎡 Колесо</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-wheel.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🔫 Снайпер</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎧 Топы (отдельный)</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-dj.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🖼️ Рамка (объединяет всё)</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-frame.html" onclick="this.select()" />
-      <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🖼️ Карты (аналог рулетки)</label>
-      <input type="text" readonly value="http://localhost:3000/overlay-cards.html" onclick="this.select()" />
-    </div>
+      <!-- ============ SNIPER ============ -->
+      <div class="tab-content" id="tab-sniper">
+        <div class="card">
+          <div class="card-title"><span class="icon">🔫</span> Снайпер</div>
+          <div class="sniper-stats">
+            <span class="alive">🟢 Живых: <strong id="snAlive">0</strong></span>
+            <span class="dead">💀 Выбыло: <strong id="snDead">0</strong></span>
+            <span>👥 Всего: <strong id="snTotal">0</strong></span>
+          </div>
+          <div class="sniper-arena" id="snArena"><div class="list-empty">Добавьте участников</div></div>
+          <div class="row" style="margin-top:16px;">
+            <input type="text" id="snName" placeholder="Имя участника..." style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" id="snAdd">➕</button>
+            <button class="btn btn-success" id="snImportTickets">🎟️ Импорт из билетов</button>
+            <button class="btn btn-success" id="snImportDonors">💸 Импорт из донатеров</button>
+            <button class="btn btn-danger" id="snShoot" disabled>🔫 Выстрел!</button>
+            <button class="btn btn-reset" id="snReset">🔄 Сброс</button>
+          </div>
+          <div class="row" style="font-size:14px; color:rgba(255,255,255,0.5);">
+            <span id="snStatus">⏸️ Ожидание</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ LISTS ============ -->
+      <div class="tab-content" id="tab-lists">
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🎟️</span> Билеты на розыгрыш
+            <button class="btn btn-sm btn-danger" id="ticketsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Список пополняется автоматически, когда зритель покупает награду за баллы канала.
+            У одного человека на неделю — один билет. Если нужно передать билет другому — нажмите на число рядом с ником и введите новое значение (0 — удалит).
+          </p>
+          <div class="row">
+            <input type="text" id="ticketsName" placeholder="Ник вручную..." style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" id="ticketsAdd">➕ Добавить</button>
+          </div>
+          <div class="counter-bar">
+            <span>Всего билетов: <strong id="ticketsCount">0</strong></span>
+            <span>Участников: <strong id="ticketsUnique">0</strong></span>
+          </div>
+          <div class="list-grid" id="ticketsList"><div class="list-empty">Пусто</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">💸</span> Донатеры (неделя)
+            <button class="btn btn-sm btn-danger" id="donorsWeeklyReset" style="margin-left:auto;">🗑️ Сбросить</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Список автоматически очищается каждый понедельник.
+            Один человек — одна плашка, суммы складываются.
+            Этот список питает полоску доната.
+          </p>
+          <div class="row">
+            <input type="text" id="donorsWeeklyName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" id="donorsWeeklyAdd">➕ Добавить</button>
+          </div>
+          <div class="counter-bar">
+            <span>Всего донатеров: <strong id="donorsWeeklyCount">0</strong></span>
+          </div>
+          <div class="list-grid" id="donorsWeeklyList"><div class="list-empty">Пусто</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">📊</span> Донатеры (полоска)
+            <button class="btn btn-sm btn-danger" id="donorsStreamReset" style="margin-left:auto;">🗑️ Сбросить</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Список не очищается автоматически. Подходит для длительного розыгрыша (сезон, марафон).
+          </p>
+          <div class="row">
+            <input type="text" id="donorsStreamName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
+            <button class="btn btn-primary" id="donorsStreamAdd">➕ Добавить</button>
+          </div>
+          <div class="counter-bar">
+            <span>Всего донатеров: <strong id="donorsStreamCount">0</strong></span>
+          </div>
+          <div class="list-grid" id="donorsStreamList"><div class="list-empty">Пусто</div></div>
+        </div>
+
+      </div>
+
+      <!-- ============ DONATION BAR ============ -->
+      <div class="tab-content" id="tab-donation-bar">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">📊</span> Полоска доната
+            <button class="btn btn-sm btn-danger" id="dbarReset" style="margin-left:auto;">🔄 Обнулить</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Прогресс копится отдельно: ручная стартовая сумма + все донаты с момента последнего обнуления.
+            Кнопка «Обнулить» очищает и полоску, и список «Донатеры (полоска)» во вкладке «Списки на розыгрыши».
+          </p>
+
+          <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+            <label style="font-size:14px; color:rgba(255,255,255,0.5);">Название цели</label>
+            <input type="text" id="dbarGoalName" placeholder="Например, «Новый микрофон»" />
+
+            <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Сумма цели, ₽</label>
+            <input type="number" id="dbarGoalAmount" min="0" placeholder="20000" />
+
+            <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:12px;">Стартовая сумма вручную, ₽</label>
+            <input type="number" id="dbarManualBase" min="0" placeholder="0" />
+
+            <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
+              Стартовая сумма прибавляется к донатам из списка «Донатеры (неделя)».
+            </div>
+
+            <button class="btn btn-success" id="dbarSave" style="margin-top:16px;">💾 Сохранить цель</button>
+          </div>
+
+          <div style="margin-top:24px; padding:16px; background:rgba(0,0,0,0.25); border-radius:10px;">
+            <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-bottom:8px;">
+              Текущий прогресс: <strong id="dbarCurrent" style="color:#fff;">0</strong> ₽ из
+              <strong id="dbarGoalDisplay" style="color:#fff;">0</strong> ₽
+            </div>
+            <div style="width:100%; height:14px; background:rgba(0,0,0,0.5); border-radius:7px; overflow:hidden;">
+              <div id="dbarFill" style="height:100%; width:0%; background:linear-gradient(90deg, #f9ca24 0%, #f0932b 60%, #ff4757 100%); transition: width 0.4s;"></div>
+            </div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:8px;">
+              Выполнено: <strong id="dbarPercent" style="color:#f9ca24;">0</strong>%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TOPS ============ -->
+      <div class="tab-content" id="tab-tops">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🌟</span> Легенда дня
+            <button class="btn btn-sm btn-danger" id="topsResetDaily" style="margin-left:auto;">🔄 Сбросить вручную</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Топ донатер за текущий стрим. Автоматически обнуляется при запуске и завершении стрима.
+          </p>
+          <div class="counter-bar">
+            <span>Лидер: <strong id="topsDailyLeader">—</strong></span>
+            <span>Всего участников: <strong id="topsDailyCount">0</strong></span>
+          </div>
+          <div class="list-grid" id="topsDailyList"><div class="list-empty">Пока нет донатов</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">👑</span> Легенда месяца
+            <button class="btn btn-sm btn-danger" id="topsResetMonthly" style="margin-left:auto;">🔄 Сбросить вручную</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Топ донатер месяца. Автоматически обнуляется 1-го числа каждого месяца.
+          </p>
+          <div class="counter-bar">
+            <span>Лидер: <strong id="topsMonthlyLeader">—</strong></span>
+            <span>Всего участников: <strong id="topsMonthlyCount">0</strong></span>
+          </div>
+          <div class="list-grid" id="topsMonthlyList"><div class="list-empty">Пока нет донатов</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🎧</span> Диджей дня
+            <button class="btn btn-sm btn-danger" id="djReset" style="margin-left:auto;">🔄 Сбросить вручную</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
+            Покупки самого стримера не учитываются.
+          </p>
+          <div style="max-width:600px;">
+            <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
+            <div id="djRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+              <div class="list-empty">Загрузка наград...</div>
+            </div>
+          </div>
+          <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
+            <div id="djLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ NICKS ============ -->
+      <div class="tab-content" id="tab-nicks">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🎮</span> Ники зрителей
+            <button class="btn btn-sm btn-danger" id="nicksReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Зрители пишут в чат <strong>!ник &lt;ник&gt;</strong>, чтобы указать свой игровой ник.
+            Если указать другой ник позже — старый заменится новым.
+            Можно добавить вручную через форму ниже.
+          </p>
+
+          <div class="row" style="margin-bottom:8px;">
+            <input type="text" id="nicksTwitchInput" placeholder="Twitch-юзернейм..." style="flex:1; min-width:180px;" />
+            <input type="text" id="nicksNickInput" placeholder="Игровой ник..." style="flex:1; min-width:180px;" />
+            <button class="btn btn-primary" id="nicksAddManual">➕ Добавить</button>
+          </div>
+          <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-bottom:16px;">
+            Если такой Twitch-юзернейм уже есть в списке — ник заменится.
+          </div>
+
+          <div class="row">
+            <input type="text" id="nicksSearch" placeholder="🔍 Поиск по юзернейму или нику..." style="flex:1; min-width:200px;" />
+          </div>
+          <div class="counter-bar">
+            <span>Всего ников: <strong id="nicksCount">0</strong></span>
+          </div>
+          <div class="list-grid" id="nicksList"><div class="list-empty">Пока никто не указал ник</div></div>
+        </div>
+      </div>
+
+      <!-- ============ VIPS ============ -->
+      <div class="tab-content" id="tab-vips">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">👑</span> VIP на канале
+            <button class="btn btn-sm btn-danger" id="vipsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Автоматическая выдача VIP при покупке награды на Twitch. Срок VIP — 30 дней.
+            Если человек покупает награду повторно — срок продлевается на 30 дней.
+            По истечении срока VIP снимается автоматически.
+          </p>
+
+          <div class="row" style="margin-bottom:12px;">
+            <input type="text" id="vipNameInput" placeholder="Юзернейм..." style="flex:2; min-width:200px;" />
+            <input type="number" id="vipDaysInput" placeholder="Дней" min="1" value="30" style="flex:1; min-width:100px;" />
+            <button class="btn btn-primary" id="vipAddBtn">➕ Добавить / Обновить</button>
+          </div>
+
+          <div class="row" style="margin-bottom:16px;">
+            <button class="btn btn-sm btn-success" id="vipCheckBtn">🔄 Проверить истёкшие</button>
+          </div>
+
+          <div class="counter-bar">
+            <span>Всего VIP: <strong id="vipsCount">0</strong></span>
+            <span>Активных: <strong id="vipsActive">0</strong></span>
+            <span>Истекших: <strong id="vipsExpired">0</strong></span>
+          </div>
+
+          <div class="list-grid" id="vipsList" style="max-height:none;">
+            <div class="list-empty">Пока нет VIP</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ DEBTS ============ -->
+      <div class="tab-content" id="tab-debts">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">💰</span> Долги
+            <button class="btn btn-sm btn-danger" id="debtsReset" style="margin-left:auto;">🗑️ Сбросить всё</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Добавляй ник и сумму долга. Если ник уже есть в списке — сумма прибавится к существующей.
+            Срок отсчитывается с момента первого добавления.
+          </p>
+
+          <div class="row" style="margin-bottom:8px;">
+            <input type="text" id="debtNameInput" placeholder="Ник в чате..." style="flex:2; min-width:200px;" />
+            <input type="number" id="debtAmountInput" placeholder="Сумма" min="1" style="flex:1; min-width:120px;" />
+            <button class="btn btn-primary" id="debtAddBtn">➕ Добавить</button>
+          </div>
+
+          <div class="counter-bar">
+            <span>Всего должников: <strong id="debtsCount">0</strong></span>
+            <span>Общая сумма: <strong id="debtsTotal">0</strong></span>
+          </div>
+
+          <div class="list-grid" id="debtsList" style="max-height:none;">
+            <div class="list-empty">Пока нет долгов</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ ANNOUNCEMENTS ============ -->
+      <div class="tab-content" id="tab-announcements">
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">⚙️</span> Настройки автоанонсов
+          </div>
+
+          <div class="row">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+              <input type="checkbox" id="annGlobalEnabled" style="width:18px; height:18px; accent-color:#9146ff;" />
+              <span>Включить автоотправку анонсов</span>
+            </label>
+          </div>
+
+          <div class="row" style="gap:24px;">
+            <div>
+              <label style="font-size:13px; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">Интервал, мин</label>
+              <input type="number" id="annIntervalMin" min="1" value="10" style="width:120px;" />
+            </div>
+            <div>
+              <label style="font-size:13px; color:rgba(255,255,255,0.5); display:block; margin-bottom:4px;">Пауза между сообщениями, мс</label>
+              <input type="number" id="annMessagesGap" min="100" step="100" value="300" style="width:160px;" />
+            </div>
+            <button class="btn btn-success btn-sm" id="annSaveSettings" style="align-self:flex-end;">💾 Применить</button>
+          </div>
+
+          <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:4px;">
+            Приложение отправляет по одному анонсу за раз, потом ждёт N минут и берёт следующий. Циклы.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">➕</span> Новый анонс
+          </div>
+
+          <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+            <input type="text" id="annNewTitle" placeholder="Название (например, «Соц. сети»)" />
+
+            <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:8px;">
+              Сообщения (одно на строку).<br>
+              Строка, начинающаяся с <code style="color:#f9ca24;">!</code>, отправится как выделенный анонс.<br>
+              Можно указать цвет: <code style="color:#f9ca24;">!purple Текст</code> (blue / green / orange / purple).
+            </div>
+            <textarea id="annNewMessages" rows="5" placeholder="!Наши соц. сети:&#10;TG - https://t.me/...&#10;Запись на рейды - https://...&#10;Дискорд - https://discord.gg/..." style="resize:vertical; min-height:120px;"></textarea>
+
+            <button class="btn btn-primary" id="annAddBtn" style="margin-top:12px; align-self:flex-start;">➕ Добавить анонс</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">📋</span> Список анонсов
+          </div>
+          <div id="annList" style="display:flex; flex-direction:column; gap:12px;">
+            <div class="list-empty">Анонсов пока нет</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============ HISTORY ============ -->
+      <div class="tab-content" id="tab-history">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">📜</span> История розыгрышей
+            <button class="btn btn-sm btn-danger" id="histClear" style="margin-left:auto;">Очистить всё</button>
+          </div>
+          <div class="history-container" id="histList"><div class="history-empty">История пуста</div></div>
+        </div>
+      </div>
+
+      <!-- ============ SETTINGS ============ -->
+      <div class="tab-content" id="tab-settings">
+        <div class="card">
+          <div class="card-title"><span class="icon">⚙️</span> Настройки интеграций</div>
+
+          <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+
+            <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награда «Билет на розыгрыш»</label>
+
+            <div id="rewardSelectWrap" style="display:none;">
+              <div class="row" style="margin-bottom:0;">
+                <select id="setRewardSelect" style="flex:1; min-width:220px;">
+                  <option value="">— Не выбрано —</option>
+                </select>
+                <button class="btn btn-sm btn-success" id="setLoadRewards">🔄 Обновить</button>
+              </div>
+            </div>
+
+            <div id="rewardManualWrap" style="display:none;">
+              <input type="text" id="setRewardIdManual" placeholder="Вставь ID награды (GUID)" />
+            </div>
+
+            <div id="rewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
+
+            <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:24px;">Награда «VIP на 30 дней»</label>
+
+            <div id="vipRewardSelectWrap" style="display:none;">
+              <div class="row" style="margin-bottom:0;">
+                <select id="setVipRewardSelect" style="flex:1; min-width:220px;">
+                  <option value="">— Не выбрано —</option>
+                </select>
+                <button class="btn btn-sm btn-success" id="setLoadVipRewards">🔄 Обновить</button>
+              </div>
+            </div>
+
+            <div id="vipRewardManualWrap" style="display:none;">
+              <input type="text" id="setVipRewardIdManual" placeholder="Вставь ID награды (GUID)" />
+            </div>
+
+            <div id="vipRewardsHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;"></div>
+
+            <button class="btn btn-success" id="setSave" style="margin-top:24px;">💾 Сохранить настройки</button>
+
+            <label style="font-size:14px; color:rgba(255,255,255,0.5); margin-top:32px;">DonationAlerts</label>
+            <div id="daAuthBlock" style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+              <span style="color:rgba(255,255,255,0.35); font-size:13px;">Загрузка...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">📺</span> URL оверлеев для OBS</div>
+          <div class="row" style="flex-direction:column; align-items:stretch;">
+            <label style="font-size:13px; color:rgba(255,255,255,0.5);">🎯 Ключевое слово (отдельный)</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-keyword.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎡 Колесо</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-wheel.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🃏 Карты (аналог рулетки)</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-cards.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🔫 Снайпер</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-winner.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🎧 Топы (отдельный)</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-dj.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🖼️ Рамка (объединяет всё)</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-frame.html" onclick="this.select()" />
+          </div>
+        </div>
+      </div>
+
+    </main>
   </div>
 </div>
 
@@ -776,13 +939,43 @@
 
 <script>
 // ============================================================
+//  ТАБЫ — переключение в сайдбаре
+// ============================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+    const target = document.getElementById(this.dataset.tab);
+    if (target) target.classList.add('active');
+
+    // Запоминаем активную вкладку
+    try { localStorage.setItem('activeTab', this.dataset.tab); } catch {}
+
+    // Прокручиваем контент наверх
+    const main = document.querySelector('.main-content');
+    if (main) main.scrollTop = 0;
+  });
+});
+
+// Восстанавливаем последнюю активную вкладку
+(function restoreActiveTab() {
+  try {
+    const saved = localStorage.getItem('activeTab');
+    if (!saved) return;
+    const btn = document.querySelector(`.tab-btn[data-tab="${saved}"]`);
+    if (btn) btn.click();
+  } catch {}
+})();
+
+// ============================================================
 //  WebSocket
 // ============================================================
 let ws;
 const state = {
   keyword: null, wheel: null, sniper: null, tickets: null,
   donors: null, dj: null, nicks: null, tops: null,
-  announcements: null, donationBar: null, debts: null,
+  announcements: null, donationBar: null, debts: null, vips: null,
   wheelQueueSize: 0,
 };
 
@@ -810,11 +1003,12 @@ function handleMessage(type, payload) {
       state.tops = payload.tops;
       state.announcements = payload.announcements;
       state.donationBar = payload.donationBar;
-      state.wheelQueueSize = payload.wheelQueueSize || 0;
       state.debts = payload.debts;
+      state.vips = payload.vips;
+      state.wheelQueueSize = payload.wheelQueueSize || 0;
       renderKeyword(); renderWheel(); renderSniper(); renderTickets();
       renderDonors(); renderDj(); renderNicks(); renderTops();
-      renderAnnouncements(); renderDonationBar(); renderDebts();
+      renderAnnouncements(); renderDonationBar(); renderDebts(); renderVips();
       renderWheelQueue();
       break;
 
@@ -852,13 +1046,13 @@ function handleMessage(type, payload) {
     case 'tops:state':     state.tops = payload; renderTops(); break;
     case 'announcements:state': state.announcements = payload; renderAnnouncements(); break;
     case 'donationBar:state': state.donationBar = payload; renderDonationBar(); break;
+    case 'debts:state':    state.debts = payload; renderDebts(); break;
+    case 'vips:state':     state.vips = payload; renderVips(); break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
 
     case 'twitchStatus':   updateTwitchStatus(payload.connected); break;
     case 'donationAlertsStatus': updateDAStatus(payload.connected); break;
-
-    case 'debts:state': state.debts = payload; renderDebts(); break;
 
     case 'error': showToast(payload.message); break;
   }
@@ -902,18 +1096,6 @@ async function refreshAuthButtons() {
     }
   } catch {}
 }
-
-// ============================================================
-//  Табы
-// ============================================================
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById(this.dataset.tab).classList.add('active');
-  });
-});
 
 // ============================================================
 //  KEYWORD
@@ -1374,7 +1556,7 @@ document.getElementById('dbarSave').addEventListener('click', () => {
 });
 
 document.getElementById('dbarReset').addEventListener('click', () => {
-  if (confirm('Обнулить полоску и список «Донатеры (полоска)»?')) {
+  if (confirm('Обнулить полоску и список «Донатеры (неделя)»?')) {
     sendAction('donationBar:resetBar');
     showToast('🔄 Обнулено', 'success');
   }
@@ -1390,6 +1572,14 @@ const topsMonthlyList = document.getElementById('topsMonthlyList');
 const topsMonthlyLeader = document.getElementById('topsMonthlyLeader');
 const topsMonthlyCount = document.getElementById('topsMonthlyCount');
 
+function formatMoney(value) {
+  const n = Number(value) || 0;
+  return n.toLocaleString('ru-RU', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 function renderTops() {
   const t = state.tops;
   if (!t) return;
@@ -1397,7 +1587,7 @@ function renderTops() {
   const dailyList = [...(t.daily?.participants || [])].sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
   topsDailyCount.textContent = dailyList.length;
   if (t.daily?.leader) {
-    topsDailyLeader.textContent = `${t.daily.leader.name} — ${t.daily.leader.totalAmount || 0} ₽`;
+    topsDailyLeader.textContent = `${t.daily.leader.name} — ${formatMoney(t.daily.leader.totalAmount)} ₽`;
   } else {
     topsDailyLeader.textContent = '—';
   }
@@ -1409,7 +1599,7 @@ function renderTops() {
       <div class="list-chip donor">
         ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '•'}
         ${escapeHtml(p.name)}
-        <span class="amount">${p.totalAmount || 0} ${p.currency || '₽'}</span>
+        <span class="amount">${formatMoney(p.totalAmount)} ${p.currency || '₽'}</span>
       </div>
     `).join('');
   }
@@ -1417,7 +1607,7 @@ function renderTops() {
   const monthlyList = [...(t.monthly?.participants || [])].sort((a, b) => (b.totalAmount || 0) - (a.totalAmount || 0));
   topsMonthlyCount.textContent = monthlyList.length;
   if (t.monthly?.leader) {
-    topsMonthlyLeader.textContent = `${t.monthly.leader.name} — ${t.monthly.leader.totalAmount || 0} ₽`;
+    topsMonthlyLeader.textContent = `${t.monthly.leader.name} — ${formatMoney(t.monthly.leader.totalAmount)} ₽`;
   } else {
     topsMonthlyLeader.textContent = '—';
   }
@@ -1429,7 +1619,7 @@ function renderTops() {
       <div class="list-chip donor">
         ${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '•'}
         ${escapeHtml(p.name)}
-        <span class="amount">${p.totalAmount || 0} ${p.currency || '₽'}</span>
+        <span class="amount">${formatMoney(p.totalAmount)} ${p.currency || '₽'}</span>
       </div>
     `).join('');
   }
@@ -1516,6 +1706,7 @@ document.getElementById('djReset').addEventListener('click', () => {
   if (confirm('Обнулить счётчик Диджея дня?')) sendAction('dj:reset');
 });
 
+// Загружаем награды при открытии вкладки «Топы»
 document.querySelector('[data-tab="tab-tops"]').addEventListener('click', loadDjRewards);
 
 // ============================================================
@@ -1593,6 +1784,224 @@ nicksTwitchInput.addEventListener('keydown', e => {
 
 document.getElementById('nicksReset').addEventListener('click', () => {
   if (confirm('Очистить все ники?')) sendAction('nicks:reset');
+});
+
+// ============================================================
+//  VIPS
+// ============================================================
+const vipsList = document.getElementById('vipsList');
+const vipsCount = document.getElementById('vipsCount');
+const vipsActive = document.getElementById('vipsActive');
+const vipsExpired = document.getElementById('vipsExpired');
+const vipNameInput = document.getElementById('vipNameInput');
+const vipDaysInput = document.getElementById('vipDaysInput');
+
+function pluralDays(n) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'день';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
+  return 'дней';
+}
+
+function renderVips() {
+  const v = state.vips;
+  if (!v) return;
+
+  const list = v.list || [];
+  vipsCount.textContent = list.length;
+
+  const active = list.filter(x => x.daysLeft > 0).length;
+  const expired = list.filter(x => x.daysLeft <= 0).length;
+  vipsActive.textContent = active;
+  vipsExpired.textContent = expired;
+
+  if (list.length === 0) {
+    vipsList.innerHTML = `<div class="list-empty">Пока нет VIP</div>`;
+    return;
+  }
+
+  vipsList.innerHTML = list.map(item => {
+    const days = item.daysLeft;
+    const daysText = days > 0
+      ? `${days} ${pluralDays(days)}`
+      : `истёк ${Math.abs(days)} ${pluralDays(Math.abs(days))} назад`;
+
+    const color = days > 7 ? '#00ff64'
+                : days > 0 ? '#f9ca24'
+                : '#ff4757';
+
+    const source = item.lastSource === 'twitch' ? '📺 Twitch'
+                 : item.lastSource === 'manual' ? '✏️ вручную'
+                 : '—';
+
+    return `
+      <div class="list-chip donor" style="flex-direction:column; align-items:flex-start; gap:6px; padding:10px 14px; border-radius:12px; max-width:380px;">
+        <div style="display:flex; align-items:center; gap:10px; width:100%;">
+          <span style="color:#fff; font-weight:800; font-size:15px;">👑 ${escapeHtml(item.username)}</span>
+          <span class="chip-x" data-username="${escapeAttr(item.username)}" style="margin-left:auto;">✕</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <input type="number" class="vip-days-edit" data-username="${escapeAttr(item.username)}"
+                 value="${Math.max(1, days)}" min="1"
+                 style="width:80px; padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);
+                        background:rgba(0,0,0,0.3); color:#f9ca24; font-weight:700; font-size:14px;" />
+          <span style="font-size:12px; color:rgba(255,255,255,0.4);">дней</span>
+          <button class="btn btn-sm btn-success vip-save" data-username="${escapeAttr(item.username)}"
+                  style="padding:3px 10px; font-size:12px;">💾</button>
+        </div>
+        <div style="font-size:12px; color:${color};">
+          ${daysText} · источник: ${source}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  vipsList.querySelectorAll('.chip-x').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!confirm('Удалить VIP у ' + el.dataset.username + '? (также снимется на Twitch)')) return;
+      sendAction('vips:remove', { username: el.dataset.username });
+    });
+  });
+
+  vipsList.querySelectorAll('.vip-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const username = btn.dataset.username;
+      const input = vipsList.querySelector(`.vip-days-edit[data-username="${CSS.escape(username)}"]`);
+      if (!input) return;
+      const days = parseInt(input.value) || 0;
+      if (days <= 0) { showToast('Укажи срок > 0'); return; }
+      sendAction('vips:setDays', { username, days });
+      showToast('✅ Срок обновлён', 'success');
+    });
+  });
+}
+
+document.getElementById('vipAddBtn').addEventListener('click', () => {
+  const username = vipNameInput.value.trim();
+  const days = parseInt(vipDaysInput.value) || 0;
+
+  if (!username) { showToast('Укажи юзернейм'); vipNameInput.focus(); return; }
+  if (days <= 0) { showToast('Укажи срок > 0'); vipDaysInput.focus(); return; }
+
+  sendAction('vips:setManual', { username, days });
+  vipNameInput.value = '';
+  vipDaysInput.value = '30';
+  vipNameInput.focus();
+  showToast('✅ VIP добавлен/обновлён', 'success');
+});
+
+vipDaysInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('vipAddBtn').click();
+});
+vipNameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') vipDaysInput.focus();
+});
+
+document.getElementById('vipCheckBtn').addEventListener('click', () => {
+  sendAction('vips:checkExpired');
+  showToast('🔄 Проверяю истёкшие...', 'success');
+});
+
+document.getElementById('vipsReset').addEventListener('click', () => {
+  if (confirm('Удалить ВСЕХ VIP из базы? На Twitch они НЕ снимутся. Продолжить?')) {
+    sendAction('vips:reset');
+  }
+});
+
+// ============================================================
+//  DEBTS
+// ============================================================
+const debtsList = document.getElementById('debtsList');
+const debtsCount = document.getElementById('debtsCount');
+const debtsTotal = document.getElementById('debtsTotal');
+const debtNameInput = document.getElementById('debtNameInput');
+const debtAmountInput = document.getElementById('debtAmountInput');
+
+function renderDebts() {
+  const d = state.debts;
+  if (!d) return;
+
+  const list = d.list || [];
+  debtsCount.textContent = list.length;
+  debtsTotal.textContent = list.reduce((s, x) => s + (Number(x.amount) || 0), 0).toLocaleString('ru-RU');
+
+  if (list.length === 0) {
+    debtsList.innerHTML = `<div class="list-empty">Пока нет долгов</div>`;
+    return;
+  }
+
+  const sorted = [...list].sort((a, b) => a.createdAt - b.createdAt);
+
+  debtsList.innerHTML = sorted.map(item => {
+    const days = Math.floor((Date.now() - item.createdAt) / (24 * 60 * 60 * 1000));
+    const date = new Date(item.createdAt).toLocaleDateString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+    return `
+      <div class="list-chip donor" style="flex-direction:column; align-items:flex-start; gap:6px; padding:10px 14px; border-radius:12px; max-width:340px;">
+        <div style="display:flex; align-items:center; gap:10px; width:100%;">
+          <span style="color:#fff; font-weight:800; font-size:15px;">💸 ${escapeHtml(item.username)}</span>
+          <span class="chip-x" data-username="${escapeAttr(item.username)}" style="margin-left:auto;">✕</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <input type="number" class="debt-amount-edit" data-username="${escapeAttr(item.username)}"
+                 value="${item.amount}" min="0"
+                 style="width:120px; padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);
+                        background:rgba(0,0,0,0.3); color:#f9ca24; font-weight:700; font-size:14px;" />
+          <span style="font-size:12px; color:rgba(255,255,255,0.4);">голды</span>
+          <button class="btn btn-sm btn-success debt-save" data-username="${escapeAttr(item.username)}"
+                  style="padding:3px 10px; font-size:12px;">💾</button>
+        </div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.5);">
+          Срок: <strong style="color:#fff;">${days} ${pluralDays(days)}</strong> · с ${date}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  debtsList.querySelectorAll('.chip-x').forEach(el => {
+    el.addEventListener('click', () => {
+      if (!confirm('Удалить долг ' + el.dataset.username + '?')) return;
+      sendAction('debts:remove', { username: el.dataset.username });
+    });
+  });
+
+  debtsList.querySelectorAll('.debt-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const username = btn.dataset.username;
+      const input = debtsList.querySelector(`.debt-amount-edit[data-username="${CSS.escape(username)}"]`);
+      if (!input) return;
+      const value = parseInt(input.value) || 0;
+      sendAction('debts:setAmount', { username, amount: value });
+      showToast('✅ Сумма обновлена', 'success');
+    });
+  });
+}
+
+document.getElementById('debtAddBtn').addEventListener('click', () => {
+  const username = debtNameInput.value.trim();
+  const amount = parseInt(debtAmountInput.value) || 0;
+
+  if (!username) { showToast('Укажи ник'); debtNameInput.focus(); return; }
+  if (amount <= 0) { showToast('Укажи сумму больше 0'); debtAmountInput.focus(); return; }
+
+  sendAction('debts:add', { username, amount });
+  debtNameInput.value = '';
+  debtAmountInput.value = '';
+  debtNameInput.focus();
+  showToast('✅ Добавлено', 'success');
+});
+
+debtAmountInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('debtAddBtn').click();
+});
+debtNameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') debtAmountInput.focus();
+});
+
+document.getElementById('debtsReset').addEventListener('click', () => {
+  if (confirm('Удалить все долги?')) sendAction('debts:reset');
 });
 
 // ============================================================
@@ -1840,15 +2249,22 @@ document.getElementById('histClear').addEventListener('click', async () => {
 let currentRewards = [];
 let rewardsApiAvailable = false;
 
+window._savedRewardId = '';
+window._savedVipRewardId = '';
+
 async function loadSettings() {
   try {
     const r = await fetch('/api/settings');
     const s = await r.json();
+
     window._savedRewardId = s.ticketRewardId || '';
+    window._savedVipRewardId = s.vipRewardId || '';
 
     await loadRewards({ silent: true });
     await renderDaAuthBlock();
-  } catch {}
+  } catch (e) {
+    console.warn('[settings] не удалось загрузить:', e.message);
+  }
 }
 
 async function renderDaAuthBlock() {
@@ -1876,12 +2292,18 @@ async function renderDaAuthBlock() {
 
 async function loadRewards({ silent } = {}) {
   const hint = document.getElementById('rewardsHint');
+  const vipHint = document.getElementById('vipRewardsHint');
   const selectWrap = document.getElementById('rewardSelectWrap');
   const manualWrap = document.getElementById('rewardManualWrap');
+  const vipSelectWrap = document.getElementById('vipRewardSelectWrap');
+  const vipManualWrap = document.getElementById('vipRewardManualWrap');
   const select = document.getElementById('setRewardSelect');
+  const vipSelect = document.getElementById('setVipRewardSelect');
   const manualInput = document.getElementById('setRewardIdManual');
+  const vipManualInput = document.getElementById('setVipRewardIdManual');
 
   if (!silent) hint.textContent = 'Загрузка списка наград...';
+  if (!silent) vipHint.textContent = 'Загрузка списка наград...';
 
   try {
     const r = await fetch('/api/rewards');
@@ -1890,14 +2312,21 @@ async function loadRewards({ silent } = {}) {
     if (data.available) {
       rewardsApiAvailable = true;
       currentRewards = data.rewards || [];
-      select.innerHTML = '<option value="">— Не выбрано —</option>' +
+
+      const options = '<option value="">— Не выбрано —</option>' +
         currentRewards.map(x =>
           `<option value="${escapeAttr(x.id)}">${escapeHtml(x.title)} — ${x.cost} баллов</option>`
         ).join('');
 
+      select.innerHTML = options;
+      vipSelect.innerHTML = options;
+
       selectWrap.style.display = 'block';
       manualWrap.style.display = 'none';
+      vipSelectWrap.style.display = 'block';
+      vipManualWrap.style.display = 'none';
 
+      // Билеты
       if (window._savedRewardId) {
         const opt = currentRewards.find(x => x.id === window._savedRewardId);
         if (opt) {
@@ -1911,33 +2340,77 @@ async function loadRewards({ silent } = {}) {
       } else {
         hint.textContent = `Найдено наград: ${currentRewards.length}. Выбери нужную.`;
       }
+
+      // VIP
+      if (window._savedVipRewardId) {
+        const opt = currentRewards.find(x => x.id === window._savedVipRewardId);
+        if (opt) {
+          vipSelect.value = window._savedVipRewardId;
+          vipHint.textContent = `✅ Активна: ${opt.title} (${opt.cost} баллов)`;
+        } else {
+          vipHint.textContent = '⚠️ Сохранённая награда не найдена. Выбери заново.';
+        }
+      } else if (currentRewards.length === 0) {
+        vipHint.textContent = 'На канале пока нет кастомных награда.';
+      } else {
+        vipHint.textContent = `Найдено наград: ${currentRewards.length}. Выбери нужную.`;
+      }
+
     } else {
       rewardsApiAvailable = false;
       selectWrap.style.display = 'none';
       manualWrap.style.display = 'block';
+      vipSelectWrap.style.display = 'none';
+      vipManualWrap.style.display = 'block';
+
       if (window._savedRewardId) manualInput.value = window._savedRewardId;
-      hint.textContent = '⚠️ ' + (data.reason || 'Список недоступен. Введи ID вручную.');
+      if (window._savedVipRewardId) vipManualInput.value = window._savedVipRewardId;
+
+      const reason = data.reason || 'Список недоступен. Введи ID вручную.';
+      hint.textContent = '⚠️ ' + reason;
+      vipHint.textContent = '⚠️ ' + reason;
     }
   } catch (e) {
-    if (!silent) hint.textContent = '⚠️ Ошибка: ' + e.message;
+    if (!silent) {
+      hint.textContent = '⚠️ Ошибка: ' + e.message;
+      vipHint.textContent = '⚠️ Ошибка: ' + e.message;
+    }
   }
 }
 
-document.getElementById('setLoadRewards').addEventListener('click', () => loadRewards());
+document.getElementById('setLoadRewards')?.addEventListener('click', () => loadRewards());
+document.getElementById('setLoadVipRewards')?.addEventListener('click', () => loadRewards());
 
-document.getElementById('setSave').addEventListener('click', async () => {
+document.getElementById('setSave')?.addEventListener('click', async () => {
   let ticketRewardId = '';
   let ticketRewardTitle = '';
+  let vipRewardId = '';
+  let vipRewardTitle = '';
 
   if (rewardsApiAvailable) {
     ticketRewardId = document.getElementById('setRewardSelect').value || '';
-    const selected = currentRewards.find(x => x.id === ticketRewardId);
-    ticketRewardTitle = selected ? selected.title : '';
+    const selectedTicket = currentRewards.find(x => x.id === ticketRewardId);
+    ticketRewardTitle = selectedTicket ? selectedTicket.title : '';
+
+    vipRewardId = document.getElementById('setVipRewardSelect').value || '';
+    const selectedVip = currentRewards.find(x => x.id === vipRewardId);
+    vipRewardTitle = selectedVip ? selectedVip.title : '';
   } else {
     ticketRewardId = document.getElementById('setRewardIdManual').value.trim();
+    vipRewardId = document.getElementById('setVipRewardIdManual').value.trim();
   }
 
-  const body = { ticketRewardId, ticketRewardTitle };
+  if (ticketRewardId && vipRewardId && ticketRewardId === vipRewardId) {
+    showToast('❌ Нельзя использовать одну и ту же награду для билетов и VIP');
+    return;
+  }
+
+  const body = {
+    ticketRewardId,
+    ticketRewardTitle,
+    vipRewardId,
+    vipRewardTitle,
+  };
 
   try {
     const r = await fetch('/api/settings', {
@@ -1946,9 +2419,17 @@ document.getElementById('setSave').addEventListener('click', async () => {
       body: JSON.stringify(body),
     });
     const data = await r.json();
-    if (data.error) { showToast('❌ ' + data.error); return; }
+
+    if (data.error) {
+      showToast('❌ ' + data.error);
+      return;
+    }
+
     showToast('✅ Настройки сохранены', 'success');
+
     window._savedRewardId = ticketRewardId;
+    window._savedVipRewardId = vipRewardId;
+
     await loadSettings();
   } catch (e) {
     showToast('❌ ' + e.message);
@@ -2014,7 +2495,6 @@ function setUpdateStatus(text, color) {
 
 async function initUpdates() {
   if (!window.electronAPI) {
-    // Открыто в браузере, не в Electron — показываем заглушку
     currentVersionEl.textContent = 'web';
     setUpdateStatus('Веб-режим', 'rgba(255,255,255,0.5)');
     return;
@@ -2125,7 +2605,6 @@ document.getElementById('copyLogsBtn').addEventListener('click', async () => {
       document.getElementById('copyLogsBtn').textContent = '📋 Скопировать';
     }, 1500);
   } catch (e) {
-    // Fallback для старых случаев
     logsTextarea.select();
     document.execCommand('copy');
   }
@@ -2141,112 +2620,6 @@ document.getElementById('clearLogsBtn').addEventListener('click', async () => {
 });
 
 initUpdates();
-
-// ============================================================
-//  DEBTS
-// ============================================================
-const debtsList = document.getElementById('debtsList');
-const debtsCount = document.getElementById('debtsCount');
-const debtsTotal = document.getElementById('debtsTotal');
-const debtNameInput = document.getElementById('debtNameInput');
-const debtAmountInput = document.getElementById('debtAmountInput');
-
-function pluralDays(n) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'день';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
-  return 'дней';
-}
-
-function renderDebts() {
-  const d = state.debts;
-  if (!d) return;
-
-  const list = d.list || [];
-  debtsCount.textContent = list.length;
-  debtsTotal.textContent = list.reduce((s, x) => s + (Number(x.amount) || 0), 0).toLocaleString('ru-RU');
-
-  if (list.length === 0) {
-    debtsList.innerHTML = `<div class="list-empty">Пока нет долгов</div>`;
-    return;
-  }
-
-  // Сортировка: старые сверху
-  const sorted = [...list].sort((a, b) => a.createdAt - b.createdAt);
-
-  debtsList.innerHTML = sorted.map(item => {
-    const days = Math.floor((Date.now() - item.createdAt) / (24 * 60 * 60 * 1000));
-    const date = new Date(item.createdAt).toLocaleDateString('ru-RU', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
-    return `
-      <div class="list-chip donor" style="flex-direction:column; align-items:flex-start; gap:6px; padding:10px 14px; border-radius:12px; max-width:340px;">
-        <div style="display:flex; align-items:center; gap:10px; width:100%;">
-          <span style="color:#fff; font-weight:800; font-size:15px;">💸 ${escapeHtml(item.username)}</span>
-          <span class="chip-x" data-username="${escapeAttr(item.username)}" style="margin-left:auto;">✕</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <input type="number" class="debt-amount-edit" data-username="${escapeAttr(item.username)}"
-                 value="${item.amount}" min="0"
-                 style="width:120px; padding:4px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);
-                        background:rgba(0,0,0,0.3); color:#f9ca24; font-weight:700; font-size:14px;" />
-          <span style="font-size:12px; color:rgba(255,255,255,0.4);">голды</span>
-          <button class="btn btn-sm btn-success debt-save" data-username="${escapeAttr(item.username)}"
-                  style="padding:3px 10px; font-size:12px;">💾</button>
-        </div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.5);">
-          Срок: <strong style="color:#fff;">${days} ${pluralDays(days)}</strong> · с ${date}
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Удаление
-  debtsList.querySelectorAll('.chip-x').forEach(el => {
-    el.addEventListener('click', () => {
-      if (!confirm('Удалить долг ' + el.dataset.username + '?')) return;
-      sendAction('debts:remove', { username: el.dataset.username });
-    });
-  });
-
-  // Сохранение отредактированной суммы
-  debtsList.querySelectorAll('.debt-save').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const username = btn.dataset.username;
-      const input = debtsList.querySelector(`.debt-amount-edit[data-username="${CSS.escape(username)}"]`);
-      if (!input) return;
-      const value = parseInt(input.value) || 0;
-      sendAction('debts:setAmount', { username, amount: value });
-      showToast('✅ Сумма обновлена', 'success');
-    });
-  });
-}
-
-document.getElementById('debtAddBtn').addEventListener('click', () => {
-  const username = debtNameInput.value.trim();
-  const amount = parseInt(debtAmountInput.value) || 0;
-
-  if (!username) { showToast('Укажи ник'); debtNameInput.focus(); return; }
-  if (amount <= 0) { showToast('Укажи сумму больше 0'); debtAmountInput.focus(); return; }
-
-  sendAction('debts:add', { username, amount });
-  debtNameInput.value = '';
-  debtAmountInput.value = '';
-  debtNameInput.focus();
-  showToast('✅ Добавлено', 'success');
-});
-
-debtAmountInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('debtAddBtn').click();
-});
-debtNameInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') debtAmountInput.focus();
-});
-
-document.getElementById('debtsReset').addEventListener('click', () => {
-  if (confirm('Удалить все долги?')) sendAction('debts:reset');
-});
 </script>
 </body>
 </html>
