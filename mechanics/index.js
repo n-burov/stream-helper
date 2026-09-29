@@ -11,6 +11,7 @@ const tops = require('./tops');
 const announcements = require('./announcements');
 const donationBar = require('./donationBar');
 const debts = require('./debts');
+const vips = require('./vips');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -25,6 +26,7 @@ function initAll(ctx) {
   announcements.init(ctx);
   donationBar.init(ctx);
   debts.init(ctx);
+  vips.init(ctx);
 }
 
 function handleCommand(action, data) {
@@ -81,6 +83,12 @@ function handleCommand(action, data) {
     case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
     case 'debts:remove':    return debts.remove(data?.username);
     case 'debts:reset':     return debts.reset();
+	
+	case 'vips:setManual': return vips.setManual(data || {});
+    case 'vips:setDays':   return vips.setDays(data?.username, data?.days);
+    case 'vips:remove':    return vips.remove(data?.username);
+    case 'vips:reset':     return vips.reset();
+    case 'vips:checkExpired': return vips.checkExpired();
 
     default:
       return { error: 'Unknown action: ' + action };
@@ -101,6 +109,7 @@ function getFullState() {
     announcements: announcements.getState(),
     donationBar: donationBar.getState(),
     debts: debts.getState(),
+	vips: vips.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -114,4 +123,5 @@ function handleChat(msg) {
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
   tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar, debts,
+  vips,
 };
