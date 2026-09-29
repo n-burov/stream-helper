@@ -78,16 +78,46 @@ function createWindow() {
   mainWindow.webContents.on('did-finish-load', () => injectHomeButton());
   mainWindow.webContents.on('did-navigate', () => injectHomeButton());
 
-  // Перехват OAuth — открываем в системном браузере
-  const oauthDomains = ['accounts.google.com', 'id.twitch.tv', 'www.donationalerts.com', 'donationalerts.com'];
+  // ============================================================
+  //  OAuth — открываем в системном браузере
+  // ============================================================
+  const OAUTH_PATHS = ['/auth/login', '/auth/callback', '/auth/donationalerts/login', '/auth/donationalerts/callback'];
+  const OAUTH_DOMAINS = ['id.twitch.tv', 'www.donationalerts.com', 'donationalerts.com'];
 
+  // 1) Перехват навигации на /auth/* и внешние OAuth-домены
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (oauthDomains.some(d => url.includes(d))) {
-      event.preventDefault();
-      shell.openExternal(url);
-    }
+    try {
+      const u = new URL(url);
+
+      // Локальные /auth/* — открываем в браузере
+      if ((u.hostname === 'localhost' || u.hostname === '127.0.0.1') &&
+          OAUTH_PATHS.some(p => u.pathname.startsWith(p))) {
+        event.preventDefault();
+        shell.openExternal(url);
+        return;
+      }
+
+      // Внешние OAuth-домены — тоже в браузер
+      if (OAUTH_DOMAINS.some(d => u.hostname.includes(d))) {
+        event.preventDefault();
+        shell.openExternal(url);
+        return;
+      }
+    } catch {}
   });
 
+  // 2) Перехват редиректов (на случай, если сервер сам редиректит на OAuth)
+  mainWindow.webContents.on('will-redirect', (event, url) => {
+    try {
+      const u = new URL(url);
+      if (OAUTH_DOMAINS.some(d => u.hostname.includes(d))) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    } catch {}
+  });
+
+  // 3) Любые window.open / target=_blank — в системный браузер
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
@@ -107,8 +137,6 @@ function setupUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
-
-  // Ставим disableWebInstaller — иначе апдейтер ругается в логах
   autoUpdater.disableWebInstaller = true;
 
   autoUpdater.on('checking-for-update', () => {
@@ -159,13 +187,11 @@ function setupUpdater() {
     sendUpdateStatus({ state: 'error', error: err.message });
   });
 
-  // Первая проверка при старте
   autoUpdater.checkForUpdates().catch((e) => {
     log.error('[update] check failed:', e.message);
     sendUpdateStatus({ state: 'error', error: e.message });
   });
 
-  // Проверяем каждые 30 минут, пока приложение открыто
   setInterval(() => {
     autoUpdater.checkForUpdates().catch(() => {});
   }, 30 * 60 * 1000);
@@ -197,6 +223,15 @@ ipcMain.handle('open-logs-folder', () => {
   shell.openPath(app.getPath('logs'));
 });
 
+// Открыть внешний URL в системном браузере (для кнопок авторизации)
+ipcMain.handle('open-external', (event, url) => {
+  if (typeof url === 'string' && /^https?:\/\//.test(url)) {
+    shell.openExternal(url);
+    return { ok: true };
+  }
+  return { ok: false, error: 'Invalid URL' };
+});
+
 // ============================================================
 //  ЛОГИ
 // ============================================================
@@ -206,7 +241,6 @@ ipcMain.handle('get-logs', () => {
     if (!fs.existsSync(logFile)) return { ok: true, content: '(лог пуст)' };
 
     const stat = fs.statSync(logFile);
-    // Если файл больше 2 МБ — читаем последние 100 КБ
     const MAX_SIZE = 2 * 1024 * 1024;
     let content;
     if (stat.size > MAX_SIZE) {
