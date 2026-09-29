@@ -27,6 +27,8 @@ const DEFAULT_DATA = {
     channel: null,
     ticketRewardId: null,
     ticketRewardTitle: null,
+	vipRewardId: null,
+    vipRewardTitle: null,
     donationAlertsToken: null,
     donationAlertsRefreshToken: null,
     donationAlertsExpiresAt: null,
@@ -99,7 +101,11 @@ const DEFAULT_DATA = {
   },
 
   debts: {
-    list: [],   // [{ userId, username, amount, createdAt, updatedAt }]
+    list: [],
+  },
+  
+  vips: {
+    list: [],
   },
 };
 
@@ -125,6 +131,7 @@ function loadData() {
     dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
 	dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
     dataCache.debts = { ...DEFAULT_DATA.debts, ...(raw.debts || {}) };
+	dataCache.vips = { ...DEFAULT_DATA.vips, ...(raw.vips || {}) };
 
     if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
       dataCache.announcements.list = [
