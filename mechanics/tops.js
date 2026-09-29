@@ -4,10 +4,23 @@ const db = require('../db');
 let ctxRef = null;
 function init(ctx) { ctxRef = ctx; }
 
+// Округление до 2 знаков (защита от float-мусора вроде 300.29999999999995)
+function roundMoney(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
+// Применяем округление ко всем суммам участника
+function normalizeParticipant(p) {
+  return {
+    ...p,
+    totalAmount: roundMoney(p.totalAmount),
+  };
+}
+
 function getState() {
   const d = db.loadData();
-  const daily = d.tops?.daily?.participants || [];
-  const monthly = d.tops?.monthly?.participants || [];
+  const daily = (d.tops?.daily?.participants || []).map(normalizeParticipant);
+  const monthly = (d.tops?.monthly?.participants || []).map(normalizeParticipant);
 
   return {
     daily: {
