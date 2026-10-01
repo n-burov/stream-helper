@@ -11,12 +11,10 @@ const VIP_DURATION_MS = VIP_DURATION_DAYS * 24 * 60 * 60 * 1000;
 //  Утилиты
 // ============================================================
 
-// Считаем оставшиеся дни (может быть отрицательным, если истёк)
 function daysLeft(expiresAt) {
   return Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
 }
 
-// Нормализуем запись для UI
 function normalizeEntry(v) {
   return {
     userId: v.userId || null,
@@ -29,9 +27,6 @@ function normalizeEntry(v) {
   };
 }
 
-// ============================================================
-//  Состояние для UI
-// ============================================================
 function getState() {
   const d = db.loadData();
   const list = (d.vips?.list || [])
@@ -45,7 +40,7 @@ function broadcast() {
 }
 
 // ============================================================
-//  Работа с Twitch API (ленивый require, чтобы не ломать загрузку)
+//  Контекст Twitch
 // ============================================================
 function getTwitchApi() {
   try {
@@ -72,7 +67,6 @@ function getTwitchContext() {
 async function addFromRedemption({ userId, username, rewardId, redeemedAt }) {
   const d = db.loadData();
 
-  // Проверяем, что это та самая награда
   if (d.settings?.vipRewardId && rewardId !== d.settings.vipRewardId) {
     return { skipped: true };
   }
@@ -94,6 +88,7 @@ async function addFromRedemption({ userId, username, rewardId, redeemedAt }) {
         item.expiresAt = newExpiresAt;
         item.lastSource = 'twitch';
         item.updatedAt = Date.now();
+        if (userId) item.userId = userId;
       }
     });
 
@@ -102,8 +97,7 @@ async function addFromRedemption({ userId, username, rewardId, redeemedAt }) {
     return { ok: true, extended: true, expiresAt: newExpiresAt };
   }
 
-  // === Новая выдача: нет VIP или истёк ===
-  // Сначала пробуем выдать через Twitch API
+  // === Новая выдача ===
   if (ctx && api?.addChannelVip) {
     try {
       await api.addChannelVip({
@@ -167,7 +161,6 @@ async function checkExpired() {
   const api = getTwitchApi();
 
   for (const v of expired) {
-    // Пробуем снять через Twitch API
     if (ctx && api?.removeChannelVip && v.userId) {
       try {
         await api.removeChannelVip({
@@ -179,12 +172,10 @@ async function checkExpired() {
         console.log(`[vips] снял VIP через Twitch: ${v.username}`);
       } catch (e) {
         console.warn(`[vips] не удалось снять VIP через Twitch для ${v.username}:`, e.message);
-        // Не падаем — удалим из базы всё равно, чтобы не зацикливаться
       }
     }
   }
 
-  // Удаляем из базы
   const expiredNames = expired.map(v => v.username.toLowerCase());
   db.update(dd => {
     dd.vips.list = (dd.vips.list || []).filter(
@@ -200,9 +191,8 @@ async function checkExpired() {
 //  Ручное редактирование
 // ============================================================
 
-// Добавить или обновить VIP вручную
-// days = сколько дней от текущего момента
-function setManual({ username, days }) {
+// Добавить или обновить VIP вручную (с автопоиском userId)
+async function setManual({ username, days, userId: explicitUserId }) {
   const trimmed = String(username || '').trim();
   if (!trimmed) return { error: 'Пустое имя' };
 
@@ -213,6 +203,35 @@ function setManual({ username, days }) {
   const now = Date.now();
   const expiresAt = now + n * 24 * 60 * 60 * 1000;
 
+  // === Ищем userId: сначала явно переданный, потом — через API ===
+  let userId = explicitUserId || null;
+
+  if (!userId) {
+    const ctx = getTwitchContext();
+    const api = getTwitchApi();
+
+    if (ctx && api?.getUserByLogin) {
+      try {
+        const user = await api.getUserByLogin({
+          token: ctx.token,
+          clientId: ctx.clientId,
+          login: trimmed,
+        });
+
+        if (user?.id) {
+          userId = user.id;
+          console.log(`[vips] найден Twitch ID для ${trimmed}: ${userId}`);
+        } else {
+          console.warn(`[vips] Twitch-юзер "${trimmed}" не найден — VIP будет только локально`);
+        }
+      } catch (e) {
+        console.warn(`[vips] ошибка поиска Twitch ID для ${trimmed}:`, e.message);
+      }
+    } else {
+      console.warn('[vips] нет доступа к Twitch API — userId не будет найден');
+    }
+  }
+
   db.update(dd => {
     if (!dd.vips) dd.vips = { list: [] };
 
@@ -221,9 +240,11 @@ function setManual({ username, days }) {
       item.expiresAt = expiresAt;
       item.lastSource = 'manual';
       item.updatedAt = now;
+      if (userId) item.userId = userId;
+      if (item.grantedAt == null) item.grantedAt = now;
     } else {
       dd.vips.list.push({
-        userId: null,
+        userId,
         username: trimmed,
         grantedAt: now,
         expiresAt,
@@ -236,7 +257,12 @@ function setManual({ username, days }) {
   });
 
   broadcast();
-  return { ok: true };
+  return {
+    ok: true,
+    userId: userId,
+    foundOnTwitch: !!userId,
+    expiresAt,
+  };
 }
 
 // Изменить срок (кол-во дней от сегодня)
@@ -244,40 +270,123 @@ function setDays(username, days) {
   return setManual({ username, days });
 }
 
-// Удалить VIP (и снять через Twitch, если есть userId)
-async function remove(username) {
-  const lower = String(username || '').trim().toLowerCase();
-  if (!lower) return { error: 'Пустое имя' };
+// ============================================================
+//  РУЧНОЕ СНЯТИЕ VIP (даже если срок не истёк)
+// ============================================================
+async function revokeManually(username, { forceLocal = false } = {}) {
+  const trimmed = String(username || '').trim();
+  if (!trimmed) return { error: 'Пустое имя' };
 
+  const lower = trimmed.toLowerCase();
   const d = db.loadData();
   const item = (d.vips?.list || []).find(v => v.username.toLowerCase() === lower);
 
-  if (item?.userId) {
+  if (!item) return { error: 'VIP не найден в базе' };
+
+  // === forceLocal: просто удалить из базы, не трогая Twitch ===
+  if (forceLocal) {
+    db.update(dd => {
+      dd.vips.list = (dd.vips.list || []).filter(
+        v => v.username.toLowerCase() !== lower
+      );
+    });
+    broadcast();
+    console.log(`[vips] удалён локально (без Twitch): ${item.username}`);
+    return { ok: true, revoked: true, localOnly: true, username: item.username };
+  }
+
+  // === Обычный путь: пробуем снять через Twitch ===
+  if (item.userId) {
     const ctx = getTwitchContext();
     const api = getTwitchApi();
-    if (ctx && api?.removeChannelVip) {
-      try {
-        await api.removeChannelVip({
-          token: ctx.token,
-          clientId: ctx.clientId,
-          broadcasterId: ctx.broadcasterId,
-          userId: item.userId,
-        });
-        console.log(`[vips] снял VIP через Twitch при удалении: ${item.username}`);
-      } catch (e) {
-        console.warn(`[vips] не удалось снять VIP через Twitch:`, e.message);
+
+    if (!ctx) {
+      return {
+        error: 'Twitch не подключён',
+        hint: 'Стример не авторизован в Twitch — снять VIP через API невозможно',
+        canForceLocal: true,
+      };
+    }
+
+    if (!api?.removeChannelVip) {
+      return {
+        error: 'Twitch API недоступно',
+        hint: 'Модуль twitch-api не загружен',
+        canForceLocal: true,
+      };
+    }
+
+    try {
+      await api.removeChannelVip({
+        token: ctx.token,
+        clientId: ctx.clientId,
+        broadcasterId: ctx.broadcasterId,
+        userId: item.userId,
+      });
+
+      console.log(`[vips] вручную снят VIP через Twitch: ${item.username}`);
+
+      db.update(dd => {
+        dd.vips.list = (dd.vips.list || []).filter(
+          v => v.username.toLowerCase() !== lower
+        );
+      });
+      broadcast();
+      return { ok: true, revoked: true, username: item.username };
+
+    } catch (e) {
+      const msg = String(e.message || '').toLowerCase();
+
+      // Twitch вернул "юзер не VIP" — не критично, предлагаем удалить локально
+      const isNotVipError =
+        msg.includes('user is not a vip') ||
+        msg.includes('not a vip') ||
+        msg.includes('no vip') ||
+        msg.includes('404');
+
+      if (isNotVipError) {
+        console.warn(`[vips] на Twitch у ${item.username} нет VIP — можно удалить локально`);
+        return {
+          error: 'На Twitch у этого зрителя нет VIP',
+          hint: 'Запись есть только в базе. Хотите удалить её локально?',
+          canForceLocal: true,
+        };
       }
+
+      console.error(`[vips] ошибка снятия VIP через Twitch:`, e.message);
+      return {
+        error: 'Twitch API: ' + e.message,
+        hint: 'Проверьте, что приложение авторизовано в Twitch со scope channel:manage:vips',
+        canForceLocal: true,
+      };
     }
   }
 
+  // userId нет — снимать на Twitch нечего, удаляем локально
+  console.warn(`[vips] у ${item.username} нет userId — удаляю только локально`);
   db.update(dd => {
     dd.vips.list = (dd.vips.list || []).filter(
       v => v.username.toLowerCase() !== lower
     );
   });
-
   broadcast();
-  return { ok: true };
+  return {
+    ok: true,
+    revoked: true,
+    localOnly: true,
+    username: item.username,
+    note: 'userId не найден — VIP снят только из базы',
+  };
+}
+
+// Удалить из базы без Twitch
+function removeLocal(username) {
+  return revokeManually(username, { forceLocal: true });
+}
+
+// Алиас для удаления (используется в UI)
+async function remove(username) {
+  return revokeManually(username);
 }
 
 // Полный сброс (без снятия на Twitch)
@@ -290,5 +399,5 @@ function reset() {
 module.exports = {
   init, getState,
   addFromRedemption, checkExpired,
-  setManual, setDays, remove, reset,
+  setManual, setDays, remove, removeLocal, revokeManually, reset,
 };
