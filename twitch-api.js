@@ -50,7 +50,9 @@ async function sendAnnouncement({ token, clientId, broadcasterId, moderatorId, m
   return { ok: true };
 }
 
-// twitch-api.js (добавить в конец)
+// ============================================================
+//  VIP
+// ============================================================
 
 // Выдать VIP на канале
 async function addChannelVip({ token, clientId, broadcasterId, userId }) {
@@ -103,6 +105,37 @@ async function getChannelVips({ token, clientId, broadcasterId }) {
   return data.data || [];
 }
 
+// Получить Twitch-юзера по логину (нику)
+// Возвращает { id, login, displayName, profileImage } или null
+async function getUserByLogin({ token, clientId, login }) {
+  const cleanLogin = String(login || '').trim().toLowerCase().replace(/^@+/, '');
+  if (!cleanLogin) throw new Error('Пустой логин');
+
+  const url = `https://api.twitch.tv/helix/users?login=${encodeURIComponent(cleanLogin)}`;
+  const res = await fetch(url, {
+    headers: {
+      'Client-Id': clientId,
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`getUserByLogin failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const user = data.data?.[0];
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    login: user.login,
+    displayName: user.display_name,
+    profileImage: user.profile_image_url,
+  };
+}
+
 module.exports = {
   getCustomRewards,
   findRewardByTitle,
@@ -110,5 +143,5 @@ module.exports = {
   addChannelVip,
   removeChannelVip,
   getChannelVips,
+  getUserByLogin,
 };
-
