@@ -29,69 +29,76 @@ function initAll(ctx) {
   vips.init(ctx);
 }
 
-function handleCommand(action, data) {
-  switch (action) {
-    case 'keyword:start':    return keyword.start(data?.word);
-    case 'keyword:stop':     return keyword.stop();
-    case 'keyword:draw':     return keyword.draw();
-    case 'keyword:reset':    return keyword.reset();
+async function handleCommand(action, data) {
+  try {
+    switch (action) {
+      case 'keyword:start':    return keyword.start(data?.word);
+      case 'keyword:stop':     return keyword.stop();
+      case 'keyword:draw':     return keyword.draw();
+      case 'keyword:reset':    return keyword.reset();
 
-    case 'wheel:setSectors': return wheel.setSectors(data?.sectors);
-    case 'wheel:spin':       return wheel.spin();
-    case 'wheel:forceQueue': return wheel.forceProcessQueue();
-    case 'wheel:reset':      return wheel.resetAll();
+      case 'wheel:setSectors': return wheel.setSectors(data?.sectors);
+      case 'wheel:spin':       return wheel.spin();
+      case 'wheel:forceQueue': return wheel.forceProcessQueue();
+      case 'wheel:reset':      return wheel.resetAll();
 
-    case 'sniper:add':       return sniper.addParticipant(data?.name);
-    case 'sniper:import':    return sniper.importFrom(data?.names);
-    case 'sniper:remove':    return sniper.removeParticipant(data?.id);
-    case 'sniper:shoot':     return sniper.shoot();
-    case 'sniper:reset':     return sniper.reset();
+      case 'sniper:add':       return sniper.addParticipant(data?.name);
+      case 'sniper:import':    return sniper.importFrom(data?.names);
+      case 'sniper:remove':    return sniper.removeParticipant(data?.id);
+      case 'sniper:shoot':     return sniper.shoot();
+      case 'sniper:reset':     return sniper.reset();
 
-    case 'tickets:add':      return tickets.addManual(data?.name);
-    case 'tickets:remove':   return tickets.removeByName(data?.name);
-    case 'tickets:setCount': return tickets.setCount(data?.name, data?.count);
-    case 'tickets:reset':    return tickets.reset();
+      case 'tickets:add':      return tickets.addManual(data?.name);
+      case 'tickets:remove':   return tickets.removeByName(data?.name);
+      case 'tickets:setCount': return tickets.setCount(data?.name, data?.count);
+      case 'tickets:reset':    return tickets.reset();
 
-    case 'donors:add':         return donors.addManual(data?.list, data?.name);
-    case 'donors:remove':      return donors.removeAt(data?.list, data?.index);
-    case 'donors:reset':       return donors.reset(data?.list);
-    case 'donors:checkWeekly': return donors.checkWeeklyReset();
+      case 'donors:add':         return donors.addManual(data?.list, data?.name);
+      case 'donors:remove':      return donors.removeAt(data?.list, data?.index);
+      case 'donors:reset':       return donors.reset(data?.list);
+      case 'donors:checkWeekly': return donors.checkWeeklyReset();
 
-    case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
-    case 'dj:reset':         return dj.reset();
+      case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
+      case 'dj:reset':         return dj.reset();
 
-    case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
-    case 'nicks:remove':     return nicks.remove(data?.userId);
-    case 'nicks:reset':      return nicks.reset();
+      case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
+      case 'nicks:remove':     return nicks.remove(data?.userId);
+      case 'nicks:reset':      return nicks.reset();
 
-    case 'tops:resetDaily':   return tops.resetDailyManual();
-    case 'tops:resetMonthly': return tops.resetMonthlyManual();
-    case 'tops:checkMonthly': return tops.checkMonthlyReset() || { ok: true };
+      case 'tops:resetDaily':   return tops.resetDailyManual();
+      case 'tops:resetMonthly': return tops.resetMonthlyManual();
+      case 'tops:checkMonthly': return tops.checkMonthlyReset() || { ok: true };
 
-    case 'announcements:setEnabled':  return announcements.setEnabled(data?.enabled);
-    case 'announcements:setInterval': return announcements.setIntervalMin(data?.minutes);
-    case 'announcements:setGap':      return announcements.setMessagesGapMs(data?.ms);
-    case 'announcements:add':         return announcements.addAnnouncement(data);
-    case 'announcements:update':      return announcements.updateAnnouncement(data?.id, data?.patch || {});
-    case 'announcements:remove':      return announcements.removeAnnouncement(data?.id);
-    case 'announcements:sendNow':     return announcements.sendNow(data?.id);
+      case 'announcements:setEnabled':  return announcements.setEnabled(data?.enabled);
+      case 'announcements:setInterval': return announcements.setIntervalMin(data?.minutes);
+      case 'announcements:setGap':      return announcements.setMessagesGapMs(data?.ms);
+      case 'announcements:add':         return announcements.addAnnouncement(data);
+      case 'announcements:update':      return announcements.updateAnnouncement(data?.id, data?.patch || {});
+      case 'announcements:remove':      return announcements.removeAnnouncement(data?.id);
+      case 'announcements:sendNow':     return announcements.sendNow(data?.id);
 
-    case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
-    case 'donationBar:resetBar': return donationBar.resetBar();
+      case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
+      case 'donationBar:resetBar': return donationBar.resetBar();
 
-    case 'debts:add':       return debts.add(data || {});
-    case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
-    case 'debts:remove':    return debts.remove(data?.username);
-    case 'debts:reset':     return debts.reset();
-	
-	case 'vips:setManual': return vips.setManual(data || {});
-    case 'vips:setDays':   return vips.setDays(data?.username, data?.days);
-    case 'vips:remove':    return vips.remove(data?.username);
-    case 'vips:reset':     return vips.reset();
-    case 'vips:checkExpired': return vips.checkExpired();
+      case 'debts:add':       return debts.add(data || {});
+      case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
+      case 'debts:remove':    return debts.remove(data?.username);
+      case 'debts:reset':     return debts.reset();
 
-    default:
-      return { error: 'Unknown action: ' + action };
+      case 'vips:setManual':    return await vips.setManual(data || {});
+      case 'vips:setDays':      return await vips.setDays(data?.username, data?.days);
+      case 'vips:remove':       return await vips.remove(data?.username);
+      case 'vips:removeLocal':  return await vips.removeLocal(data?.username);
+      case 'vips:revoke':       return await vips.revokeManually(data?.username);
+      case 'vips:reset':        return vips.reset();
+      case 'vips:checkExpired': return await vips.checkExpired();
+
+      default:
+        return { error: 'Unknown action: ' + action };
+    }
+  } catch (e) {
+    console.error('[handleCommand] ошибка в', action, ':', e);
+    return { error: e.message || 'Unknown error' };
   }
 }
 
@@ -109,7 +116,7 @@ function getFullState() {
     announcements: announcements.getState(),
     donationBar: donationBar.getState(),
     debts: debts.getState(),
-	vips: vips.getState(),
+    vips: vips.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -122,6 +129,5 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar, debts,
-  vips,
+  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar, debts, vips,
 };
