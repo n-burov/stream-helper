@@ -29,22 +29,127 @@ function injectHomeButton() {
   if (!mainWindow) return;
   const js = `
     (function() {
-      if (document.getElementById('__electron_home_btn')) return;
-      const btn = document.createElement('div');
-      btn.id = '__electron_home_btn';
-      btn.textContent = '← На главную';
-      btn.style.cssText = \`
+      // Не создаём повторно
+      if (document.getElementById('__electron_toolbar')) return;
+
+      // Контейнер с двумя кнопками
+      const toolbar = document.createElement('div');
+      toolbar.id = '__electron_toolbar';
+      toolbar.style.cssText = \`
         position: fixed; bottom: 16px; right: 16px;
-        padding: 10px 18px;
-        background: linear-gradient(135deg, #9146ff, #7a3bcb);
-        color: #fff; font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 14px; font-weight: 700; border-radius: 10px;
-        cursor: pointer; z-index: 2147483647;
-        box-shadow: 0 6px 24px rgba(145, 70, 255, 0.5);
+        display: flex; gap: 8px;
+        z-index: 2147483647;
         user-select: none;
       \`;
-      btn.addEventListener('click', () => { window.location.href = 'http://localhost:3000/'; });
-      document.body.appendChild(btn);
+
+      // Кнопка «Обновить»
+      const reloadBtn = document.createElement('div');
+      reloadBtn.id = '__electron_reload_btn';
+      reloadBtn.textContent = '🔄 Обновить';
+      reloadBtn.title = 'Перезагрузить страницу (F5)';
+      reloadBtn.style.cssText = \`
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #00d4ff, #0099cc);
+        color: #fff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 14px; font-weight: 700; border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(0, 212, 255, 0.5);
+      \`;
+      reloadBtn.addEventListener('click', () => {
+        window.location.reload();
+      });
+
+      // Кнопка «На главную»
+      const homeBtn = document.createElement('div');
+      homeBtn.id = '__electron_home_btn';
+      homeBtn.textContent = '← На главную';
+      homeBtn.style.cssText = \`
+        padding: 10px 18px;
+        background: linear-gradient(135deg, #9146ff, #7a3bcb);
+        color: #fff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 14px; font-weight: 700; border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(145, 70, 255, 0.5);
+      \`;
+      homeBtn.addEventListener('click', () => {
+        window.location.href = 'http://localhost:3000/';
+      });
+
+      toolbar.appendChild(reloadBtn);
+      toolbar.appendChild(homeBtn);
+      document.body.appendChild(toolbar);
+
+      // ============================================================
+      //  АВТО-ВОССТАНОВЛЕНИЕ ПРИ JS-ОШИБКАХ
+      // ============================================================
+      // Если где-то падает JS, через 3 секунды страница автоматически
+      // перезагружается. Защита от «мёртвых» полей ввода.
+      // Не срабатывает, если ошибка произошла в течение 5 секунд
+      // после загрузки (защита от цикла).
+      if (!window.__autoReloadInstalled) {
+        window.__autoReloadInstalled = true;
+
+        let lastErrorAt = 0;
+
+        window.addEventListener('error', (event) => {
+          // Игнорируем ошибки, не связанные с рендером UI
+          // (например, WebSocket-редирект при реконнекте)
+          const msg = String(event.message || '');
+
+          // Не перезагружаем при "Script error." (кросс-доменные) и
+          // при ошибках сети
+          if (msg === 'Script error.') return;
+          if (/WebSocket|Failed to fetch|NetworkError/i.test(msg)) return;
+
+          const now = Date.now();
+
+          // Защита от цикла: если ошибка повторилась быстрее 5 сек — не перезагружаем
+          if (now - lastErrorAt < 5000) {
+            console.warn('[auto-reload] ошибка повторилась, не перезагружаю:', msg);
+            return;
+          }
+          lastErrorAt = now;
+
+          console.error('[auto-reload] JS-ошибка, перезагрузка через 3 сек:', msg);
+
+          // Показываем уведомление
+          const notice = document.createElement('div');
+          notice.style.cssText = \`
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 12px 24px;
+            background: rgba(255,71,87,0.95);
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 14px; font-weight: 600; border-radius: 10px;
+            box-shadow: 0 6px 24px rgba(255,71,87,0.5);
+            z-index: 2147483647;
+          \`;
+          notice.textContent = '⚠️ Ошибка в интерфейсе, перезагружаю через 3 сек...';
+          document.body.appendChild(notice);
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        });
+
+        // Также ловим необработанные Promise-реджекты
+        window.addEventListener('unhandledrejection', (event) => {
+          const reason = String(event.reason?.message || event.reason || '');
+          if (/WebSocket|Failed to fetch|NetworkError/i.test(reason)) return;
+
+          const now = Date.now();
+          if (now - lastErrorAt < 5000) return;
+          lastErrorAt = now;
+
+          console.error('[auto-reload] Promise rejection, перезагрузка через 3 сек:', reason);
+
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        });
+      }
     })();
   `;
   mainWindow.webContents.executeJavaScript(js).catch(() => {});
