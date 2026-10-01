@@ -23,7 +23,7 @@ startApp().catch((e) => {
 
 async function startApp() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '20mb' }));
 
   app.use(express.static(path.join(__dirname, 'public'), {
     acceptRanges: false,
@@ -73,24 +73,20 @@ async function startApp() {
   setInterval(() => {
     try { mechanics.tops.checkMonthlyReset(); } catch {}
   }, 60 * 60 * 1000);
-  
+
   // Проверка истечения VIP — раз в час
   setInterval(() => {
-    try {
-      mechanics.vips.checkExpired();
-    } catch (e) {
+    try { mechanics.vips.checkExpired(); } catch (e) {
       console.warn('⚠️ Ошибка проверки VIP:', e.message);
     }
   }, 60 * 60 * 1000);
 
-// Проверка при старте (на случай, если приложение было выключено)
-setTimeout(() => {
-  try {
-    mechanics.vips.checkExpired();
-  } catch (e) {
-    console.warn('⚠️ Ошибка стартовой проверки VIP:', e.message);
-  }
-}, 10000);
+  // Проверка при старте (через 10 сек)
+  setTimeout(() => {
+    try { mechanics.vips.checkExpired(); } catch (e) {
+      console.warn('⚠️ Ошибка стартовой проверки VIP:', e.message);
+    }
+  }, 10000);
 
   // ============================================================
   //  WebSocket
@@ -100,14 +96,30 @@ setTimeout(() => {
     ws.send(JSON.stringify({ type: 'twitchStatus', payload: ircState }));
     ws.send(JSON.stringify({ type: 'donationAlertsStatus', payload: daState }));
 
-    ws.on('message', (raw) => {
+    ws.on('message', async (raw) => {
       let msg;
       try { msg = JSON.parse(raw); } catch { return; }
       if (!msg || !msg.action) return;
 
-      const result = mechanics.handleCommand(msg.action, msg.data);
-      if (result?.error) {
-        ws.send(JSON.stringify({ type: 'error', payload: { action: msg.action, message: result.error } }));
+      try {
+        const result = await mechanics.handleCommand(msg.action, msg.data);
+        if (result?.error) {
+          ws.send(JSON.stringify({
+            type: 'error',
+            payload: {
+              action: msg.action,
+              message: result.error,
+              hint: result.hint,
+              canForceLocal: result.canForceLocal,
+            },
+          }));
+        }
+      } catch (e) {
+        console.error('[ws] ошибка обработки команды:', e);
+        ws.send(JSON.stringify({
+          type: 'error',
+          payload: { action: msg.action, message: e.message || 'Unknown error' },
+        }));
       }
     });
   });
@@ -379,50 +391,50 @@ setTimeout(() => {
     eventSub.on('error', (msg) => console.warn('⚠️ EventSub:', msg));
     eventSub.on('disconnected', () => console.log('⚠️ EventSub отключён, реконнект...'));
 
-	eventSub.on('event', ({ type, event }) => {
-	  if (type === 'channel.channel_points_custom_reward_redemption.add') {
-		// Билеты
-		const ticketResult = mechanics.tickets.addFromRedemption({
-		  userId: event.user_id,
-		  username: event.user_name || event.user_login,
-		  rewardId: event.reward?.id,
-		  redeemedAt: new Date(event.redeemed_at).getTime(),
-		});
-		console.log('🎟️ Билет:', event.user_name, ticketResult);
+    eventSub.on('event', ({ type, event }) => {
+      if (type === 'channel.channel_points_custom_reward_redemption.add') {
+        // Билеты
+        const ticketResult = mechanics.tickets.addFromRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          redeemedAt: new Date(event.redeemed_at).getTime(),
+        });
+        console.log('🎟️ Билет:', event.user_name, ticketResult);
 
-		// VIP — асинхронная выдача, не блокируем обработчик
-		mechanics.vips.addFromRedemption({
-		  userId: event.user_id,
-		  username: event.user_name || event.user_login,
-		  rewardId: event.reward?.id,
-		  redeemedAt: new Date(event.redeemed_at).getTime(),
-		}).then(r => {
-		  if (r && !r.skipped) console.log('👑 VIP:', event.user_name, r);
-		}).catch(e => {
-		  console.warn('⚠️ Ошибка выдачи VIP:', e.message);
-		});
+        // VIP — асинхронная выдача
+        mechanics.vips.addFromRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          redeemedAt: new Date(event.redeemed_at).getTime(),
+        }).then(r => {
+          if (r && !r.skipped) console.log('👑 VIP:', event.user_name, r);
+        }).catch(e => {
+          console.warn('⚠️ Ошибка выдачи VIP:', e.message);
+        });
 
-		// Диджей дня
-		mechanics.dj.addRedemption({
-		  userId: event.user_id,
-		  username: event.user_name || event.user_login,
-		  rewardId: event.reward?.id,
-		  cost: event.reward?.cost,
-		});
-	  }
+        // Диджей дня
+        mechanics.dj.addRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          cost: event.reward?.cost,
+        });
+      }
 
-	  if (type === 'stream.offline') {
-		console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
-		mechanics.dj.reset();
-		mechanics.tops.resetDaily();
-	  }
+      if (type === 'stream.offline') {
+        console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
+        mechanics.dj.reset();
+        mechanics.tops.resetDaily();
+      }
 
-	  if (type === 'stream.online') {
-		console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
-		mechanics.dj.reset();
-		mechanics.tops.resetDaily();
-	  }
-	});
+      if (type === 'stream.online') {
+        console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
+        mechanics.dj.reset();
+        mechanics.tops.resetDaily();
+      }
+    });
 
     eventSub.connect();
   }
