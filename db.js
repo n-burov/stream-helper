@@ -2,15 +2,11 @@
 const fs = require('fs');
 const path = require('path');
 
-// Определяем, где хранить data.json:
-// - в Electron (упакованном или dev) → userData (%APPDATA%\stream-helper\)
-// - вне Electron → рядом с файлом db.js
 let BASE_DIR;
 try {
   const { app } = require('electron');
   BASE_DIR = app.getPath('userData');
 } catch {
-  // Не в Electron — используем директорию файла
   BASE_DIR = __dirname;
 }
 
@@ -27,8 +23,9 @@ const DEFAULT_DATA = {
     channel: null,
     ticketRewardId: null,
     ticketRewardTitle: null,
-	vipRewardId: null,
+    vipRewardId: null,
     vipRewardTitle: null,
+    wheelSpinCost: 300,
     donationAlertsToken: null,
     donationAlertsRefreshToken: null,
     donationAlertsExpiresAt: null,
@@ -85,12 +82,12 @@ const DEFAULT_DATA = {
     daily: { participants: [], lastResetAt: null },
     monthly: { participants: [], lastResetAt: null },
   },
-  
+
   donationBar: {
     goalName: 'Розыгрыш 55.555 голды',
     goalAmount: 15000,
     manualBase: 0,
-	accumulated: 0,
+    accumulated: 0,
   },
 
   announcements: {
@@ -103,7 +100,7 @@ const DEFAULT_DATA = {
   debts: {
     list: [],
   },
-  
+
   vips: {
     list: [],
   },
@@ -122,16 +119,15 @@ function loadData() {
     const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     dataCache = { ...DEFAULT_DATA, ...raw };
 
-    // Мерж вложенных объектов
     dataCache.settings = { ...DEFAULT_DATA.settings, ...(raw.settings || {}) };
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
     dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
-	dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
+    dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
     dataCache.debts = { ...DEFAULT_DATA.debts, ...(raw.debts || {}) };
-	dataCache.vips = { ...DEFAULT_DATA.vips, ...(raw.vips || {}) };
+    dataCache.vips = { ...DEFAULT_DATA.vips, ...(raw.vips || {}) };
 
     if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
       dataCache.announcements.list = [
