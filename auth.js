@@ -74,16 +74,18 @@ async function validateToken(access_token) {
   return res.json();
 }
 
-async function ensureFreshToken() {
+// === Проверяем, скоро ли истекает токен ===
+function isTokenExpiringSoon(bufferMs = 30 * 60 * 1000) {
   const data = db.loadData();
-  if (!data.tokens || !data.tokens.access_token) return null;
+  if (!data.tokens?.expires_at) return true;
+  return Date.now() > data.tokens.expires_at - bufferMs;
+}
 
-  const info = await validateToken(data.tokens.access_token);
-  if (info) return data.tokens;
-
-  // Токен протух — пробуем обновить
-  if (!data.tokens.refresh_token) {
-    db.update(d => { d.tokens = null; });
+// === Принудительный refresh (без validate) ===
+async function forceRefreshToken() {
+  const data = db.loadData();
+  if (!data.tokens?.refresh_token) {
+    console.warn('[auth] нет refresh_token, обновление невозможно');
     return null;
   }
 
@@ -97,15 +99,45 @@ async function ensureFreshToken() {
         expires_at: Date.now() + refreshed.expires_in * 1000,
       };
     });
+    console.log('[auth] ✅ токен обновлён (refresh)');
     return db.loadData().tokens;
   } catch (e) {
-    console.error('[auth] refresh failed:', e.message);
+    console.error('[auth] ❌ не удалось обновить токен:', e.message);
     db.update(d => { d.tokens = null; });
     return null;
   }
 }
 
+// === Умная проверка: если скоро истечёт — обновляем, иначе отдаём как есть ===
+async function ensureTokenFresh(bufferMs = 30 * 60 * 1000) {
+  const data = db.loadData();
+  if (!data.tokens?.access_token) return null;
+
+  if (isTokenExpiringSoon(bufferMs)) {
+    return await forceRefreshToken();
+  }
+  return data.tokens;
+}
+
+// === Совместимость: старый вызов ensureFreshToken (валидирует через Twitch) ===
+async function ensureFreshToken() {
+  const data = db.loadData();
+  if (!data.tokens || !data.tokens.access_token) return null;
+
+  const info = await validateToken(data.tokens.access_token);
+  if (info) return data.tokens;
+
+  // Токен протух — пробуем обновить
+  if (!data.tokens.refresh_token) {
+    db.update(d => { d.tokens = null; });
+    return null;
+  }
+
+  return await forceRefreshToken();
+}
+
 module.exports = {
-  getAuthUrl, exchangeCode, refreshToken, validateToken, ensureFreshToken,
+  getAuthUrl, exchangeCode, refreshToken, validateToken,
+  ensureFreshToken, ensureTokenFresh, forceRefreshToken, isTokenExpiringSoon,
   CLIENT_ID, REDIRECT_URI,
 };
