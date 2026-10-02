@@ -769,6 +769,21 @@
       <!-- ============ SETTINGS ============ -->
       <div class="tab-content" id="tab-settings">
         <div class="card">
+          <div class="card-title"><span class="icon">🎡</span> Колесо фортуны</div>
+
+          <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
+            <label style="font-size:14px; color:rgba(255,255,255,0.5);">Стоимость одной прокрутки, ₽</label>
+            <div class="row" style="margin-bottom:0;">
+              <input type="number" id="setSpinCost" min="1" step="50" value="300" style="flex:1; min-width:160px;" />
+              <button class="btn btn-success" id="setSaveSpinCost">💾 Сохранить</button>
+            </div>
+            <div id="spinCostHint" style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
+              Каждые N рублей доната = 1 прокрутка. Остаток сгорает.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card-title"><span class="icon">⚙️</span> Настройки интеграций</div>
 
           <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
@@ -924,7 +939,7 @@ function handleMessage(type, payload) {
       renderKeyword(); renderWheel(); renderSniper(); renderTickets();
       renderDonors(); renderDj(); renderNicks(); renderTops();
       renderAnnouncements(); renderDonationBar(); renderDebts(); renderVips();
-      renderWheelQueue();
+      renderWheelQueue(); renderSpinCost();
       break;
 
     case 'keyword:state':  state.keyword = payload; renderKeyword(); break;
@@ -932,7 +947,7 @@ function handleMessage(type, payload) {
       if (state.keyword) { state.keyword.participants.push(payload); renderKeyword(); }
       break;
 
-    case 'wheel:state':    state.wheel = payload; renderWheel(); break;
+    case 'wheel:state':    state.wheel = payload; renderWheel(); renderSpinCost(); break;
     case 'wheel:queue':
       state.wheelQueueSize = payload.size;
       renderWheelQueue();
@@ -1231,6 +1246,32 @@ function animateLocalWheel({ targetAngle, duration }) {
   }
   requestAnimationFrame(step);
 }
+
+// ============================================================
+//  СТОИМОСТЬ ПРОКРУТКИ
+// ============================================================
+const setSpinCost = document.getElementById('setSpinCost');
+const setSaveSpinCost = document.getElementById('setSaveSpinCost');
+const spinCostHint = document.getElementById('spinCostHint');
+
+function renderSpinCost() {
+  const w = state.wheel;
+  if (!w) return;
+  const cost = w.spinCost || 300;
+  setSpinCost.value = cost;
+  spinCostHint.textContent = `Каждые ${cost} ₽ доната = 1 прокрутка. Остаток сгорает.`;
+}
+
+setSaveSpinCost?.addEventListener('click', () => {
+  const cost = parseInt(setSpinCost.value) || 0;
+  if (cost < 1) { showToast('Укажи стоимость > 0'); setSpinCost.focus(); return; }
+  sendAction('wheel:setSpinCost', { cost });
+  showToast('✅ Стоимость сохранена', 'success');
+});
+
+setSpinCost?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') setSaveSpinCost.click();
+});
 
 // ============================================================
 //  SNIPER
