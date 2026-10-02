@@ -38,7 +38,8 @@ async function handleCommand(action, data) {
       case 'keyword:reset':    return keyword.reset();
 
       case 'wheel:setSectors': return wheel.setSectors(data?.sectors);
-      case 'wheel:spin':       return wheel.spin();
+      case 'wheel:setSpinCost':return wheel.setSpinCost(data?.cost);
+      case 'wheel:spin':       return wheel.spin({ count: 1 });
       case 'wheel:forceQueue': return wheel.forceProcessQueue();
       case 'wheel:reset':      return wheel.resetAll();
 
