@@ -81,12 +81,37 @@ async function startApp() {
     }
   }, 60 * 60 * 1000);
 
-  // Проверка при старте (через 10 сек)
   setTimeout(() => {
     try { mechanics.vips.checkExpired(); } catch (e) {
       console.warn('⚠️ Ошибка стартовой проверки VIP:', e.message);
     }
   }, 10000);
+
+  // ============================================================
+  //  ПРОАКТИВНОЕ ОБНОВЛЕНИЕ TWITCH-ТОКЕНА
+  // ============================================================
+  // Раз в 10 минут проверяем: если до истечения < 30 минут — обновляем заранее.
+  setInterval(async () => {
+    try {
+      const before = db.loadData().tokens?.access_token;
+      const tokens = await auth.ensureTokenFresh(30 * 60 * 1000);
+      const after = db.loadData().tokens?.access_token;
+
+      // Если токен реально обновился — перезапускаем IRC и EventSub
+      if (before && after && before !== after) {
+        console.log('[auth] токен обновился в фоне — перезапускаю Twitch-сервисы');
+        try { await restartTwitch(); } catch (e) { console.warn('IRC restart:', e.message); }
+        try { await restartEventSub(); } catch (e) { console.warn('EventSub restart:', e.message); }
+      }
+    } catch (e) {
+      console.warn('[auth] ошибка фонового обновления токена:', e.message);
+    }
+  }, 10 * 60 * 1000);
+
+  // Первая проверка при старте — через 5 секунд после запуска
+  setTimeout(async () => {
+    try { await auth.ensureTokenFresh(30 * 60 * 1000); } catch {}
+  }, 5000);
 
   // ============================================================
   //  WebSocket
@@ -144,15 +169,17 @@ async function startApp() {
   });
 
   app.get('/api/rewards', async (req, res) => {
-    const d = db.loadData();
-    if (!d.tokens || !d.tokens.access_token) {
+    // Проверяем и обновляем токен, если он скоро истечёт
+    const tokens = await auth.ensureTokenFresh(5 * 60 * 1000);
+    if (!tokens || !tokens.access_token) {
       return res.status(400).json({ error: 'Не авторизован в Twitch' });
     }
+
     try {
       const rewards = await getCustomRewards({
-        token: d.tokens.access_token,
+        token: tokens.access_token,
         clientId: auth.CLIENT_ID,
-        broadcasterId: d.tokens.user_id,
+        broadcasterId: tokens.user_id,
       });
       res.json({
         available: true,
@@ -393,7 +420,6 @@ async function startApp() {
 
     eventSub.on('event', ({ type, event }) => {
       if (type === 'channel.channel_points_custom_reward_redemption.add') {
-        // Билеты
         const ticketResult = mechanics.tickets.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -402,7 +428,6 @@ async function startApp() {
         });
         console.log('🎟️ Билет:', event.user_name, ticketResult);
 
-        // VIP — асинхронная выдача
         mechanics.vips.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -414,7 +439,6 @@ async function startApp() {
           console.warn('⚠️ Ошибка выдачи VIP:', e.message);
         });
 
-        // Диджей дня
         mechanics.dj.addRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -493,21 +517,25 @@ async function startApp() {
       mechanics.tops.addDonation(donation);
       mechanics.donationBar.addToBar(donation.amount);
 
-      const AMOUNT_THRESHOLD = 200;
       const currency = (donation.currency || 'RUB').toUpperCase();
       const amount = Number(donation.amount) || 0;
 
-      if (currency === 'RUB' && amount >= AMOUNT_THRESHOLD) {
-        console.log(`🎡 Донат ${amount}₽ от ${donation.name} — запускаю колесо`);
+      const data = db.loadData();
+      const spinCost = Math.max(1, parseInt(data.settings.wheelSpinCost) || 300);
+
+      if (currency === 'RUB' && amount >= spinCost) {
+        const spins = Math.floor(amount / spinCost);
+        console.log(`🎡 Донат ${amount}₽ от ${donation.name} — ${spins} прокруток (по ${spinCost}₽)`);
         try {
           const result = mechanics.wheel.spin({
             donorName: donation.name,
             donorAmount: amount,
+            count: spins,
           });
           if (result?.error) {
             console.warn('⚠️ Не удалось запустить колесо:', result.error);
           } else if (result?.queued) {
-            console.log(`[wheel] донат от ${donation.name} в очереди (позиция ${result.queueSize})`);
+            console.log(`[wheel] серия из ${spins} для ${donation.name} в очереди (серий в очереди: ${result.queueSize})`);
           }
         } catch (e) {
           console.warn('⚠️ Ошибка автокрутки:', e.message);
@@ -521,7 +549,7 @@ async function startApp() {
   // ============================================================
   //  Подключение к Twitch и запуск сервера
   // ============================================================
-  const tokens = await auth.ensureFreshToken();
+  const tokens = await auth.ensureTokenFresh(30 * 60 * 1000);
   if (tokens) {
     await restartTwitch();
     await restartEventSub();
