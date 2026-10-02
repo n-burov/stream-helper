@@ -1,8 +1,58 @@
 // twitch-api.js
 
+// ============================================================
+//  ОБЁРТКА: автоматический refresh при 401
+// ============================================================
+let _refreshInFlight = null;
+
+async function _getFreshToken() {
+  if (_refreshInFlight) return _refreshInFlight;
+
+  _refreshInFlight = (async () => {
+    try {
+      const auth = require('./auth');
+      const tokens = await auth.forceRefreshToken();
+      return tokens?.access_token || null;
+    } catch (e) {
+      console.warn('[twitch-api] refresh не удался:', e.message);
+      return null;
+    } finally {
+      _refreshInFlight = null;
+    }
+  })();
+
+  return _refreshInFlight;
+}
+
+// Обёртка: если запрос вернул 401 — обновляем токен и повторяем ОДИН раз
+async function fetchWithRetry(url, options = {}, attempt = 1) {
+  const res = await fetch(url, options);
+
+  if (res.status === 401 && attempt <= 2) {
+    console.warn(`[twitch-api] 401 — обновляю токен и повторяю запрос (attempt ${attempt})`);
+    const newToken = await _getFreshToken();
+    if (!newToken) return res;
+
+    const newOptions = {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        'Authorization': `Bearer ${newToken}`,
+      },
+    };
+
+    return fetchWithRetry(url, newOptions, attempt + 1);
+  }
+
+  return res;
+}
+
+// ============================================================
+//  НАГРАДЫ ЗА БАЛЛЫ
+// ============================================================
 async function getCustomRewards({ token, clientId, broadcasterId }) {
   const url = `https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id=${broadcasterId}&only_manageable_rewards=false`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: {
       'Client-Id': clientId,
       'Authorization': `Bearer ${token}`,
@@ -23,7 +73,9 @@ async function findRewardByTitle({ token, clientId, broadcasterId, title }) {
   return found || null;
 }
 
-// Отправка announcement через Helix API
+// ============================================================
+//  ANNOUNCEMENTS
+// ============================================================
 async function sendAnnouncement({ token, clientId, broadcasterId, moderatorId, message, color = 'primary' }) {
   const url = `https://api.twitch.tv/helix/chat/announcements?broadcaster_id=${broadcasterId}&moderator_id=${moderatorId}`;
 
@@ -32,7 +84,7 @@ async function sendAnnouncement({ token, clientId, broadcasterId, moderatorId, m
     color,
   };
 
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     method: 'POST',
     headers: {
       'Client-Id': clientId,
@@ -53,11 +105,9 @@ async function sendAnnouncement({ token, clientId, broadcasterId, moderatorId, m
 // ============================================================
 //  VIP
 // ============================================================
-
-// Выдать VIP на канале
 async function addChannelVip({ token, clientId, broadcasterId, userId }) {
   const url = `https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcasterId}&user_id=${userId}`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     method: 'POST',
     headers: {
       'Client-Id': clientId,
@@ -71,10 +121,9 @@ async function addChannelVip({ token, clientId, broadcasterId, userId }) {
   return { ok: true };
 }
 
-// Снять VIP на канале
 async function removeChannelVip({ token, clientId, broadcasterId, userId }) {
   const url = `https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcasterId}&user_id=${userId}`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     method: 'DELETE',
     headers: {
       'Client-Id': clientId,
@@ -88,10 +137,9 @@ async function removeChannelVip({ token, clientId, broadcasterId, userId }) {
   return { ok: true };
 }
 
-// Получить список VIP на канале
 async function getChannelVips({ token, clientId, broadcasterId }) {
   const url = `https://api.twitch.tv/helix/channels/vips?broadcaster_id=${broadcasterId}&first=100`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: {
       'Client-Id': clientId,
       'Authorization': `Bearer ${token}`,
@@ -105,14 +153,12 @@ async function getChannelVips({ token, clientId, broadcasterId }) {
   return data.data || [];
 }
 
-// Получить Twitch-юзера по логину (нику)
-// Возвращает { id, login, displayName, profileImage } или null
 async function getUserByLogin({ token, clientId, login }) {
   const cleanLogin = String(login || '').trim().toLowerCase().replace(/^@+/, '');
   if (!cleanLogin) throw new Error('Пустой логин');
 
   const url = `https://api.twitch.tv/helix/users?login=${encodeURIComponent(cleanLogin)}`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: {
       'Client-Id': clientId,
       'Authorization': `Bearer ${token}`,
@@ -137,6 +183,7 @@ async function getUserByLogin({ token, clientId, login }) {
 }
 
 module.exports = {
+  fetchWithRetry,
   getCustomRewards,
   findRewardByTitle,
   sendAnnouncement,
