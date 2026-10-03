@@ -420,6 +420,10 @@ async function startApp() {
 
     eventSub.on('event', ({ type, event }) => {
       if (type === 'channel.channel_points_custom_reward_redemption.add') {
+        // 🚨 ВРЕМЕННО ОТКЛЮЧЕНО: автовыдача билета и VIP
+        // Раскомментировать после фикса проверки rewardId
+    
+        /*
         const ticketResult = mechanics.tickets.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -427,7 +431,7 @@ async function startApp() {
           redeemedAt: new Date(event.redeemed_at).getTime(),
         });
         console.log('🎟️ Билет:', event.user_name, ticketResult);
-
+    
         mechanics.vips.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -438,7 +442,9 @@ async function startApp() {
         }).catch(e => {
           console.warn('⚠️ Ошибка выдачи VIP:', e.message);
         });
-
+        */
+    
+        // Диджей дня — оставляем активным, он не завязан на rewardId
         mechanics.dj.addRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -446,7 +452,19 @@ async function startApp() {
           cost: event.reward?.cost,
         });
       }
-
+    
+      if (type === 'stream.offline') {
+        console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
+        mechanics.dj.reset();
+        mechanics.tops.resetDaily();
+      }
+    
+      if (type === 'stream.online') {
+        console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
+        mechanics.dj.reset();
+        mechanics.tops.resetDaily();
+      }
+    });
       if (type === 'stream.offline') {
         console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
         mechanics.dj.reset();
