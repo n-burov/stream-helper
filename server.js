@@ -90,14 +90,12 @@ async function startApp() {
   // ============================================================
   //  ПРОАКТИВНОЕ ОБНОВЛЕНИЕ TWITCH-ТОКЕНА
   // ============================================================
-  // Раз в 10 минут проверяем: если до истечения < 30 минут — обновляем заранее.
   setInterval(async () => {
     try {
       const before = db.loadData().tokens?.access_token;
       const tokens = await auth.ensureTokenFresh(30 * 60 * 1000);
       const after = db.loadData().tokens?.access_token;
 
-      // Если токен реально обновился — перезапускаем IRC и EventSub
       if (before && after && before !== after) {
         console.log('[auth] токен обновился в фоне — перезапускаю Twitch-сервисы');
         try { await restartTwitch(); } catch (e) { console.warn('IRC restart:', e.message); }
@@ -108,7 +106,6 @@ async function startApp() {
     }
   }, 10 * 60 * 1000);
 
-  // Первая проверка при старте — через 5 секунд после запуска
   setTimeout(async () => {
     try { await auth.ensureTokenFresh(30 * 60 * 1000); } catch {}
   }, 5000);
@@ -169,7 +166,6 @@ async function startApp() {
   });
 
   app.get('/api/rewards', async (req, res) => {
-    // Проверяем и обновляем токен, если он скоро истечёт
     const tokens = await auth.ensureTokenFresh(5 * 60 * 1000);
     if (!tokens || !tokens.access_token) {
       return res.status(400).json({ error: 'Не авторизован в Twitch' });
@@ -420,18 +416,18 @@ async function startApp() {
 
     eventSub.on('event', ({ type, event }) => {
       if (type === 'channel.channel_points_custom_reward_redemption.add') {
-        // 🚨 ВРЕМЕННО ОТКЛЮЧЕНО: автовыдача билета и VIP
-        // Раскомментировать после фикса проверки rewardId
-    
-        /*
+        // Билеты — внутри addFromRedemption жёсткая проверка ticketRewardId
         const ticketResult = mechanics.tickets.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
           rewardId: event.reward?.id,
           redeemedAt: new Date(event.redeemed_at).getTime(),
         });
-        console.log('🎟️ Билет:', event.user_name, ticketResult);
-    
+        if (ticketResult && !ticketResult.skipped) {
+          console.log('🎟️ Билет:', event.user_name, ticketResult);
+        }
+
+        // VIP — внутри addFromRedemption жёсткая проверка vipRewardId
         mechanics.vips.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -442,9 +438,8 @@ async function startApp() {
         }).catch(e => {
           console.warn('⚠️ Ошибка выдачи VIP:', e.message);
         });
-        */
-    
-        // Диджей дня — оставляем активным, он не завязан на rewardId
+
+        // Диджей дня
         mechanics.dj.addRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -452,19 +447,7 @@ async function startApp() {
           cost: event.reward?.cost,
         });
       }
-    
-      if (type === 'stream.offline') {
-        console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
-        mechanics.dj.reset();
-        mechanics.tops.resetDaily();
-      }
-    
-      if (type === 'stream.online') {
-        console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
-        mechanics.dj.reset();
-        mechanics.tops.resetDaily();
-      }
-    });
+
       if (type === 'stream.offline') {
         console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
         mechanics.dj.reset();
