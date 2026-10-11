@@ -16,12 +16,23 @@ function getState() {
   return { participants };
 }
 
-// Вызывается из EventSub при покупке награды
+// ============================================================
+//  АВТОВЫДАЧА БИЛЕТА ПРИ ПОКУПКЕ НАГРАДЫ
+//  ЖЁСТКАЯ ЗАЩИТА: если ticketRewardId не настроен — НИЧЕГО не делаем.
+//  Иначе любая покупка награды будет выдавать билет.
+// ============================================================
 function addFromRedemption({ userId, username, rewardId, redeemedAt }) {
   const d = db.loadData();
 
-  if (d.settings.ticketRewardId && rewardId !== d.settings.ticketRewardId) {
-    return { skipped: true };
+  // === ЖЁСТКАЯ ЗАЩИТА ===
+  if (!d.settings?.ticketRewardId) {
+    console.warn('[tickets] ticketRewardId не настроен — выдача билетов отключена');
+    return { skipped: true, reason: 'ticketRewardId not configured' };
+  }
+
+  // === Если rewardId не совпадает с настроенным — пропускаем ===
+  if (rewardId !== d.settings.ticketRewardId) {
+    return { skipped: true, reason: 'reward mismatch' };
   }
 
   // Если уже есть — не добавляем (один билет на неделю)
@@ -75,7 +86,6 @@ function removeByName(username) {
   return { ok: true };
 }
 
-// Изменить количество билетов у участника (для ручной передачи)
 function setCount(username, count) {
   const n = Math.max(0, parseInt(count) || 0);
   db.update(d => {
@@ -95,9 +105,7 @@ function setCount(username, count) {
   return { ok: true };
 }
 
-// Прибавить билет пользователю по имени.
-// Если пользователя нет — создать его с одним билетом.
-// Если есть — увеличить count. Используется для автовыдачи из колеса.
+// Прибавить билет пользователю по имени (для автовыдачи из колеса)
 function incrementByUsername(username, source = 'wheel') {
   const trimmed = String(username || '').trim();
   if (!trimmed) return { error: 'Пустое имя' };
