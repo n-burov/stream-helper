@@ -74,7 +74,6 @@ async function startApp() {
     try { mechanics.tops.checkMonthlyReset(); } catch {}
   }, 60 * 60 * 1000);
 
-  // Проверка истечения VIP — раз в час
   setInterval(() => {
     try { mechanics.vips.checkExpired(); } catch (e) {
       console.warn('⚠️ Ошибка проверки VIP:', e.message);
@@ -87,9 +86,7 @@ async function startApp() {
     }
   }, 10000);
 
-  // ============================================================
-  //  ПРОАКТИВНОЕ ОБНОВЛЕНИЕ TWITCH-ТОКЕНА
-  // ============================================================
+  // Проактивное обновление Twitch-токена
   setInterval(async () => {
     try {
       const before = db.loadData().tokens?.access_token;
@@ -110,9 +107,7 @@ async function startApp() {
     try { await auth.ensureTokenFresh(30 * 60 * 1000); } catch {}
   }, 5000);
 
-  // ============================================================
-  //  WebSocket
-  // ============================================================
+  // WebSocket
   wss.on('connection', (ws) => {
     ws.send(JSON.stringify({ type: 'state', payload: mechanics.getFullState() }));
     ws.send(JSON.stringify({ type: 'twitchStatus', payload: ircState }));
@@ -146,15 +141,11 @@ async function startApp() {
     });
   });
 
-  // ============================================================
-  //  История
-  // ============================================================
+  // История
   app.get('/api/history', (req, res) => res.json(db.loadHistory()));
   app.delete('/api/history', (req, res) => { db.clearHistory(); res.json({ ok: true }); });
 
-  // ============================================================
-  //  Настройки
-  // ============================================================
+  // Настройки
   app.get('/api/settings', (req, res) => {
     const d = db.loadData();
     res.json({
@@ -170,7 +161,6 @@ async function startApp() {
     if (!tokens || !tokens.access_token) {
       return res.status(400).json({ error: 'Не авторизован в Twitch' });
     }
-
     try {
       const rewards = await getCustomRewards({
         token: tokens.access_token,
@@ -207,9 +197,7 @@ async function startApp() {
     res.json({ ok: true });
   });
 
-  // ============================================================
-  //  Страница «Авторизация успешна»
-  // ============================================================
+  // Auth success
   app.get('/auth/success', (req, res) => {
     res.send(`
       <!DOCTYPE html>
@@ -253,9 +241,7 @@ async function startApp() {
     `);
   });
 
-  // ============================================================
-  //  Twitch Auth
-  // ============================================================
+  // Twitch Auth
   app.get('/auth/login', (req, res) => {
     pendingState = crypto.randomBytes(16).toString('hex');
     res.redirect(auth.getAuthUrl(pendingState));
@@ -290,9 +276,7 @@ async function startApp() {
     }
   });
 
-  // ============================================================
-  //  DonationAlerts Auth
-  // ============================================================
+  // DA Auth
   app.get('/auth/donationalerts/login', (req, res) => {
     pendingDaState = crypto.randomBytes(16).toString('hex');
     res.redirect(daAuth.getAuthUrl(pendingDaState));
@@ -357,9 +341,7 @@ async function startApp() {
     res.redirect('/');
   });
 
-  // ============================================================
-  //  Twitch IRC
-  // ============================================================
+  // IRC
   async function restartTwitch() {
     if (twitch) { await twitch.disconnect(); twitch = null; }
     const data = db.loadData();
@@ -395,9 +377,7 @@ async function startApp() {
     }
   }
 
-  // ============================================================
-  //  EventSub
-  // ============================================================
+  // EventSub
   async function restartEventSub() {
     if (eventSub) { eventSub.disconnect(); eventSub = null; }
     const data = db.loadData();
@@ -416,7 +396,6 @@ async function startApp() {
 
     eventSub.on('event', ({ type, event }) => {
       if (type === 'channel.channel_points_custom_reward_redemption.add') {
-        // Билеты — внутри addFromRedemption жёсткая проверка ticketRewardId
         const ticketResult = mechanics.tickets.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -427,7 +406,6 @@ async function startApp() {
           console.log('🎟️ Билет:', event.user_name, ticketResult);
         }
 
-        // VIP — внутри addFromRedemption жёсткая проверка vipRewardId
         mechanics.vips.addFromRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
@@ -439,8 +417,14 @@ async function startApp() {
           console.warn('⚠️ Ошибка выдачи VIP:', e.message);
         });
 
-        // Диджей дня
         mechanics.dj.addRedemption({
+          userId: event.user_id,
+          username: event.user_name || event.user_login,
+          rewardId: event.reward?.id,
+          cost: event.reward?.cost,
+        });
+
+        mechanics.gifMaster.addRedemption({
           userId: event.user_id,
           username: event.user_name || event.user_login,
           rewardId: event.reward?.id,
@@ -449,14 +433,16 @@ async function startApp() {
       }
 
       if (type === 'stream.offline') {
-        console.log('📴 Стрим завершён — сбрасываю Диджея дня и Топ дня');
+        console.log('📴 Стрим завершён — сбрасываю Диджея дня, Гиф-мастера дня и Топ дня');
         mechanics.dj.reset();
+        mechanics.gifMaster.reset();
         mechanics.tops.resetDaily();
       }
 
       if (type === 'stream.online') {
-        console.log('📺 Стрим начался — сбрасываю Диджея дня и Топ дня');
+        console.log('📺 Стрим начался — сбрасываю Диджея дня, Гиф-мастера дня и Топ дня');
         mechanics.dj.reset();
+        mechanics.gifMaster.reset();
         mechanics.tops.resetDaily();
       }
     });
@@ -464,9 +450,7 @@ async function startApp() {
     eventSub.connect();
   }
 
-  // ============================================================
-  //  DonationAlerts
-  // ============================================================
+  // DonationAlerts
   async function startDonationAlerts() {
     if (donationAlerts) { donationAlerts.stop(); donationAlerts = null; }
 
@@ -547,9 +531,7 @@ async function startApp() {
     donationAlerts.start();
   }
 
-  // ============================================================
-  //  Подключение к Twitch и запуск сервера
-  // ============================================================
+  // Запуск
   const tokens = await auth.ensureTokenFresh(30 * 60 * 1000);
   if (tokens) {
     await restartTwitch();
@@ -562,12 +544,13 @@ async function startApp() {
 
   server.listen(3000, () => {
     console.log('🚀 Сервер: http://localhost:3000');
-    console.log('   Панель:            http://localhost:3000/');
-    console.log('   Оверлей keyword:   http://localhost:3000/overlay-keyword.html');
-    console.log('   Оверлей wheel:     http://localhost:3000/overlay-wheel.html');
-    console.log('   Оверлей cards:     http://localhost:3000/overlay-cards.html');
-    console.log('   Оверлей sniper:    http://localhost:3000/overlay-sniper.html');
-    console.log('   Оверлей winner:    http://localhost:3000/overlay-winner.html');
-    console.log('   Оверлей Топы:      http://localhost:3000/overlay-dj.html');
+    console.log('   Панель:                     http://localhost:3000/');
+    console.log('   Оверлей keyword:            http://localhost:3000/overlay-keyword.html');
+    console.log('   Оверлей wheel:              http://localhost:3000/overlay-wheel.html');
+    console.log('   Оверлей cards:              http://localhost:3000/overlay-cards.html');
+    console.log('   Оверлей sniper:             http://localhost:3000/overlay-sniper.html');
+    console.log('   Оверлей winner:             http://localhost:3000/overlay-winner.html');
+    console.log('   Оверлей Топы:               http://localhost:3000/overlay-dj.html');
+    console.log('   Оверлей Розыгрыш полоски:   http://localhost:3000/overlay-donation-wheel.html');
   });
 }
