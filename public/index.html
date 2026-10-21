@@ -252,6 +252,47 @@
     .tab-btn { padding: 12px 0; justify-content: center; font-size: 20px; }
     .tab-btn span.label { display: none; }
   }
+
+  .dw-progress-bar {
+    width: 100%;
+    height: 18px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 9px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .dw-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f9ca24 0%, #f0932b 60%, #ff4757 100%);
+    transition: width 0.4s;
+  }
+
+  .dw-participant {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .dw-participant.winner {
+    background: rgba(0,255,100,0.08);
+    border-color: rgba(0,255,100,0.25);
+  }
+  .dw-participant .dw-name {
+    flex: 1; font-weight: 700; min-width: 120px;
+  }
+  .dw-participant .dw-chance {
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    padding: 2px 8px; background: rgba(145,70,255,0.15); border-radius: 10px;
+  }
+  .dw-participant input {
+    width: 110px; padding: 6px 10px; font-size: 14px;
+    text-align: right;
+  }
+  .dw-participant .dw-badge-winner {
+    font-size: 11px; color: #00ff64; font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -291,6 +332,7 @@
         <button class="tab-btn" data-tab="tab-wheel">🎡 <span class="label">Колесо</span></button>
         <button class="tab-btn" data-tab="tab-sniper">🔫 <span class="label">Снайпер</span></button>
         <button class="tab-btn" data-tab="tab-lists">🎟️ <span class="label">Списки на розыгрыши</span></button>
+        <button class="tab-btn" data-tab="tab-donation-wheel">🏆 <span class="label">Розыгрыш полоски</span></button>
       </div>
 
       <div class="sidebar-group">
@@ -473,9 +515,8 @@
             <button class="btn btn-sm btn-danger" id="donorsWeeklyReset" style="margin-left:auto;">🗑️ Сбросить</button>
           </div>
           <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-            Список автоматически очищается каждый понедельник.
+            Список автоматически очищается каждый понедельник. Используется для еженедельных розыгрышей.
             Один человек — одна плашка, суммы складываются.
-            Этот список питает полоску доната.
           </p>
           <div class="row">
             <input type="text" id="donorsWeeklyName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
@@ -493,7 +534,8 @@
             <button class="btn btn-sm btn-danger" id="donorsStreamReset" style="margin-left:auto;">🗑️ Сбросить</button>
           </div>
           <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
-            Список не очищается автоматически. Подходит для длительного розыгрыша (сезон, марафон).
+            Список не очищается автоматически. Питает полоску доната и розыгрыш полоски.
+            Суммы можно редактировать во вкладке «🏆 Розыгрыш полоски».
           </p>
           <div class="row">
             <input type="text" id="donorsStreamName" placeholder="Имя вручную..." style="flex:1; min-width:200px;" />
@@ -506,6 +548,91 @@
         </div>
       </div>
 
+      <!-- ============ DONATION WHEEL ============ -->
+      <div class="tab-content" id="tab-donation-wheel">
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🏆</span> Розыгрыш полоски
+          </div>
+
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Розыгрыш запускается, когда полоска доната заполнена на 100%.
+            Шанс победы пропорционален сумме доната.
+            Суммы фиксируются при первой прокрутке — последующие донаты не участвуют до сброса полоски.
+          </p>
+
+          <!-- Статус полоски -->
+          <div style="padding:16px; background:rgba(0,0,0,0.25); border-radius:12px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:8px;">
+              <div style="font-size:14px; color:rgba(255,255,255,0.6);">
+                Прогресс: <strong id="dwCurrent" style="color:#fff;">0</strong> ₽ из <strong id="dwGoal" style="color:#fff;">0</strong> ₽
+              </div>
+              <div style="font-size:14px; color:rgba(255,255,255,0.6);">
+                Осталось участников: <strong id="dwRemaining" style="color:#00d4ff;">0</strong>
+              </div>
+            </div>
+            <div class="dw-progress-bar">
+              <div class="dw-progress-fill" id="dwProgressFill" style="width:0%;"></div>
+            </div>
+            <div id="dwStatusText" style="font-size:13px; margin-top:8px; color:rgba(255,255,255,0.5);">
+              Загрузка...
+            </div>
+          </div>
+
+          <!-- Настройка исключения победителей -->
+          <div class="row" style="margin-bottom:16px; padding:12px 16px; background:rgba(0,0,0,0.25); border-radius:12px;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+              <input type="checkbox" id="dwExcludeWinners" style="width:18px; height:18px; accent-color:#9146ff;" />
+              <span style="font-weight:600;">Исключать победителя из следующих розыгрышей</span>
+            </label>
+            <div style="font-size:12px; color:rgba(255,255,255,0.4); width:100%;">
+              Если выключено — победитель может выиграть повторно (по умолчанию выключено).
+            </div>
+          </div>
+
+          <!-- Кнопки управления -->
+          <div class="row" style="margin-bottom:16px;">
+            <button class="btn btn-gold" id="dwSpinBtn" disabled>🎲 Крутить</button>
+            <button class="btn btn-reset" id="dwResetWinnersBtn">🔄 Сбросить прогресс розыгрыша</button>
+            <button class="btn btn-danger" id="dwResetBarBtn">🗑️ Сбросить полоску</button>
+          </div>
+
+          <div class="counter-bar">
+            <span>Всего выиграло: <strong id="dwWinnersCount">0</strong></span>
+          </div>
+
+          <div class="list-grid" id="dwWinnersList" style="margin-top:12px;">
+            <div class="list-empty">Пока никто не выиграл</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">👥</span> Участники розыгрыша
+            <span style="font-size:13px; color:rgba(255,255,255,0.4); margin-left:auto;">
+              (из списка «Донатеры (полоска)»)
+            </span>
+          </div>
+
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Здесь можно вручную добавить, изменить сумму или удалить участника.
+            Изменения синхронизируются со списком «Донатеры (полоска)».
+            Если розыгрыш уже начался (была хотя бы 1 прокрутка) — список участников зафиксирован,
+            изменения не повлияют на текущий розыгрыш до его сброса.
+          </p>
+
+          <div class="row" style="margin-bottom:12px;">
+            <input type="text" id="dwAddName" placeholder="Ник..." style="flex:2; min-width:180px;" />
+            <input type="number" id="dwAddAmount" placeholder="Сумма ₽" min="1" style="flex:1; min-width:120px;" />
+            <button class="btn btn-primary" id="dwAddBtn">➕ Добавить</button>
+          </div>
+
+          <div id="dwParticipantsList" style="margin-top:16px;">
+            <div class="list-empty">Пока нет участников</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ============ DONATION BAR ============ -->
       <div class="tab-content" id="tab-donation-bar">
         <div class="card">
@@ -515,7 +642,7 @@
           </div>
           <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
             Прогресс копится отдельно: ручная стартовая сумма + все донаты с момента последнего обнуления.
-            Кнопка «Обнулить» очищает и полоску, и список «Донатеры (полоска)» во вкладке «Списки на розыгрыши».
+            Кнопка «Обнулить» очищает и полоску, и список «Донатеры (полоска)», и прогресс розыгрыша.
           </p>
 
           <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
@@ -529,7 +656,7 @@
             <input type="number" id="dbarManualBase" min="0" placeholder="0" />
 
             <div style="font-size:12px; color:rgba(255,255,255,0.35); margin-top:6px;">
-              Стартовая сумма прибавляется к донатам из списка «Донатеры (неделя)».
+              Стартовая сумма прибавляется к донатам из списка «Донатеры (полоска)».
             </div>
 
             <button class="btn btn-success" id="dbarSave" style="margin-top:16px;">💾 Сохранить цель</button>
@@ -592,7 +719,10 @@
             Покупки самого стримера не учитываются.
           </p>
           <div style="max-width:600px;">
-            <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
+              <button class="btn btn-sm btn-reset" id="djReloadRewards">🔄 Обновить список</button>
+            </div>
             <div id="djRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
               <div class="list-empty">Загрузка наград...</div>
             </div>
@@ -600,6 +730,30 @@
           <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
             <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
             <div id="djLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span class="icon">🖼️</span> Гиф-мастер дня
+            <button class="btn btn-sm btn-danger" id="gifMasterReset" style="margin-left:auto;">🔄 Сбросить вручную</button>
+          </div>
+          <p style="color:rgba(255,255,255,0.5); margin-bottom:16px; font-size:14px;">
+            Выбери награды, которые учитываются в счётчике. Счётчик обнуляется автоматически при завершении или начале стрима.
+            Покупки самого стримера не учитываются.
+          </p>
+          <div style="max-width:600px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награды за баллы</label>
+              <button class="btn btn-sm btn-reset" id="gifMasterReloadRewards">🔄 Обновить список</button>
+            </div>
+            <div id="gifMasterRewardsList" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+              <div class="list-empty">Загрузка наград...</div>
+            </div>
+          </div>
+          <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);">
+            <div style="font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:8px;">Текущий лидер</div>
+            <div id="gifMasterLeader" style="font-size:20px; color:#f9ca24; font-weight:700;">—</div>
           </div>
         </div>
       </div>
@@ -787,7 +941,6 @@
           <div class="card-title"><span class="icon">⚙️</span> Настройки интеграций</div>
 
           <div class="row" style="flex-direction:column; align-items:stretch; max-width:600px;">
-
             <label style="font-size:14px; color:rgba(255,255,255,0.5);">Награда «Билет на розыгрыш»</label>
 
             <div id="rewardSelectWrap" style="display:none;">
@@ -840,6 +993,8 @@
             <input type="text" readonly value="http://localhost:3000/overlay-wheel.html" onclick="this.select()" />
             <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🃏 Карты (аналог рулетки)</label>
             <input type="text" readonly value="http://localhost:3000/overlay-cards.html" onclick="this.select()" />
+            <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Розыгрыш полоски</label>
+            <input type="text" readonly value="http://localhost:3000/overlay-donation-wheel.html" onclick="this.select()" />
             <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🔫 Снайпер</label>
             <input type="text" readonly value="http://localhost:3000/overlay-sniper.html" onclick="this.select()" />
             <label style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:12px;">🏆 Победитель (общий)</label>
@@ -901,8 +1056,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 let ws;
 const state = {
   keyword: null, wheel: null, sniper: null, tickets: null,
-  donors: null, dj: null, nicks: null, tops: null,
+  donors: null, dj: null, gifMaster: null, nicks: null, tops: null,
   announcements: null, donationBar: null, debts: null, vips: null,
+  donationWheel: null,
   wheelQueueSize: 0,
 };
 
@@ -929,16 +1085,19 @@ function handleMessage(type, payload) {
       state.tickets = payload.tickets;
       state.donors = payload.donors;
       state.dj = payload.dj;
+      state.gifMaster = payload.gifMaster;
       state.nicks = payload.nicks;
       state.tops = payload.tops;
       state.announcements = payload.announcements;
       state.donationBar = payload.donationBar;
       state.debts = payload.debts;
       state.vips = payload.vips;
+      state.donationWheel = payload.donationWheel;
       state.wheelQueueSize = payload.wheelQueueSize || 0;
       renderKeyword(); renderWheel(); renderSniper(); renderTickets();
-      renderDonors(); renderDj(); renderNicks(); renderTops();
+      renderDonors(); renderDj(); renderGifMaster(); renderNicks(); renderTops();
       renderAnnouncements(); renderDonationBar(); renderDebts(); renderVips();
+      renderDonationWheel();
       renderWheelQueue(); renderSpinCost();
       break;
 
@@ -969,13 +1128,14 @@ function handleMessage(type, payload) {
       renderSniper(); break;
 
     case 'tickets:state':  state.tickets = payload; renderTickets(); break;
-    case 'donors:state':   state.donors = payload; renderDonors(); break;
+    case 'donors:state':   state.donors = payload; renderDonors(); renderDonationWheel(); break;
     case 'dj:state':       state.dj = payload; renderDj(); break;
+    case 'gifMaster:state': state.gifMaster = payload; renderGifMaster(); break;
     case 'nicks:state':    state.nicks = payload; renderNicks(); break;
     case 'nicks:updated':  renderNicks(); break;
     case 'tops:state':     state.tops = payload; renderTops(); break;
     case 'announcements:state': state.announcements = payload; renderAnnouncements(); break;
-    case 'donationBar:state': state.donationBar = payload; renderDonationBar(); break;
+    case 'donationBar:state': state.donationBar = payload; renderDonationBar(); renderDonationWheel(); break;
     case 'debts:state':    state.debts = payload; renderDebts(); break;
     case 'vips:state':
       state.vips = payload;
@@ -997,6 +1157,22 @@ function handleMessage(type, payload) {
           btn.textContent = '➕ Добавить / Обновить';
         }
       }
+      break;
+
+    case 'donationWheel:state':
+      state.donationWheel = payload;
+      renderDonationWheel();
+      break;
+    case 'donationWheel:spin':
+      if (state.donationWheel) state.donationWheel.isSpinning = true;
+      renderDonationWheel();
+      break;
+    case 'donationWheel:completed':
+      if (state.donationWheel) {
+        state.donationWheel.isSpinning = false;
+        state.donationWheel.lastWinner = payload.winnerUsername;
+      }
+      renderDonationWheel();
       break;
 
     case 'winner:show':    showWinnerModal(payload.name); break;
@@ -1116,7 +1292,7 @@ function renderKeyword() {
 }
 
 // ============================================================
-//  WHEEL
+//  WHEEL (существующее колесо)
 // ============================================================
 const wCanvas = document.getElementById('wheelCanvas');
 const wCtx = wCanvas.getContext('2d');
@@ -1130,6 +1306,17 @@ let localRotation = 0, animating = false;
 
 wheelSpin.addEventListener('click', () => sendAction('wheel:spin'));
 document.getElementById('wheelForceQueue').addEventListener('click', () => {
+  const queueSize = state.wheelQueueSize || 0;
+
+  const msg = queueSize === 0
+    ? 'Очередь пуста. Кнопка ничего не сделает.\n\nПродолжить?'
+    : `В очереди ${queueSize} серий.\n\n` +
+      `Если сейчас идёт серия, она НЕ прервётся — следующая начнётся сразу после неё.\n` +
+      `Если серия не идёт, следующая из очереди стартует немедленно.\n\n` +
+      `Продолжить?`;
+
+  if (!confirm(msg)) return;
+
   sendAction('wheel:forceQueue');
   showToast('⏩ Подталкиваю очередь...', 'success');
 });
@@ -1519,6 +1706,181 @@ function renderDonors() {
 }
 
 // ============================================================
+//  DONATION WHEEL
+// ============================================================
+const dwCurrent = document.getElementById('dwCurrent');
+const dwGoal = document.getElementById('dwGoal');
+const dwRemaining = document.getElementById('dwRemaining');
+const dwProgressFill = document.getElementById('dwProgressFill');
+const dwStatusText = document.getElementById('dwStatusText');
+const dwSpinBtn = document.getElementById('dwSpinBtn');
+const dwResetWinnersBtn = document.getElementById('dwResetWinnersBtn');
+const dwResetBarBtn = document.getElementById('dwResetBarBtn');
+const dwWinnersCount = document.getElementById('dwWinnersCount');
+const dwWinnersList = document.getElementById('dwWinnersList');
+const dwParticipantsList = document.getElementById('dwParticipantsList');
+const dwAddName = document.getElementById('dwAddName');
+const dwAddAmount = document.getElementById('dwAddAmount');
+const dwExcludeWinners = document.getElementById('dwExcludeWinners');
+
+function renderDonationWheel() {
+  const dw = state.donationWheel;
+  const bar = state.donationBar;
+  if (!dw || !bar) return;
+
+  const current = dw.barCurrent || 0;
+  const goal = dw.barGoal || 0;
+  const percent = dw.barPercent || 0;
+  dwCurrent.textContent = current.toLocaleString('ru-RU');
+  dwGoal.textContent = goal.toLocaleString('ru-RU');
+  dwProgressFill.style.width = Math.min(100, percent) + '%';
+  dwRemaining.textContent = dw.remainingCount || 0;
+
+  if (dwExcludeWinners) {
+    dwExcludeWinners.checked = !!dw.excludeWinners;
+  }
+
+  if (dw.isSpinning) {
+    dwStatusText.textContent = '🔄 Идёт прокрутка...';
+    dwStatusText.style.color = '#00d4ff';
+  } else if (percent < 100) {
+    dwStatusText.textContent = `Полоска заполнена на ${Math.round(percent)}% — розыгрыш недоступен`;
+    dwStatusText.style.color = '#ff4757';
+  } else if (dw.excludeWinners && dw.remainingCount <= 1 && dw.winners?.length > 0) {
+    dwStatusText.textContent = '🎉 Все призы разыграны (режим «исключать победителей») — сбросьте полоску или выключите чекбокс';
+    dwStatusText.style.color = '#f9ca24';
+  } else {
+    dwStatusText.textContent = dw.excludeWinners
+      ? '✅ Полоска заполнена — можно крутить! (победители исключаются)'
+      : '✅ Полоска заполнена — можно крутить! (победители могут выиграть повторно)';
+    dwStatusText.style.color = '#00ff64';
+  }
+
+  dwSpinBtn.disabled = !dw.canSpin;
+
+  const winners = dw.winners || [];
+  dwWinnersCount.textContent = winners.length;
+  if (winners.length === 0) {
+    dwWinnersList.innerHTML = `<div class="list-empty">Пока никто не выиграл</div>`;
+  } else {
+    dwWinnersList.innerHTML = winners.map((name, i) => `
+      <div class="list-chip donor" style="background:rgba(0,255,100,0.1); border-color:rgba(0,255,100,0.3);">
+        ${i + 1}. 🏆 ${escapeHtml(name)}
+      </div>
+    `).join('');
+  }
+
+  renderDonationWheelParticipants(dw);
+}
+
+function renderDonationWheelParticipants(dw) {
+  const donors = state.donors?.stream || [];
+  const winners = dw.winners || [];
+  const excludeWinners = !!dw.excludeWinners;
+
+  const fixed = (dw.participants && dw.participants.length > 0) ? dw.participants : null;
+  const list = fixed || donors.map(p => ({ username: p.name, amount: Number(p.totalAmount) || 0 }));
+
+  const total = list.reduce((s, p) => s + (p.amount || 0), 0);
+
+  if (list.length === 0) {
+    dwParticipantsList.innerHTML = `<div class="list-empty">Пока нет участников</div>`;
+    return;
+  }
+
+  dwParticipantsList.innerHTML = list.map((p, i) => {
+    const isWinner = excludeWinners && winners.includes(p.username);
+    const chance = total > 0 ? ((p.amount / total) * 100).toFixed(1) : 0;
+    return `
+      <div class="dw-participant ${isWinner ? 'winner' : ''}">
+        <span class="dw-name">${escapeHtml(p.username)}</span>
+        ${isWinner ? '<span class="dw-badge-winner">🏆 выиграл</span>' : ''}
+        <input type="number" class="dw-amount-input"
+               data-username="${escapeAttr(p.username)}"
+               value="${p.amount}" min="0"
+               ${isWinner ? 'disabled' : ''} />
+        <span class="dw-chance">${chance}%</span>
+        ${isWinner ? '' : `<button class="btn btn-sm btn-success dw-save" data-username="${escapeAttr(p.username)}">💾</button>`}
+        ${isWinner ? '' : `<button class="btn btn-sm btn-danger dw-remove" data-username="${escapeAttr(p.username)}">✕</button>`}
+      </div>
+    `;
+  }).join('');
+
+  dwParticipantsList.querySelectorAll('.dw-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const username = btn.dataset.username;
+      const input = dwParticipantsList.querySelector(`.dw-amount-input[data-username="${CSS.escape(username)}"]`);
+      if (!input) return;
+      const amount = parseInt(input.value) || 0;
+      if (amount < 0) { showToast('Сумма не может быть отрицательной'); return; }
+      const donorIdx = (state.donors?.stream || []).findIndex(p => p.name.toLowerCase() === username.toLowerCase());
+      if (donorIdx === -1) {
+        showToast('Донатер не найден в списке полоски');
+        return;
+      }
+      sendAction('donors:setAmount', { list: 'stream', name: username, amount });
+      showToast('✅ Сумма обновлена', 'success');
+    });
+  });
+
+  dwParticipantsList.querySelectorAll('.dw-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const username = btn.dataset.username;
+      if (!confirm(`Удалить "${username}" из списка полоски?`)) return;
+      const donorIdx = (state.donors?.stream || []).findIndex(p => p.name.toLowerCase() === username.toLowerCase());
+      if (donorIdx === -1) return;
+      sendAction('donors:remove', { list: 'stream', index: donorIdx });
+    });
+  });
+}
+
+dwSpinBtn.addEventListener('click', () => {
+  if (dwSpinBtn.disabled) return;
+  if (!confirm('Запустить прокрутку? Оверлей покажет колесо.')) return;
+  sendAction('donationWheel:spin');
+});
+
+dwResetWinnersBtn.addEventListener('click', () => {
+  if (!confirm('Сбросить прогресс розыгрыша (список победителей и зафиксированных участников)? Полоска НЕ обнулится.')) return;
+  sendAction('donationWheel:reset');
+  showToast('🔄 Прогресс розыгрыша сброшен', 'success');
+});
+
+dwResetBarBtn.addEventListener('click', () => {
+  if (!confirm('Сбросить полоску доната?\n\nЭто обнулит:\n- прогресс полоски\n- список донатеров полоски\n- прогресс розыгрыша\n\nПродолжить?')) return;
+  sendAction('donationBar:resetBar');
+  showToast('🔄 Полоска и розыгрыш сброшены', 'success');
+});
+
+dwExcludeWinners?.addEventListener('change', () => {
+  sendAction('donationWheel:setExcludeWinners', { enabled: dwExcludeWinners.checked });
+  showToast(
+    dwExcludeWinners.checked
+      ? '✅ Победители будут исключаться из следующих розыгрышей'
+      : '✅ Победители могут выиграть повторно',
+    'success'
+  );
+});
+
+document.getElementById('dwAddBtn').addEventListener('click', () => {
+  const name = dwAddName.value.trim();
+  const amount = parseInt(dwAddAmount.value) || 0;
+
+  if (!name) { showToast('Укажи ник'); dwAddName.focus(); return; }
+  if (amount <= 0) { showToast('Укажи сумму > 0'); dwAddAmount.focus(); return; }
+
+  sendAction('donors:add', { list: 'stream', name });
+  setTimeout(() => {
+    sendAction('donors:setAmount', { list: 'stream', name, amount });
+  }, 300);
+
+  dwAddName.value = '';
+  dwAddAmount.value = '';
+  dwAddName.focus();
+  showToast('✅ Добавлено', 'success');
+});
+
+// ============================================================
 //  DONATION BAR
 // ============================================================
 const dbarGoalName = document.getElementById('dbarGoalName');
@@ -1557,7 +1919,7 @@ document.getElementById('dbarSave').addEventListener('click', () => {
 });
 
 document.getElementById('dbarReset').addEventListener('click', () => {
-  if (confirm('Обнулить полоску и список «Донатеры (неделя)»?')) {
+  if (confirm('Обнулить полоску и список «Донатеры (полоска)»?\n\nЭто также сбросит прогресс розыгрыша полоски.')) {
     sendAction('donationBar:resetBar');
     showToast('🔄 Обнулено', 'success');
   }
@@ -1708,6 +2070,95 @@ document.getElementById('djReset').addEventListener('click', () => {
 });
 
 document.querySelector('[data-tab="tab-tops"]').addEventListener('click', loadDjRewards);
+
+document.getElementById('djReloadRewards')?.addEventListener('click', () => {
+  djRewardsLoaded = false;
+  djCurrentRewards = [];
+  djRewardsList.innerHTML = `<div class="list-empty">Загрузка наград...</div>`;
+  loadDjRewards();
+});
+
+// ============================================================
+//  GIF MASTER
+// ============================================================
+const gifMasterRewardsList = document.getElementById('gifMasterRewardsList');
+const gifMasterLeader = document.getElementById('gifMasterLeader');
+
+let gifMasterCurrentRewards = [];
+let gifMasterRewardsLoaded = false;
+
+async function loadGifMasterRewards() {
+  if (gifMasterRewardsLoaded) return;
+  try {
+    const r = await fetch('/api/rewards');
+    const data = await r.json();
+    if (data.available && data.rewards) {
+      gifMasterCurrentRewards = data.rewards;
+      renderGifMasterRewards();
+      gifMasterRewardsLoaded = true;
+    } else {
+      gifMasterRewardsList.innerHTML = `<div class="list-empty">Не удалось загрузить награды</div>`;
+    }
+  } catch (e) {
+    gifMasterRewardsList.innerHTML = `<div class="list-empty">Ошибка загрузки: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderGifMasterRewards() {
+  const selected = state.gifMaster?.rewardIds || [];
+
+  if (gifMasterCurrentRewards.length === 0) {
+    gifMasterRewardsList.innerHTML = `<div class="list-empty">Нет наград</div>`;
+    return;
+  }
+
+  gifMasterRewardsList.innerHTML = gifMasterCurrentRewards.map(r => {
+    const checked = selected.includes(r.id) ? 'checked' : '';
+    return `
+      <label style="display:flex; align-items:center; gap:10px; padding:8px 12px;
+                    background:rgba(255,255,255,0.03); border-radius:8px; cursor:pointer;">
+        <input type="checkbox" ${checked} data-reward-id="${escapeAttr(r.id)}"
+               style="width:18px; height:18px; accent-color:#9146ff;" />
+        <span>${escapeHtml(r.title)}</span>
+        <span style="color:rgba(255,255,255,0.3); font-size:12px;">${r.cost} баллов</span>
+      </label>
+    `;
+  }).join('');
+
+  gifMasterRewardsList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const ids = Array.from(gifMasterRewardsList.querySelectorAll('input:checked'))
+        .map(x => x.dataset.rewardId);
+      sendAction('gifMaster:setRewards', { rewardIds: ids });
+    });
+  });
+}
+
+function renderGifMaster() {
+  const gm = state.gifMaster;
+  if (!gm) return;
+
+  if (gm.leader) {
+    gifMasterLeader.textContent = `${gm.leader.username} — ${gm.leader.points.toLocaleString('ru-RU')} баллов`;
+  } else {
+    gifMasterLeader.textContent = '—';
+  }
+
+  if (gifMasterRewardsLoaded) renderGifMasterRewards();
+}
+
+document.getElementById('gifMasterReset').addEventListener('click', () => {
+  if (confirm('Обнулить счётчик Гиф-мастера дня?')) sendAction('gifMaster:reset');
+});
+
+document.querySelector('[data-tab="tab-tops"]').addEventListener('click', loadGifMasterRewards);
+
+document.getElementById('gifMasterReloadRewards')?.addEventListener('click', () => {
+  gifMasterRewardsLoaded = false;
+  gifMasterCurrentRewards = [];
+  gifMasterRewardsList.innerHTML = `<div class="list-empty">Загрузка наград...</div>`;
+  loadGifMasterRewards();
+});
 
 // ============================================================
 //  NICKS
@@ -1865,7 +2316,6 @@ function renderVips() {
     `;
   }).join('');
 
-  // Крестик — удалить только из базы
   vipsList.querySelectorAll('.chip-x[data-action="remove"]').forEach(el => {
     el.addEventListener('click', () => {
       if (!confirm(`Удалить "${el.dataset.username}" из базы?\n\nВНИМАНИЕ: это НЕ снимет VIP на Twitch, если он там есть. Для снятия используйте кнопку «🚫 Снять».`)) return;
@@ -1873,7 +2323,6 @@ function renderVips() {
     });
   });
 
-  // Кнопка сохранения срока
   vipsList.querySelectorAll('.vip-save').forEach(btn => {
     btn.addEventListener('click', () => {
       const username = btn.dataset.username;
@@ -1886,7 +2335,6 @@ function renderVips() {
     });
   });
 
-  // Кнопка «🚫 Снять» — досрочное снятие с Twitch
   vipsList.querySelectorAll('.vip-revoke').forEach(btn => {
     btn.addEventListener('click', () => {
       const username = btn.dataset.username;
@@ -2259,6 +2707,7 @@ function renderHistory(list) {
     else if (item.mechanic === 'wheel') label = '🎡 Колесо';
     else if (item.mechanic === 'wheel-donation') label = '🎡 Колесо (донат)';
     else if (item.mechanic === 'sniper') label = '🔫 Снайпер';
+    else if (item.mechanic === 'donationWheel') label = '🏆 Розыгрыш полоски';
     else label = '📌 ' + item.mechanic;
 
     const winners = (item.winners || []).join(', ') || '—';
