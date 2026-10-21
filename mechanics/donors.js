@@ -125,6 +125,35 @@ function removeAt(listName, index) {
   return { ok: true };
 }
 
+// === НОВОЕ: задать сумму донатера вручную ===
+function setAmount(listName, name, amount) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed) return { error: 'Пустое имя' };
+  if (listName !== 'stream' && listName !== 'weekly') return { error: 'Неверный список' };
+
+  const sum = Number(amount);
+  if (!Number.isFinite(sum) || sum < 0) return { error: 'Некорректная сумма' };
+
+  const lower = trimmed.toLowerCase();
+  let updated = false;
+
+  db.update(d => {
+    const list = d.donors?.[listName]?.participants || [];
+    const item = list.find(p => p.name.toLowerCase() === lower);
+    if (item) {
+      item.totalAmount = sum;
+      item.lastAt = Date.now();
+      item.manual = true;
+      updated = true;
+    }
+  });
+
+  if (!updated) return { error: 'Донатер не найден' };
+
+  broadcastAll();
+  return { ok: true };
+}
+
 function reset(listName) {
   if (listName !== 'stream' && listName !== 'weekly') return { error: 'Неверный список' };
 
@@ -139,4 +168,6 @@ function reset(listName) {
   return { ok: true };
 }
 
-module.exports = { init, getState, addDonor, addManual, removeAt, reset, checkWeeklyReset };
+module.exports = {
+  init, getState, addDonor, addManual, removeAt, setAmount, reset, checkWeeklyReset,
+};
