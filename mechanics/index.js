@@ -6,12 +6,14 @@ const winner = require('./winner');
 const tickets = require('./tickets');
 const donors = require('./donors');
 const dj = require('./dj');
+const gifMaster = require('./gifMaster');
 const nicks = require('./nicks');
 const tops = require('./tops');
 const announcements = require('./announcements');
 const donationBar = require('./donationBar');
 const debts = require('./debts');
 const vips = require('./vips');
+const donationWheel = require('./donationWheel');
 
 function initAll(ctx) {
   winner.init(ctx);
@@ -21,12 +23,14 @@ function initAll(ctx) {
   tickets.init(ctx);
   donors.init(ctx);
   dj.init(ctx);
+  gifMaster.init(ctx);
   nicks.init(ctx);
   tops.init(ctx);
   announcements.init(ctx);
   donationBar.init(ctx);
   debts.init(ctx);
   vips.init(ctx);
+  donationWheel.init(ctx);
 }
 
 async function handleCommand(action, data) {
@@ -55,12 +59,16 @@ async function handleCommand(action, data) {
       case 'tickets:reset':    return tickets.reset();
 
       case 'donors:add':         return donors.addManual(data?.list, data?.name);
+      case 'donors:setAmount':   return donors.setAmount(data?.list, data?.name, data?.amount);
       case 'donors:remove':      return donors.removeAt(data?.list, data?.index);
       case 'donors:reset':       return donors.reset(data?.list);
       case 'donors:checkWeekly': return donors.checkWeeklyReset();
 
       case 'dj:setRewards':    return dj.setRewards(data?.rewardIds);
       case 'dj:reset':         return dj.reset();
+
+      case 'gifMaster:setRewards': return gifMaster.setRewards(data?.rewardIds);
+      case 'gifMaster:reset':      return gifMaster.reset();
 
       case 'nicks:addManual':  return nicks.addManual(data?.twitchUsername, data?.nick);
       case 'nicks:remove':     return nicks.remove(data?.userId);
@@ -79,7 +87,11 @@ async function handleCommand(action, data) {
       case 'announcements:sendNow':     return announcements.sendNow(data?.id);
 
       case 'donationBar:setGoal':  return donationBar.setGoal(data || {});
-      case 'donationBar:resetBar': return donationBar.resetBar();
+      case 'donationBar:resetBar': {
+        const r = donationBar.resetBar();
+        try { donationWheel.resetAll(); } catch (e) { console.warn('[index] donationWheel reset:', e.message); }
+        return r;
+      }
 
       case 'debts:add':       return debts.add(data || {});
       case 'debts:setAmount': return debts.setAmount(data?.username, data?.amount);
@@ -93,6 +105,10 @@ async function handleCommand(action, data) {
       case 'vips:revoke':       return await vips.revokeManually(data?.username);
       case 'vips:reset':        return vips.reset();
       case 'vips:checkExpired': return await vips.checkExpired();
+
+      case 'donationWheel:spin':   return donationWheel.spin();
+      case 'donationWheel:reset':  return donationWheel.resetWinners();
+	  case 'donationWheel:setExcludeWinners': return donationWheel.setExcludeWinners(data?.enabled);
 
       default:
         return { error: 'Unknown action: ' + action };
@@ -112,12 +128,14 @@ function getFullState() {
     tickets: tickets.getState(),
     donors: donors.getState(),
     dj: dj.getState(),
+    gifMaster: gifMaster.getState(),
     nicks: nicks.getState(),
     tops: tops.getState(),
     announcements: announcements.getState(),
     donationBar: donationBar.getState(),
     debts: debts.getState(),
     vips: vips.getState(),
+    donationWheel: donationWheel.getState(),
     wheelQueueSize: wheel.getQueueSize(),
   };
 }
@@ -130,5 +148,6 @@ function handleChat(msg) {
 
 module.exports = {
   initAll, handleCommand, getFullState, handleChat,
-  tickets, donors, sniper, dj, nicks, wheel, tops, announcements, donationBar, debts, vips,
+  tickets, donors, sniper, dj, gifMaster, nicks, wheel, tops, announcements,
+  donationBar, debts, vips, donationWheel,
 };
