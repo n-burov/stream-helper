@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Оверлей | Розыгрыш полоски</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: transparent !important;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .stage {
+    position: relative;
+    width: 800px; height: 800px;
+    display: none;
+    align-items: center; justify-content: center;
+  }
+  .stage.visible { display: flex; }
+
+  .wheel-wrap {
+    position: relative;
+    width: 640px; height: 640px;
+  }
+
+  #c {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    box-shadow:
+      0 0 60px rgba(255, 215, 0, 0.35),
+      0 0 120px rgba(179, 0, 0, 0.4);
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
+  }
+
+  /* Стрелка сверху */
+  .arrow {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 24px solid transparent;
+    border-right: 24px solid transparent;
+    border-top: 40px solid #FFD700;
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    z-index: 10;
+  }
+
+  /* Центральный логотип */
+  .center-logo {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 110px; height: 110px;
+    background: radial-gradient(circle, #B30000 0%, #7a0000 60%, #2a0505 100%);
+    border: 4px solid #FFD700;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow:
+      0 0 30px rgba(255, 215, 0, 0.7),
+      inset 0 0 20px rgba(0,0,0,0.5);
+    z-index: 5;
+    text-align: center;
+  }
+  .center-logo .logo-text {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    color: #FFD700;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.9), 0 1px 2px #000;
+    line-height: 1.1;
+  }
+
+  /* Плашка победителя */
+  .winner-badge {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    padding: 30px 60px;
+    background: radial-gradient(circle, rgba(20, 5, 5, 0.95), rgba(48, 8, 8, 0.95));
+    border: 3px solid #FFD700;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow:
+      0 0 60px rgba(255, 215, 0, 0.6),
+      inset 0 0 30px rgba(0,0,0,0.6);
+    z-index: 100;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(.3,1.6,.5,1);
+  }
+  .winner-badge.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  .winner-badge .title {
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: rgba(255, 215, 0, 0.7);
+    margin-bottom: 10px;
+  }
+  .winner-badge .name {
+    font-size: 44px;
+    font-weight: 900;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    line-height: 1.2;
+  }
+  .winner-badge .amount {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 10px;
+  }
+
+  .flash {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.9), transparent 60%);
+    opacity: 0; z-index: 50;
+  }
+  .flash.go { animation: flash .6s ease-out; }
+  @keyframes flash {
+    0% { opacity: .9; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="arrow"></div>
+  <div class="wheel-wrap">
+    <canvas id="c" width="1200" height="1200"></canvas>
+    <div class="center-logo">
+      <div class="logo-text">Gepard<br>maN</div>
+    </div>
+  </div>
+  <div class="winner-badge" id="winnerBadge">
+    <div class="title">Победитель</div>
+    <div class="name" id="winnerName">—</div>
+    <div class="amount" id="winnerAmount"></div>
+  </div>
+  <div class="flash" id="flash"></div>
+</div>
+
+<script>
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const winnerBadge = document.getElementById('winnerBadge');
+const winnerName = document.getElementById('winnerName');
+const winnerAmount = document.getElementById('winnerAmount');
+const flash = document.getElementById('flash');
+
+const W = 1200;
+const H = 1200;
+const CX = W / 2;
+const CY = H / 2;
+const RADIUS = 560;
+
+// Палитра для секторов (по «редкости» доната)
+const PALETTE = {
+  low:    ['#4a0a0a', '#5a1010', '#3a0808'],
+  mid:    ['#8b0000', '#a31010', '#7a0000'],
+  high:   ['#B30000', '#cc0000', '#990000'],
+  ultra:  ['#FFD700', '#e6c200', '#ccaa00'],
+};
+
+function getPalette(amount) {
+  if (amount >= 5000) return PALETTE.ultra;
+  if (amount >= 1000) return PALETTE.high;
+  if (amount >= 300) return PALETTE.mid;
+  return PALETTE.low;
+}
+
+let currentRotation = 0;
+let animating = false;
+let lastRemaining = [];
+
+function draw(remaining, rotation) {
+  ctx.clearRect(0, 0, W, H);
+  if (!remaining || remaining.length === 0) return;
+
+  const total = remaining.reduce((s, p) => s + p.amount, 0);
+  let startAngle = rotation;
+
+  remaining.forEach((p, i) => {
+    const slice = (p.amount / total) * Math.PI * 2;
+    const end = startAngle + slice;
+
+    // Фон сектора
+    const pal = getPalette(p.amount);
+    const color = pal[i % pal.length];
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, RADIUS, startAngle, end);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Текст
+    const mid = startAngle + slice / 2;
+    const textR = RADIUS * 0.72;
+    const x = CX + Math.cos(mid) * textR;
+    const y = CY + Math.sin(mid) * textR;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(mid + (mid > Math.PI / 2 && mid < Math.PI * 1.5 ? Math.PI : 0));
+
+    // Ник
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 28px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(p.username.slice(0, 14), 0, -14);
+
+    // Сумма
+    ctx.font = 'bold 20px "Segoe UI", sans-serif';
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText(`${p.amount.toLocaleString('ru-RU')}₽`, 0, 16);
+
+    ctx.restore();
+
+    startAngle = end;
+  });
+
+  // Обводка
+  ctx.beginPath();
+  ctx.arc(CX, CY, RADIUS, 0, Math.PI * 2);
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 8;
+  ctx.shadowColor = 'rgba(255, 215, 0, 0.7)';
+  ctx.shadowBlur = 20;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function spinTo({ targetAngle, duration, remaining, winnerUsername, winnerAmount: amount }) {
+  if (animating) return;
+  animating = true;
+  lastRemaining = remaining;
+  currentRotation = currentRotation % (Math.PI * 2);
+
+  const startRot = currentRotation;
+  const startTs = performance.now();
+
+  function step(now) {
+    const t = Math.min((now - startTs) / duration, 1);
+    // easeOutQuint — красивое затухание
+    const eased = 1 - Math.pow(1 - t, 5);
+    currentRotation = startRot + (targetAngle - startRot) * eased;
+    draw(remaining, currentRotation);
+
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      currentRotation = targetAngle % (Math.PI * 2);
+      draw(remaining, currentRotation);
+      animating = false;
+
+      // Показать победителя
+      showWinner(winnerUsername, amount);
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function showWinner(name, amount) {
+  winnerName.textContent = name;
+  winnerAmount.textContent = amount ? `${amount.toLocaleString('ru-RU')}₽` : '';
+  winnerBadge.classList.add('show');
+  flash.classList.add('go');
+  setTimeout(() => flash.classList.remove('go'), 700);
+}
+
+function hideOverlay() {
+  winnerBadge.classList.remove('show');
+  stage.classList.remove('visible');
+  // Очищаем канвас, чтобы не висело
+  ctx.clearRect(0, 0, W, H);
+}
+
+// WebSocket
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}`);
+
+  ws.onmessage = (e) => {
+    const { type, payload } = JSON.parse(e.data);
+
+    if (type === 'state') {
+      // При подключении — оверлей скрыт
+      hideOverlay();
+    }
+
+    if (type === 'donationWheel:spin') {
+      // Показываем и крутим
+      stage.classList.add('visible');
+      winnerBadge.classList.remove('show');
+      currentRotation = 0;
+      draw(payload.remaining, 0);
+
+      // Небольшая пауза перед стартом (чтобы зритель увидел колесо)
+      setTimeout(() => {
+        spinTo(payload);
+      }, 500);
+    }
+
+    if (type === 'donationWheel:completed') {
+      // Через 4 сек после показа победителя — скрываем
+      setTimeout(() => {
+        hideOverlay();
+      }, 4000);
+    }
+  };
+
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+connect();
+</script>
+</body>
+</html>
