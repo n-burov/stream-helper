@@ -19,13 +19,14 @@ const HISTORY_FILE = path.join(BASE_DIR, 'history.json');
 
 const DEFAULT_DATA = {
   tokens: null,
-  settings: {
+    settings: {
     channel: null,
     ticketRewardId: null,
     ticketRewardTitle: null,
     vipRewardId: null,
     vipRewardTitle: null,
-    wheelSpinCost: 300,
+    wheelSpinCost: 100,
+    donationWheelExcludeWinners: false,
     donationAlertsToken: null,
     donationAlertsRefreshToken: null,
     donationAlertsExpiresAt: null,
@@ -78,6 +79,12 @@ const DEFAULT_DATA = {
     leader: null,
   },
 
+  gifMaster: {
+    rewardIds: [],
+    scores: {},
+    leader: null,
+  },
+
   tops: {
     daily: { participants: [], lastResetAt: null },
     monthly: { participants: [], lastResetAt: null },
@@ -104,6 +111,14 @@ const DEFAULT_DATA = {
   vips: {
     list: [],
   },
+
+  donationWheel: {
+    participants: [],
+    winners: [],
+    isSpinning: false,
+    lastWinner: null,
+    lastSpinId: null,
+  },
 };
 
 let dataCache = null;
@@ -123,11 +138,13 @@ function loadData() {
     dataCache.tickets = { ...DEFAULT_DATA.tickets, ...(raw.tickets || {}) };
     dataCache.donors = { ...DEFAULT_DATA.donors, ...(raw.donors || {}) };
     dataCache.dj = { ...DEFAULT_DATA.dj, ...(raw.dj || {}) };
+    dataCache.gifMaster = { ...DEFAULT_DATA.gifMaster, ...(raw.gifMaster || {}) };
     dataCache.tops = { ...DEFAULT_DATA.tops, ...(raw.tops || {}) };
     dataCache.announcements = { ...DEFAULT_DATA.announcements, ...(raw.announcements || {}) };
     dataCache.donationBar = { ...DEFAULT_DATA.donationBar, ...(raw.donationBar || {}) };
     dataCache.debts = { ...DEFAULT_DATA.debts, ...(raw.debts || {}) };
     dataCache.vips = { ...DEFAULT_DATA.vips, ...(raw.vips || {}) };
+    dataCache.donationWheel = { ...DEFAULT_DATA.donationWheel, ...(raw.donationWheel || {}) };
 
     if (!dataCache.announcements.list || dataCache.announcements.list.length === 0) {
       dataCache.announcements.list = [
